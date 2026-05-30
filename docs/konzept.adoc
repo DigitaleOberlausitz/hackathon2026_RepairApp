@@ -565,9 +565,11 @@ Fähigkeit prüfbar, einzeln verbesserbar und später als eigener Orchestrierung
 (LLM-Prompt/Agent) im Backend umsetzbar. Die ausgeschriebenen Rollenspezifikationen
 liegen in `docs/runtime-roles/` (siehe dortiges `README`).
 
-NOTE: Diese *App-Laufzeit-Rollen* (wie das Produkt den Endnutzer führt) sind strikt
-getrennt von den *Entwickler-Workflow-Skills* (`requirements`, `architecture`, …), die
-nur das _Bauen_ der App steuern.
+NOTE: Diese *App-Laufzeit-Rollen* (wie das Produkt den Endnutzer führt) liegen auf einer
+anderen Ebene als die *Entwickler-Workflow-Skills* (`requirements`, `architecture`, …), die
+nur das _Bauen_ der App steuern. Fachliche Quelle der Wahrheit ist `docs/runtime-roles/`;
+inhaltsgleiche, abgeleitete Kopien sind zusätzlich als projekt-lokale Claude-Code-Skills
+unter `.claude/skills/<rolle>/SKILL.md` abgelegt (per Slash-Command aufruf-/testbar).
 
 === Fünf Rollen-Klassen
 
