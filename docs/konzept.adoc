@@ -204,6 +204,13 @@ flowchart TD
 . *Daten-Schwungrad (löst das Kaltstart-Problem).* Anonymisierte Protokolle füttern
   mit Einwilligung die kuratierte Fehlerzustand-Sammlung („Symptom X bei Gerät Y war
   in N Fällen Ursache Z“). Die App wird durch Nutzung schlauer.
++
+WARNING: *Gate vor dem Commitment:* Das Schwungrad ist erst dann eine belastbare
+tragende Säule, wenn grob geklärt ist, dass Einwilligung _und_ Foto-/Freitext-
+Anonymisierung praktikabel sind (vgl. <<decision-log,D10>> und
+<<ausgelagerte-themen,Ausgelagerte Themen>>). Scheitert das, muss das Schwungrad ohne
+diese Datennutzung auskommen — die App funktioniert auch dann (Triage + kuratierte
+Datengrundlage bleiben unabhängig nutzbar).
 . *Übergabe-Dokument zwischen Rollen.* Ein geteiltes Protokoll für Eigentümer /
   Nutzer / Diagnostiker / Reparateur — adressiert „Nutzer ≠ Eigentümer“.
 . *Reparatur-Tagebuch / Gerätegedächtnis.* Das Protokoll bleibt pro Gerät erhalten:
@@ -320,9 +327,11 @@ Leckage — sicherheitsrelevantes Bauteil. Rückfrage: „Steht das Fahrzeug akt
 wird es noch gefahren?“
 | Quelle / Konfidenz | Kuratierte Quelle vorhanden · Konfidenz hoch 🟢
 | Warn-Ampel | Sicherheit 🔴 (Personengefahr) · Komplexität 🔴 · Kosten 🟡 · Machbarkeit 🟡
-| Empfehlung | *Profi / Werkstatt.* Keine DIY-Anleitung (Schicht B bleibt aus —
-„warnen statt sperren“, D15). Stattdessen *präzises Werkstatt-Protokoll* zur Mitnahme.
-Deutliche Sicherheitswarnung: Fahrzeug bis zur Prüfung möglichst nicht bewegen.
+| Empfehlung | *Profi / Werkstatt — dringend.* Die App *rät bei Rot deutlich von der
+Selbstreparatur ab* und empfiehlt nachdrücklich die Werkstatt; sie sperrt Schicht B
+aber nicht hart („warnen statt sperren“, D15). In den Vordergrund tritt das *präzise
+Werkstatt-Protokoll* zur Mitnahme. Deutliche Sicherheitswarnung: Fahrzeug bis zur
+Prüfung möglichst nicht bewegen.
 |===
 
 [mermaid]
@@ -330,7 +339,7 @@ Deutliche Sicherheitswarnung: Fahrzeug bis zur Prüfung möglichst nicht bewegen
 flowchart TD
   P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)"]
   T --> D[Diagnose · KI] --> A{Warn-Ampel}
-  A -->|rot| Prof["Profi / Werkstatt<br/>+ Werkstatt-Protokoll"]
+  A -->|"rot · dringend abraten"| Prof["Profi / Werkstatt<br/>+ Werkstatt-Protokoll"]
   Prof --> W[Reflexion & Wirkung]
   classDef path fill:#bbf7d0,stroke:#16a34a,stroke-width:2px
   classDef red fill:#fecaca,stroke:#dc2626,stroke-width:2px
@@ -473,11 +482,20 @@ kuratierten Sammlung.
 
 === Wissensquelle: kuratierte Quellen mit Fallback
 
-* *Primär:* Auswertung kuratierter Quellen (iFixit, Hersteller-Handbücher, kuratierte
-  Defekt-Sammlung). Die KI fasst zusammen und *belegt mit Quelle*, statt frei zu
-  diagnostizieren.
-* *Fallback:* Liegt keine Quelle vor, ermittelt und bewertet die KI selbst — und
-  *kennzeichnet das deutlich*.
+Drei Stufen, klar unterschieden — entscheidend für den Vertrauens-Indikator:
+
+* *Primär (kuratiert):* Auswertung kuratierter Quellen. Dazu zählen externe Quellen
+  (iFixit, Hersteller-Handbücher) *und die eigene, KI-erstellte und anschließend
+  menschlich geprüfte Datengrundlage* (<<decision-log,D13>> + <<decision-log,D5>>) —
+  Letztere gilt als kuratiert, _nicht_ als roher Fallback. Die KI fasst zusammen und
+  *belegt mit Quelle*.
+* *Fallback (ungeprüft):* Liegt _gar keine_ kuratierte Grundlage vor, ermittelt und
+  bewertet die KI frei — und *kennzeichnet das deutlich* mit niedriger Konfidenz.
+
+NOTE: Damit löst sich die scheinbare Spannung zwischen <<decision-log,D2>> („kuratiert
+zuerst“) und <<decision-log,D13>> („zum Start eigene Datengrundlage“): Die Startdaten
+sind durch das Experten-Review (D5) kuratiert, der Vertrauens-Indikator zeigt also auch
+im MVP angemessene — nicht durchgängig niedrige — Konfidenz.
 
 [mermaid]
 ....
@@ -660,7 +678,8 @@ ist Machbarkeit und Akzeptanz (siehe <<ziel-phase>>).
 | D1 | *Warn-Ampel* als Kernfunktion; Achsen Sicherheit · Komplexität · Kostenaufwand ·
 Machbarkeit. *Warnen statt sperren* — mündiger Nutzer.
 | D2 | *Wissensquelle:* kuratierte Quellen zuerst; KI-Eigenrecherche nur als
-gekennzeichneter Fallback.
+gekennzeichneter Fallback. Die eigene KI-erstellte + menschlich geprüfte Datengrundlage
+(D13/D5) zählt als _kuratiert_, nicht als Fallback.
 | D3 | *Vertrauens-Indikator:* Konfidenz + Begründung bei jeder KI-Aussage, eskalierend
 mit Kritikalität; Fehler-Hinweis immer.
 | D4 | *Diagnose:* KI führt durch kuratierte Fehlerzustände (statt freiem Dialog oder
@@ -691,8 +710,9 @@ Details: <<einstieg-ton,Niederschwelliger Einstieg & ehrlicher Ton>>.
 | D12 | *Steuerung & Misserfolgs-Pfad:* Nutzer lenkt jederzeit (Reparatur / Profi /
 Austausch); Vergleich über Kosten-Nutzen, Zeit und Ökologie. Details: <<steuerung,Steuerung & Alternativen>>.
 | D13 | *Datengrundlage (MVP):* keine externen Daten zum Start — eine _eigene
-Datengrundlage_ wird (KI-gestützt) erstellt, mit der zunächst gearbeitet wird; Menschen
-entwickeln sie danach weiter. Keine regionale Einschränkung.
+Datengrundlage_ wird (KI-gestützt) erstellt und menschlich geprüft (gilt damit als
+kuratiert, vgl. D2/D5), mit ihr wird zunächst gearbeitet; Menschen entwickeln sie danach
+weiter. Keine regionale Einschränkung.
 | D14 | *Eigentum im Protokoll:* Ist der Nutzer nicht der Eigentümer, wird das im
 Ergebnisprotokoll vermerkt — inkl. Angabe des Eigentümers und *wer die Kosten übernimmt*.
 | D15 | *Keine Hard-Stop-Schwelle:* Es gibt keine Geräteklasse, die Schicht B komplett
@@ -713,11 +733,20 @@ Abwägung, was wichtiger ist, trifft der Nutzer.
 Bewusst aus dem Konzept ausgeklammert und später als eigenständige Vorhaben zu behandeln:
 
 * *Datenschutz-Umsetzung* — konkrete Rechtsgrundlage, Einwilligungs-Flow und
-  Anonymisierung für das Cloud-first-Schwungrad (vgl. D10).
+  Anonymisierung für das Cloud-first-Schwungrad (vgl. D10). +
+  *Grob-Gate:* Bevor das Daten-Schwungrad als tragende Säule fix gilt, muss grob
+  geklärt sein, dass Einwilligung und Foto-/Freitext-Anonymisierung praktikabel sind —
+  sonst Klumpenrisiko fürs Kern-Feature.
 * *Assistive Barrierefreiheit* — Screenreader, große Schrift, Kontraste, ARIA
   (über die Mehrsprachigkeit aus D17 hinaus).
 * *Kostenmodell der KI* — erst nach Machbarkeits- und Akzeptanznachweis relevant;
   zunächst irrelevant (vgl. <<ziel-phase>>).
+* *Rechtliche Absicherung (zu prüfen):* Trotz D16 („Haftung beim Anwender“) ist ein
+  pauschaler Haftungsausschluss bei _konkreten DIY-Anleitungen_ (Schicht B) zu rechtlich
+  verbotenen oder besonders gefährlichen Laien-Eingriffen (Gas, Hochvolt-Akku/E-Auto,
+  feste 230-V-Installation) möglicherweise unwirksam (Produkthaftung, Verkehrssicherungs-
+  pflicht). Offener Prüfpunkt: wie weit „warnen statt sperren“ (D15) rechtlich trägt und
+  welche Disclaimer/Bestätigungen nötig sind.
 
 [[ziel-phase]]
 == Priorität & Zielsetzung dieser Phase
