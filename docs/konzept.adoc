@@ -49,6 +49,26 @@ mehrere ausfüllen) vs. *Nutzer-Segmente* (überdauernde Eigenschaften). Diese b
 Ebenen waren im ursprünglichen Brainstorming vermischt.
 ====
 
+[mermaid]
+....
+flowchart LR
+  subgraph Rollen["Rollen (situativ, pro Vorgang)"]
+    direction TB
+    R1[Eigentümer]
+    R2[Nutzer]
+    R3[Diagnostiker]
+    R4[Reparateur]
+    R5[Teile-Beschaffer]
+  end
+  subgraph Segmente["Segmente (überdauernde Achsen)"]
+    direction TB
+    S1[Budget]
+    S2[Zeit]
+    S3[Können]
+    S4[Motivation]
+  end
+....
+
 === Rollen in einem Reparaturvorgang
 
 * *Eigentümer* — trägt das Risiko, wägt Reparatur vs. Neuanschaffung ab, will Werterhalt.
@@ -107,6 +127,16 @@ das Alleinstellungsmerkmal — kein bekannter Wettbewerber bietet diese Achsen
 integriert an. Grundhaltung: *warnen statt sperren* — der mündige Nutzer entscheidet,
 je kritischer desto deutlicher die Warnung.
 
+[mermaid]
+....
+flowchart LR
+  S[Sicherheit] --> AMP{{Warn-Ampel}}
+  K[Komplexität] --> AMP
+  KO[Kostenaufwand] --> AMP
+  M[Machbarkeit] --> AMP
+  AMP --> R["selbst machen · Repair Café ·<br/>Profi · fachgerecht entsorgen"]
+....
+
 == Zwei Schichten: Triage und Reparatur
 
 Die App trennt *Breite* und *Tiefe*. Das löst den Widerspruch zwischen „möglichst
@@ -123,8 +153,20 @@ erlaubt _und_ Wissen vorhanden ist. Beispiel: beim Auto-Bremsproblem keine
 Wechsel-Anleitung, aber ein präzises Protokoll für die Werkstatt.
 |===
 
+[mermaid]
+....
+flowchart LR
+  G[Jedes Gerät] --> A["Schicht A · Triage<br/>immer verfügbar, immer sicher"]
+  A --> P[Problemaufnahme-Protokoll]
+  A --> C{"Ampel erlaubt?<br/>+ Wissen vorhanden?"}
+  C -->|ja| B[Schicht B · DIY-Anleitung]
+  C -->|nein| W[Präzises Werkstatt-Protokoll]
+  classDef gate fill:#fef9c3,stroke:#ca8a04
+  class C gate
+....
+
 So bekommt *jeder* sofort Mehrwert, ohne dass für jedes Gerät der Welt eine
-vollständige Reparaturdatenbank existieren muss.
+vollständige Reparaturdatenbank existieren muss. (→ Decision-Log <<_decision_log_getroffene_entscheidungen,D6>>)
 
 [[protokoll]]
 == Problemaufnahme-Protokoll
@@ -139,6 +181,18 @@ erzeugt daraus ein teilbares Protokoll. Geführte Fragen (KI-gestützt, gerätea
 * Was ist (vermutlich) das Problem?
 
 === Was das Protokoll darüber hinaus leistet
+
+[mermaid]
+....
+flowchart TD
+  PR(("Problemaufnahme-<br/>Protokoll"))
+  PR --> A[Brücke DIY ↔ Profi]
+  PR --> B["Daten-Schwungrad<br/>(mit Einwilligung)"]
+  PR --> C[Übergabe zwischen Rollen]
+  PR --> D[Reparatur-Tagebuch]
+  PR --> E[Selbstwirksamkeit ohne Erfolg]
+  PR --> F["KI-Entscheidungsprotokoll<br/>(Nachvollziehbarkeit)"]
+....
 
 . *Portables Artefakt / Brücke DIY ↔ Profi.* Exportier- und teilbar — zur Werkstatt,
   ins Repair Café, ins Forum, an die Hersteller-Hotline. Spart Diagnosezeit →
@@ -162,6 +216,26 @@ erzeugt daraus ein teilbares Protokoll. Geführte Fragen (KI-gestützt, gerätea
 == Customer Journey (Ende zu Ende)
 
 Der durchgängige Ablauf, der die App vom Themen-Sammelsurium zum Produkt macht:
+
+[mermaid]
+....
+flowchart TD
+  P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)"]
+  T --> D[Diagnose · KI] --> A{Warn-Ampel}
+  A -->|grün/gelb| E{Entscheidung}
+  A -->|rot| Prof[Profi / Repair Café]
+  E -->|selbst| B[Begleitung] --> R{Ergebnis}
+  E --> Prof
+  E --> Ent[Fachgerecht entsorgen]
+  R -->|Erfolg| W[Reflexion & Wirkung]
+  R -->|Misserfolg| Prof
+  Prof --> W
+  Ent --> W
+  classDef red fill:#fecaca,stroke:#dc2626
+  classDef green fill:#bbf7d0,stroke:#16a34a
+  class Prof,Ent red
+  class W green
+....
 
 . *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht").
 . *Problemaufnahme-Protokoll* — geführte Triage (Schicht A), siehe <<protokoll>>.
@@ -189,8 +263,9 @@ verarbeitet/gespeichert, damit Diagnose und Daten-Schwungrad maximal profitieren
 
 [WARNING]
 ====
-Damit steigt der Aufklärungs- und Compliance-Bedarf. Auch bei Cloud-first bleiben
-DSGVO-Pflichten bestehen:
+Damit steigt der Aufklärungs- und Compliance-Bedarf. Der Anwender muss sich bewusst
+sein, dass seine Daten zu Trainingszwecken verwendet werden können (klare Einwilligung).
+Auch bei Cloud-first bleiben DSGVO-Pflichten bestehen:
 
 * *Rechtsgrundlage* für Verarbeitung/Speicherung nötig (Einwilligung oder berechtigtes
   Interesse) — besonders fürs Weiterverwenden der Protokolle (Schwungrad).
@@ -198,7 +273,8 @@ DSGVO-Pflichten bestehen:
 * *Anonymisierung/Pseudonymisierung* der Protokolle vor der Wiederverwendung.
 * *Hinweis* auf Hintergrund/Personen/Seriennummern bei Fotos; Lösch-/Auskunftsrechte.
 
-→ Konkrete Ausgestaltung in <<offene-fragen>> vermerkt.
+→ Detaillierte Umsetzung ist ein eigenes Projekt (vgl. D10 und
+<<_ausgelagerte_themen_eigene_projekte,Ausgelagerte Themen>>).
 ====
 
 [[ki]]
@@ -230,6 +306,16 @@ kuratierten Sammlung.
   diagnostizieren.
 * *Fallback:* Liegt keine Quelle vor, ermittelt und bewertet die KI selbst — und
   *kennzeichnet das deutlich*.
+
+[mermaid]
+....
+flowchart TD
+  N[Freie Nutzereingabe] --> Q{"Kuratierte Quelle<br/>vorhanden?"}
+  Q -->|ja| S["Zusammenfassen +<br/>mit Quelle belegen"] --> V[Vertrauens-Indikator<br/>Konfidenz + Begründung]
+  Q -->|nein| F["KI-Eigenrecherche<br/>deutlich gekennzeichnet"] --> V
+  classDef fallback fill:#fef9c3,stroke:#ca8a04
+  class F fallback
+....
 
 === Vertrauens-Indikator (Designprinzip)
 
@@ -284,6 +370,11 @@ Jeder Pfad wird vergleichbar gemacht über:
 * *Zeitfaktor* (Reparaturdauer/Ausfallzeit vs. Beschaffung & Einrichtung),
 * *ökologische Kosten* (Ressourcen/CO₂ von Reparatur vs. Neugerät).
 
+Ist der *Austausch wirtschaftlicher*, wird auch das so dargestellt. Ökonomie, Ökologie
+und soziale Aspekte können sich *widersprechen*: Die App zeigt die Unterschiede nur
+transparent auf, die KI gibt eine *Empfehlung mit Begründung* — die *Entscheidung, was
+wichtiger ist, liegt beim Nutzer* (vgl. D18).
+
 Damit ist auch der *Misserfolgs-Pfad* abgedeckt: Abbruch ist jederzeit möglich,
 führt sicher zur Fachkraft und bleibt durch die ermutigende Rahmung selbstwirksam.
 
@@ -323,9 +414,12 @@ Es muss Anbieter geben, die die Ersatzteile liefern.
   Online-Workshops, iFixit (Lizenzlage prüfen), Online-Shops mit Austausch-Anleitungen.
 * *Repair Cafés / Werkstätten:* bestehende offene Datenbanken (z. B.
   `reparatur-initiativen.de`) statt Eigenpflege; ggf. OpenStreetMap.
-* *Förderung:* Der „Reparatur-Bonus" ist *kein Bundesprogramm*, sondern fragmentiert
-  pro Bundesland mit wechselnden Budgets und Stopps. Daher kuratierte, klein gehaltene
-  Liste mit Feld „Stand / gültig-bis" und Hinweis auf mögliches Auslaufen.
+* *Förderung (als Nutzer-Feature):* Die App zeigt passende Förderprogramme zum Gerät/
+  Standort an. Der „Reparatur-Bonus" ist *kein Bundesprogramm*, sondern fragmentiert
+  pro Bundesland (z. B. Sachsen: https://www.sab.sachsen.de/reparaturbonus[SAB-Reparaturbonus])
+  mit wechselnden Budgets und Stopps; dazu kommen *kommunale/lokale Programme*. Daher
+  kuratierte, klein gehaltene Liste mit Feld „Stand / gültig-bis" und Hinweis auf
+  mögliches Auslaufen.
 
 == Gerätekategorien
 
@@ -354,6 +448,26 @@ Die App stellt den *Gesamtaufwand* gegenüber:
   Transport, Verkabelung).
 * *Reparatur:* Reparaturkosten + Zeit − ggf. Förderung.
 
+== Finanzierung der App
+
+Gemeinnützige Ausrichtung. Tragende Säulen:
+
+* *Kommunale Förderung* und *EU-Förderprogramme*.
+* *Lokale Sponsoren* und *Partnerschaften mit Ersatzteilanbietern* — inklusive einer
+  *integrierten Bestellfunktion*.
+* Ergänzend *Freemium*.
+
+[WARNING]
+====
+Bestell-/Partner-Erlöse berühren den anfangs bewusst ausgeschlossenen Provisions-/
+Affiliate-Pfad. Leitplanke gegen Verzerrung: Die Empfehlung folgt _immer_ der
+<<_kernfunktion_die_warn_ampel,Warn-Ampel>> (günstigste/sinnvollste Lösung zuerst);
+die Bestelloption ist *nachgelagert und transparent gekennzeichnet*.
+====
+
+NOTE: Ein ausgefeiltes Kostenmodell ist dieser Phase nachgelagert — erste Priorität
+ist Machbarkeit und Akzeptanz (siehe <<priorität>>).
+
 == Decision-Log (getroffene Entscheidungen)
 
 [cols="1,4"]
@@ -377,11 +491,17 @@ gegated Tiefe.
 Daten-Schwungrad (mit Einwilligung), Übergabe-Dokument zwischen Rollen,
 Reparatur-Tagebuch, Selbstwirksamkeit auch ohne Erfolg und *KI-Entscheidungsprotokoll*
 (nachvollziehbarer Denkweg: Ausgangslage, Fragen, Infos, Entscheidungen + Basis).
-| D8 | *Finanzierung:* Förderung/Stiftung/gemeinnützig + Freemium. *Kein* Affiliate /
-keine Lead-Gebühren — bewusst, um Provisions-Bias und Mission-Konflikt zu vermeiden.
+| D8 | *Finanzierung:* gemeinnützige Ausrichtung — kommunale Förderung, EU-Förderprogramme,
+lokale Sponsoren sowie Partnerschaften mit Ersatzteilanbietern inkl. *integrierter
+Bestellfunktion*; ergänzend Freemium. +
+⚠️ *Spannung zur ursprünglichen Haltung:* Bestell-/Partner-Erlöse berühren den anfangs
+bewusst ausgeschlossenen Provisions-/Affiliate-Pfad. Damit der Provisionsanreiz die
+Empfehlung nicht verzerrt, gilt: Empfehlung folgt _immer_ der Warn-Ampel (günstigste/
+sinnvollste Lösung zuerst), Bestelloption ist nachgelagert und transparent gekennzeichnet.
 | D9 | *Eingabe-Wege:* Text/geführte Fragen, Foto/Video, Sprache/Voice, Barcode/Modell-Scan.
-| D10 | *Datenschutz:* Cloud-first für KI-Qualität & schnelles Lernen — DSGVO-Pflichten
-(Rechtsgrundlage, Transparenz, Anonymisierung der Protokolle) bleiben zwingend.
+| D10 | *Datenschutz:* Cloud-first für KI-Qualität & schnelles Lernen. Der Anwender muss
+sich *bewusst sein, dass seine Daten zu Trainingszwecken verwendet werden können* (klare
+Einwilligung). Die detaillierte Datenschutz-Umsetzung ist ein *eigenes Projekt*.
 | D11 | *Niederschwelliger Einstieg:* adaptive Anleitungstiefe (Anfänger/geübt), einfache
 Sprache + Mehrsprachigkeit. *Ehrlicher Ton:* ermutigen, aber nichts beschönigen — klar
 sagen, wenn es schwierig/unsicher/aufwändig wird; den Nutzer vom zu frühen Aufgeben
@@ -391,24 +511,42 @@ mehr rückfragen ('Traust du dir das zu?'), u. a. über eine Bewertung der letzt
 Reparatur bevorzugen, bei zu hoher Komplexität/Unsicherheit auf professionelle Reparatur
 wechseln, oder Austausch/Alternativgeräte ansehen. Vergleich stets über Kosten-Nutzen,
 Zeitfaktor und ökologische Kosten.
+| D13 | *Datengrundlage (MVP):* keine externen Daten zum Start — eine _eigene
+Datengrundlage_ wird (KI-gestützt) erstellt, mit der zunächst gearbeitet wird; Menschen
+entwickeln sie danach weiter. Keine regionale Einschränkung.
+| D14 | *Eigentum im Protokoll:* Ist der Nutzer nicht der Eigentümer, wird das im
+Ergebnisprotokoll vermerkt — inkl. Angabe des Eigentümers und *wer die Kosten übernimmt*.
+| D15 | *Keine Hard-Stop-Schwelle:* Es gibt keine Geräteklasse, die Schicht B komplett
+abriegelt — durchgängig „warnen statt sperren" (D1).
+| D16 | *Haftung:* liegt *immer beim Anwender*; beauftragt er eine Firma, liegt sie bei
+dieser. Die App gibt Hilfestellung, übernimmt keine Verantwortung für die Ausführung.
+| D17 | *Sprachen zum Start:* Deutsch und Englisch. Assistive Technik (Screenreader, große
+Schrift, Kontraste, ARIA) ist als _eigenes Thema_ ausgelagert.
+| D18 | *Zielkonflikte transparent, Entscheidung beim Nutzer:* Ökonomie, Ökologie und
+Soziales können sich widersprechen (auch: Austausch ist mal wirtschaftlicher). Die App
+stellt die Unterschiede transparent dar, die KI empfiehlt _mit Begründung_ — die
+Abwägung, was wichtiger ist, trifft der Nutzer.
 |===
+
+== Ausgelagerte Themen (eigene Projekte)
+
+Bewusst aus dem Konzept ausgeklammert und später als eigenständige Vorhaben zu behandeln:
+
+* *Datenschutz-Umsetzung* — konkrete Rechtsgrundlage, Einwilligungs-Flow und
+  Anonymisierung für das Cloud-first-Schwungrad (vgl. D10).
+* *Assistive Barrierefreiheit* — Screenreader, große Schrift, Kontraste, ARIA
+  (über die Mehrsprachigkeit aus D17 hinaus).
+* *Kostenmodell der KI* — erst nach Machbarkeits- und Akzeptanznachweis relevant;
+  zunächst irrelevant (vgl. <<ziel-phase>>).
+
+[[ziel-phase]]
+== Priorität & Zielsetzung dieser Phase
+
+Erste Priorität ist die *Machbarkeit zu prüfen und die Akzeptanz zu testen*. Ein
+ausgefeiltes Kostenmodell, die detaillierte Datenschutz-Implementierung und assistive
+Barrierefreiheit sind diesem Ziel nachgelagert und bewusst ausgelagert (siehe oben).
 
 == Offene Fragen / zu klärende Edge Cases
 
-* *Finanzierung — Details:* Richtung steht (D8: Förderung/Stiftung + Freemium). Offen:
-  konkrete Fördertöpfe/Träger, und wo genau die Grenze Free ↔ Premium verläuft
-  (was bleibt immer kostenlos — Triage/Protokoll?).
-* *MVP-Umfang/Region:* Geräte-_Breite_ ist via Schicht A entschieden (alles, auch
-  Auto). Offen bleibt: Für welche Geräte gibt es zum Start schon Schicht-B-Anleitungen,
-  und welche Region zuerst (Förder-/Café-Daten sind regional)?
-* *Nutzer ≠ Eigentümer:* Durch Übergabe-Dokument konzeptionell adressiert. Offen:
-  Braucht es trotzdem Hinweise/Bestätigungen bei Mietgerät, Arbeitgeber-Laptop?
-* *Hard-Stop-Schwelle:* Gibt es trotz „Warnen statt sperren" (D1) Geräteklassen, bei
-  denen Schicht B komplett abgeriegelt wird?
-* *Rechtliches:* Haftung bei Fehldiagnose, Disclaimer, iFixit-Lizenzlage, Einschränkungen.
-* *KI-Kosten:* Kosten pro Anfrage (besonders Bild-Diagnose) — Kostenmodell (relevant für
-  die Free-/Premium-Grenze).
-* *Barrierefreiheit — Details:* über D11 hinaus (Screenreader, große Schrift,
-  Kontraste); welche Sprachen zum Start?
-* *Datenschutz-Umsetzung:* konkrete Rechtsgrundlage & Anonymisierung für das
-  Cloud-first-Schwungrad (D10).
+Aktuell sind alle Kernfragen entschieden (siehe Decision-Log D1–D18) oder als eigenes
+Projekt ausgelagert. Neue offene Punkte hier ergänzen, sobald sie auftauchen.
