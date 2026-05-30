@@ -299,3 +299,439 @@ body {
 .rk-theme-mutig .rk-soft { box-shadow: none; }
 .rk-theme-mutig .rk-hero { line-height: .92; }
 .rk-theme-mutig .rk-reco { color: var(--accent-ink); }
+
+/* ==========================================================================
+   STUFE 1 — Neue Komponenten (PROJ-1 … PROJ-10)
+   Alle Farben über CSS-Variablen — kein hartes Hex außer #fff am
+   rk-confirm-proceed (Kontrast-Ausnahme auf --stop-Rot, begründet).
+   ========================================================================== */
+
+/* ---------- Eigentum (PROJ-1) ---------- */
+.rk-owner { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-owner-q { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-owner-followup {
+  margin-top: 4px; padding: 13px 14px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); display: flex; flex-direction: column;
+  gap: 10px; animation: rkFade var(--motion) ease;
+}
+.rk-owner-input {
+  width: 100%; padding: 10px 13px; margin-top: 8px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); font: inherit; color: var(--ink);
+  outline: none; transition: border-color var(--motion);
+}
+.rk-owner-input:focus { border-color: var(--accent2); }
+
+/* ---------- Freitext-Triage (PROJ-2) ---------- */
+.rk-triage-text-wrap { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.rk-triage-text {
+  width: 100%; min-height: 72px; resize: vertical;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 10px 13px;
+  font-family: var(--font-body); font-size: 13.5px; color: var(--ink);
+  line-height: 1.5; outline: none;
+  transition: border-color var(--motion), box-shadow var(--motion);
+}
+.rk-triage-text::placeholder { color: var(--ink-soft); opacity: 1; }
+.rk-triage-text:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px var(--accent2-soft); }
+.rk-charcount { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); text-align: right; transition: color var(--motion); }
+.rk-charcount-over { color: var(--stop-ink); font-weight: 600; }
+
+/* ---------- Skill-Rückfrage (PROJ-3) ---------- */
+.rk-skillask { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-skill-opt {
+  width: 100%; text-align: left; padding: 15px 17px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); display: flex; align-items: center;
+  gap: 13px; font-size: 14.5px; color: var(--ink); box-shadow: var(--shadow-sm);
+  transition: border-color var(--motion), transform var(--motion), background var(--motion);
+}
+.rk-skill-opt:hover { border-color: var(--accent); }
+.rk-skill-opt:active { transform: translateY(1px); background: var(--accent-soft); border-color: var(--accent); }
+.rk-skill-out {
+  width: 100%; text-align: center; padding: 11px 14px; font-size: 13px;
+  color: var(--ink-soft); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  transition: border-color var(--motion), color var(--motion);
+}
+.rk-skill-out:hover { border-color: var(--accent); color: var(--ink); }
+
+/* ---------- Unklar-Screen (PROJ-4) ---------- */
+.rk-unclear { display: flex; flex-direction: column; align-items: center; text-align: center; padding: var(--pad); gap: 6px; }
+.rk-unclear-emoji { font-size: 52px; line-height: 1; margin-bottom: 6px; }
+.rk-unclear-title { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 22px; letter-spacing: var(--display-tracking); color: var(--ink); margin: 0; text-wrap: balance; }
+.rk-unclear-body { font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); max-width: 30ch; margin: 4px 0 10px; }
+.rk-unclear-paths { display: flex; flex-direction: column; gap: var(--gap); width: 100%; margin-top: 4px; }
+
+/* ---------- Vergleich 4-Pfad (PROJ-5) ---------- */
+/* DOM: rk-compare-4 > rk-compare-path (Karte) > rk-compare-head + rk-compare-row*
+   Gestapelte Karten, volle Breite, kein horizontaler Scroll. */
+.rk-compare-4 { /* kein horizontales Scroll */ }
+.rk-compare-path { margin-top: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+.rk-compare-path:first-child { margin-top: 0; }
+.rk-compare-path > .rk-compare-head {
+  background: var(--surface-2); display: block; padding: 8px 12px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--ink);
+  white-space: normal; word-break: break-word;
+}
+.rk-compare-4 .rk-compare-row { grid-template-columns: auto 1fr; min-width: unset; }
+.rk-compare-4 .rk-compare-row > span:last-child { white-space: normal; overflow-wrap: anywhere; word-break: break-word; text-align: right; }
+.rk-compare-reco { background: color-mix(in srgb, var(--accent2) 12%, var(--surface)); color: var(--accent2); font-weight: 700; }
+.rk-compare-hidden {
+  padding: 9px 12px; border-top: 1px solid var(--line); background: var(--surface-2);
+  font-size: 12px; color: var(--ink-soft); cursor: pointer; display: flex;
+  align-items: center; gap: 6px; transition: color var(--motion); user-select: none;
+}
+.rk-compare-hidden:hover { color: var(--ink); }
+.rk-compare-hidden-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; color: var(--ink-soft); padding: 6px 12px;
+  border-top: 1px dotted var(--line); line-height: 1.4;
+}
+.rk-compare-na { color: var(--ink-soft); font-style: italic; opacity: .6; font-size: .9em; }
+.rk-est-tag {
+  display: inline-block; font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--mittel-ink);
+  background: var(--mittel-bg); border-radius: var(--radius-pill); padding: 2px 6px;
+  vertical-align: middle; white-space: nowrap;
+}
+.rk-compare-begruendung { padding: 9px 12px 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); line-height: 1.5; font-style: italic; }
+
+/* ---------- Förderblock (PROJ-6) ---------- */
+.rk-foerder { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rk-foerder-head { padding: 9px 12px; background: var(--surface-2); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px; }
+.rk-foerder-item { padding: 11px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+.rk-foerder-name { font-weight: 600; font-size: 13.5px; color: var(--ink); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; line-height: 1.3; }
+.rk-foerder-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+.rk-foerder-badge { display: inline-block; font-family: var(--font-mono); font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--gut-bg); color: var(--gut-ink); white-space: nowrap; }
+.rk-foerder-stale { background: color-mix(in srgb, var(--mittel-bg) 35%, var(--surface)); }
+.rk-foerder-stale .rk-foerder-badge, .rk-foerder-badge.rk-foerder-stale { background: var(--mittel-bg); color: var(--mittel-ink); }
+.rk-foerder-expired { opacity: .72; }
+.rk-foerder-expired .rk-foerder-badge, .rk-foerder-badge.rk-foerder-expired { background: var(--stop-bg); color: var(--stop-ink); }
+.rk-foerder-expired .rk-foerder-name { text-decoration: line-through; text-decoration-color: var(--stop); }
+.rk-foerder-src { font-size: 12px; color: var(--accent2); text-decoration: underline; text-underline-offset: 2px; display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; }
+.rk-foerder-disclaimer { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 11px; color: var(--ink-soft); line-height: 1.4; font-style: italic; }
+.rk-foerder-empty { padding: 18px 12px; text-align: center; font-size: 13px; color: var(--ink-soft); font-style: italic; }
+
+/* ---------- Garantie-Gate (PROJ-7) ---------- */
+.rk-gate { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-gate-warn { background: var(--mittel-bg); color: var(--mittel-ink); border-radius: var(--radius-sm); padding: 12px 13px; font-size: 13px; font-weight: 600; line-height: 1.4; }
+.rk-gate-q { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 18px; letter-spacing: var(--display-tracking); color: var(--ink); margin: 4px 0; }
+.rk-gate-actions { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-gate-alt { width: 100%; text-align: left; padding: 14px 16px; background: var(--accent2-soft); color: var(--accent2); border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; box-shadow: var(--shadow-sm); transition: opacity var(--motion), transform var(--motion); }
+.rk-gate-alt:active { transform: translateY(1px); opacity: .88; }
+.rk-gate-proceed { width: 100%; text-align: center; padding: 11px 14px; font-size: 13px; color: var(--ink-soft); border: 1px solid var(--line); border-radius: var(--radius-sm); transition: border-color var(--motion), color var(--motion); }
+.rk-gate-proceed:hover { border-color: var(--accent); color: var(--ink); }
+
+/* ---------- Sicherheits-Bestätigung (PROJ-8) ---------- */
+.rk-confirm { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-confirm-warn { background: var(--stop-bg); color: var(--stop-ink); border-radius: var(--radius-sm); padding: 13px 14px; font-size: 13.5px; font-weight: 700; line-height: 1.45; border: 1.5px solid color-mix(in srgb, var(--stop) 28%, transparent); }
+.rk-confirm-q { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 17px; letter-spacing: var(--display-tracking); color: var(--ink); margin: 4px 0; }
+.rk-confirm-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 14px; color: var(--ink); line-height: 1.4; }
+.rk-confirm-actions { display: flex; flex-direction: column; gap: var(--gap); margin-top: 4px; }
+/* #fff: bewusste Ausnahme — --stop ist über alle Themes Rotwert, Weiß sichert WCAG-AA */
+.rk-confirm-proceed { width: 100%; padding: 14px; background: var(--stop); color: #fff; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; text-align: center; box-shadow: var(--shadow-sm); transition: transform var(--motion), opacity var(--motion); }
+.rk-confirm-proceed:active { transform: translateY(1px); opacity: .85; }
+.rk-confirm-alt { width: 100%; text-align: center; padding: 11px 14px; font-size: 13px; color: var(--ink-soft); border: 1px solid var(--line); border-radius: var(--radius-sm); transition: border-color var(--motion), color var(--motion); }
+.rk-confirm-alt:hover { border-color: var(--accent2); color: var(--accent2); }
+
+/* ---------- Toast (PROJ-9/10) ---------- */
+.rk-toast,
+.rk-share-toast { position: absolute; bottom: 74px; left: var(--pad); right: var(--pad); border-radius: var(--radius-sm); padding: 11px 14px; font-size: 13px; font-weight: 500; line-height: 1.4; z-index: 90; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity var(--motion), transform var(--motion); }
+.rk-toast { background: var(--ink); color: var(--bg); box-shadow: var(--shadow); }
+.rk-share-toast { background: var(--gut-ink); color: var(--gut-bg); z-index: 91; }
+.rk-toast-show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* ---------- Link teilen (PROJ-10) ---------- */
+.rk-link-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 13px; display: flex; flex-direction: column; gap: 5px; }
+.rk-link-url { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent2); word-break: break-all; overflow-wrap: anywhere; line-height: 1.45; user-select: all; }
+.rk-link-note { font-size: 11.5px; color: var(--ink-soft); line-height: 1.4; }
+
+/* ---------- Werkstatt-Overrides: Stufe-1-Komponenten ---------- */
+.rk-theme-werkstatt .rk-skill-opt,
+.rk-theme-werkstatt .rk-triage-text,
+.rk-theme-werkstatt .rk-owner-followup,
+.rk-theme-werkstatt .rk-owner-input,
+.rk-theme-werkstatt .rk-gate-alt,
+.rk-theme-werkstatt .rk-confirm-row,
+.rk-theme-werkstatt .rk-foerder,
+.rk-theme-werkstatt .rk-link-box { border-width: 1.5px; border-color: var(--line-strong); }
+
+/* ---------- Mutig-Overrides: Stufe-1-Komponenten ---------- */
+.rk-theme-mutig .rk-skill-opt,
+.rk-theme-mutig .rk-gate-alt,
+.rk-theme-mutig .rk-confirm-proceed { box-shadow: none; }
+.rk-theme-mutig .rk-toast { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
+
+/* ==========================================================================
+   STUFE 2 — Neue Komponenten (PROJ-11 … PROJ-14, PROJ-25, PROJ-26)
+   Alle Farben über CSS-Variablen (Ampel-Tokens --gut/--mittel/--stop +
+   --accent/--accent2). Keine harten Hex-Werte. Baut auf den Stufe-0/1-
+   Atomen auf (rk-trust, rk-compare, rk-foerder …) und ergänzt sie nur.
+   ========================================================================== */
+
+/* ---------- Vertrauens-Indikator / Ampel-Modifier (PROJ-25, D3) ----------
+   rk-trust + rk-trust-dot existieren bereits (Stufe 0/1). Hier nur die
+   Ampel-Varianten + die neuen Text-Atome. Der farbige Punkt erbt die
+   Level-Farbe vom Eltern-Modifier — keine hartkodierte Farbe. */
+.rk-trust-hoch    { color: var(--gut-ink); background: var(--gut-bg); }
+.rk-trust-mittel  { color: var(--mittel-ink); background: var(--mittel-bg); }
+.rk-trust-niedrig { color: var(--stop-ink); background: var(--stop-bg); }
+.rk-trust-hoch .rk-trust-dot    { background: var(--gut); }
+.rk-trust-mittel .rk-trust-dot  { background: var(--mittel); }
+.rk-trust-niedrig .rk-trust-dot { background: var(--stop); }
+.rk-trust-src {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .02em;
+  opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rk-trust-note {
+  margin-left: auto; font-family: var(--font-body); font-size: 11px;
+  opacity: .85; cursor: help;
+}
+/* Kompakte Inline-Variante des Badges (z.B. an Karten/compare-Schätzungen) */
+.rk-trust.rk-trust-hoch,
+.rk-trust.rk-trust-mittel,
+.rk-trust.rk-trust-niedrig { margin-top: 8px; }
+
+/* ---------- Service / Anbieter-Vermittlung (PROJ-11) ---------- */
+.rk-svc { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.rk-svc-head {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 20px; letter-spacing: var(--display-tracking); color: var(--ink); margin: 0;
+}
+.rk-svc-intro { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+.rk-svc-list { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-svc-card {
+  position: relative; width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 13px 14px;
+  display: flex; flex-direction: column; gap: 7px; box-shadow: var(--shadow-sm);
+  transition: border-color var(--motion), transform var(--motion);
+}
+.rk-svc-card:active { transform: translateY(1px); border-color: var(--accent); }
+.rk-svc-card-sel {
+  border-color: var(--accent2); border-width: 1.5px;
+  box-shadow: 0 0 0 2px var(--accent2-soft);
+}
+.rk-svc-name { font-weight: 600; font-size: 14.5px; color: var(--ink); line-height: 1.25; }
+.rk-svc-typ {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 3px 8px; border-radius: var(--radius-pill);
+  background: var(--surface-2); color: var(--ink-soft); white-space: nowrap;
+}
+.rk-svc-meta {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+  line-height: 1.5; display: flex; flex-direction: column; gap: 2px;
+}
+.rk-svc-badge {
+  display: inline-block; font-family: var(--font-mono); font-size: 9.5px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: var(--radius-pill);
+  background: var(--accent2-soft); color: var(--accent2); white-space: nowrap;
+}
+/* Kosten neutral, Repair-Café/kostenlos positiv hervorgehoben */
+.rk-svc-cost {
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.rk-svc-free {
+  font-size: 12.5px; font-weight: 700;
+  color: var(--gut-ink); background: var(--gut-bg);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+}
+.rk-svc-src {
+  font-size: 11px; color: var(--ink-soft); font-style: italic;
+  line-height: 1.4; margin-top: 2px;
+}
+.rk-svc-select {
+  margin-top: 4px; align-self: flex-start;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--accent2); padding: 7px 13px;
+  border: 1px solid var(--accent2); border-radius: var(--radius-pill);
+  transition: background var(--motion), color var(--motion);
+}
+.rk-svc-select:hover { background: var(--accent2); color: #fff; }
+.rk-svc-card-sel .rk-svc-select { background: var(--accent2); color: #fff; }
+/* Ehrlicher, freundlicher (nicht-alarmierender) Leertreffer */
+.rk-svc-empty {
+  text-align: center; padding: 22px 16px;
+  background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: var(--radius); color: var(--ink-soft);
+  font-size: 13px; line-height: 1.55;
+}
+.rk-svc-empty b { color: var(--ink); }
+
+/* ---------- Standort-Eingabe (PROJ-11/12) ---------- */
+.rk-loc-label {
+  font-family: var(--font-mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-soft); margin-bottom: 6px; display: block;
+}
+.rk-loc-input {
+  width: 100%; padding: 11px 13px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); font: inherit; font-size: 14px; color: var(--ink);
+  outline: none; transition: border-color var(--motion), box-shadow var(--motion);
+}
+.rk-loc-input::placeholder { color: var(--ink-soft); opacity: 1; }
+.rk-loc-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px var(--accent2-soft); }
+
+/* ---------- Anbieter-Typ-Akzente (PROJ-11) ---------- */
+.rk-typ-repaircafe { background: var(--gut-bg); color: var(--gut-ink); }
+.rk-typ-werkstatt  { background: var(--accent-soft); color: var(--accent-ink); }
+.rk-typ-profi      { background: var(--accent2-soft); color: var(--accent2); }
+
+/* ---------- Entsorgung / Recyclingwege (PROJ-12) ---------- */
+.rk-disp { display: flex; flex-direction: column; gap: 6px; }
+.rk-disp-art {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 3px 8px; border-radius: var(--radius-pill);
+  background: var(--accent2-soft); color: var(--accent2); white-space: nowrap;
+}
+.rk-disp-rohstoff {
+  font-size: 12.5px; line-height: 1.45;
+  color: var(--gut-ink); background: var(--gut-bg);
+  padding: 8px 11px; border-radius: var(--radius-sm);
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.rk-disp-rohstoff::before { content: '♻️'; flex: none; }
+.rk-disp-zeiten { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.rk-disp-kosten { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+
+/* ---------- Produktsuche / Alternativgeräte (PROJ-13) ----------
+   Optik konsistent zur compare-Welt (Geld/Zeit/Ökologie). */
+.rk-alt { display: flex; flex-direction: column; gap: var(--gap); margin-top: 4px; }
+.rk-alt-card {
+  position: relative; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.rk-alt-modell {
+  padding: 11px 13px; background: var(--surface-2);
+  font-weight: 700; font-size: 14.5px; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.rk-alt-spec {
+  padding: 9px 13px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.rk-alt-spec b { color: var(--ink); font-weight: 600; }
+/* Vergleichstabelle — gleiche Grid-Logik wie rk-compare-row */
+.rk-alt-vergleich {
+  display: grid; grid-template-columns: auto 1fr; align-items: baseline;
+  padding: 10px 13px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--ink-soft); gap: 4px 10px;
+}
+.rk-alt-vergleich > span:nth-child(odd) { color: var(--ink); font-weight: 600; }
+.rk-alt-vergleich > span:nth-child(even) { text-align: right; overflow-wrap: anywhere; }
+.rk-alt-setup {
+  padding: 9px 13px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ink-soft);
+}
+.rk-alt-setup b { color: var(--ink); font-weight: 600; }
+/* Ehrlicher Öko-/Geld-Break-Even — sichtbar, aber ruhig (kein CTA) */
+.rk-alt-breakeven {
+  padding: 10px 13px; border-top: 1px solid var(--line);
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  font-size: 12px; line-height: 1.5; font-style: italic;
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.rk-alt-breakeven::before { content: '⚖️'; flex: none; font-style: normal; }
+
+/* ---------- Beschaffung / Ersatzteile (PROJ-14, D8) ---------- */
+.rk-parts { display: flex; flex-direction: column; gap: 0;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden; margin-top: 12px; }
+.rk-parts-head {
+  padding: 9px 12px; background: var(--surface-2);
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--ink-soft);
+  border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px;
+}
+.rk-parts-item {
+  padding: 11px 12px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rk-parts-item:first-of-type { border-top: none; }
+.rk-parts-price {
+  font-weight: 700; font-size: 14px; color: var(--ink);
+  display: inline-flex; align-items: baseline; gap: 6px;
+}
+.rk-parts-stock {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--gut-ink); background: var(--gut-bg);
+  padding: 2px 7px; border-radius: var(--radius-pill); align-self: flex-start;
+}
+/* Nicht lieferbar — gedämpft/ausgegraut */
+.rk-parts-oos { opacity: .62; }
+.rk-parts-oos .rk-parts-stock { color: var(--stop-ink); background: var(--stop-bg); }
+.rk-parts-oos .rk-parts-price { color: var(--ink-soft); }
+.rk-parts-keep {
+  align-self: flex-start; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--accent2); padding: 6px 12px;
+  border: 1px solid var(--accent2); border-radius: var(--radius-pill);
+  transition: background var(--motion), color var(--motion);
+}
+.rk-parts-keep:hover { background: var(--accent2); color: #fff; }
+.rk-parts-keep.on { background: var(--accent2); color: #fff; }
+
+/* ---------- Affiliate-Leitplanke (PROJ-14, D8) ----------
+   Bewusst NICHT als Primär-CTA: dezenter Rahmen, transparente
+   Provisions-Kennzeichnung. Die günstigste Option bleibt visuell führend. */
+.rk-affiliate {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--ink-soft); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  padding: 2px 7px; white-space: nowrap;
+}
+.rk-affiliate::before { content: '🔗'; }
+.rk-order-opt {
+  width: 100%; text-align: left; margin-top: 6px;
+  padding: 10px 12px; background: var(--surface);
+  border: 1px dashed var(--line); border-radius: var(--radius-sm);
+  font-size: 12.5px; color: var(--ink-soft);
+  display: flex; align-items: center; gap: 8px;
+  transition: border-color var(--motion);
+}
+.rk-order-opt:hover { border-color: var(--ink-soft); }
+.rk-order-disclaimer {
+  font-size: 10.5px; line-height: 1.4; color: var(--ink-soft);
+  font-style: italic; margin-top: 4px;
+}
+
+/* ---------- Universelle Triage (PROJ-26) ---------- */
+.rk-univ { display: flex; flex-direction: column; gap: var(--gap); }
+.rk-univ-q {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 20px; line-height: 1.15; letter-spacing: var(--display-tracking);
+  color: var(--ink); margin: 0; text-wrap: balance;
+}
+
+/* ---------- Werkstatt-Overrides: Stufe-2-Komponenten ---------- */
+.rk-theme-werkstatt .rk-svc-card,
+.rk-theme-werkstatt .rk-alt-card,
+.rk-theme-werkstatt .rk-parts,
+.rk-theme-werkstatt .rk-loc-input,
+.rk-theme-werkstatt .rk-svc-empty { border-width: 1.5px; border-color: var(--line-strong); }
+.rk-theme-werkstatt .rk-svc-head,
+.rk-theme-werkstatt .rk-univ-q { text-transform: none; }
+
+/* ---------- Mutig-Overrides: Stufe-2-Komponenten ---------- */
+.rk-theme-mutig .rk-svc-card,
+.rk-theme-mutig .rk-alt-card,
+.rk-theme-mutig .rk-parts { box-shadow: none; }
+.rk-theme-mutig .rk-svc-select:hover,
+.rk-theme-mutig .rk-parts-keep:hover,
+.rk-theme-mutig .rk-svc-select.on,
+.rk-theme-mutig .rk-parts-keep.on { color: var(--accent-ink); }

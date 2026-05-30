@@ -1,5 +1,29 @@
-"""repair — Inhaltsmodell, Schema-Validierung und KI-Diagnose des Reparatur-Helfers."""
+"""repair — Inhaltsmodell, Schema-Validierung, KI-Diagnose, Persistenz und Export."""
 
-from . import ai, data, schema
+from . import (
+    ai,
+    anbieter,
+    data,
+    entsorgung,
+    ersatzteile,
+    export,
+    foerderung,
+    produktsuche,
+    schema,
+    store,
+    triage,
+)
 
-__all__ = ["ai", "data", "schema"]
+__all__ = [
+    "ai",
+    "anbieter",
+    "data",
+    "entsorgung",
+    "ersatzteile",
+    "export",
+    "foerderung",
+    "produktsuche",
+    "schema",
+    "store",
+    "triage",
+]

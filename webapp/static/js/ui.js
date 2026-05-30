@@ -210,14 +210,49 @@
     return scrim;
   }
 
-  /* ---- kleines Vertrauens-/Quellen-Badge ---- */
-  function TrustBadge(opts) {
+  /* ---- Toast (PROJ-9/10): kurze, nicht-blockierende Rückmeldung ---- */
+  function toast(msg, ms) {
+    try {
+      var t = document.createElement('div');
+      t.className = 'rk-toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      void t.offsetWidth; // reflow erzwingen, damit die Transition greift
+      t.className = 'rk-toast rk-toast-show';
+      window.setTimeout(function () {
+        t.className = 'rk-toast';
+        window.setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 350);
+      }, ms || 2400);
+    } catch (e) { /* Toast ist optional, nie hart scheitern */ }
+  }
+
+  /* ---- Vertrauens-/Quellen-Badge (PROJ-25, durchgängig wiederverwendbar) ----
+     TrustBadge(level, source, reason [, opts]) — level: 'hoch'|'mittel'|'niedrig'.
+     opts: { onClick, strong } (strong = Kritikalität, deutlicherer KI-Hinweis). */
+  function trustMeta(level) {
+    if (level === 'hoch') return { cls: 'rk-trust-hoch', dot: '🟢' };
+    if (level === 'niedrig') return { cls: 'rk-trust-niedrig', dot: '🔴' };
+    return { cls: 'rk-trust-mittel', dot: '🟡' };
+  }
+  // toleranter Mapper: Konfidenz-/Freitext-Level → hoch|mittel|niedrig
+  function normTrustLevel(level) {
+    var l = ('' + (level || '')).toLowerCase();
+    if (l.indexOf('hoch') >= 0 || l === 'high') return 'hoch';
+    if (l.indexOf('niedrig') >= 0 || l.indexOf('gering') >= 0 || l === 'low') return 'niedrig';
+    return 'mittel';
+  }
+  function TrustBadge(level, source, reason, opts) {
     opts = opts || {};
-    var confidence = opts.confidence;
-    return h('button', { class: 'rk-trust', onClick: opts.onClick },
-      h('span', { class: 'rk-trust-dot' }),
-      h('span', {}, 'Quelle: ' + confidence.source + ' · Sicherheit ' + confidence.level),
-      h('span', { class: 'rk-trust-i' }, 'ⓘ')
+    var lvl = normTrustLevel(level);
+    var m = trustMeta(lvl);
+    var note = (opts.strong ? '⚠️ ' : '') + 'Die KI kann Fehler machen';
+    var attrs = { class: 'rk-trust ' + m.cls, title: reason || '' };
+    if (opts.onClick) attrs.onClick = opts.onClick;
+    return h('button', attrs,
+      h('span', { class: 'rk-trust-dot' }, m.dot),
+      h('span', { class: 'rk-trust-src' }, 'Quelle: ' + (source || 'unbekannt')),
+      h('span', { class: 'rk-trust-note' }, note),
+      opts.onClick ? h('span', { class: 'rk-trust-i' }, 'ⓘ') : null
     );
   }
 
@@ -226,6 +261,7 @@
     PhoneFrame: PhoneFrame, Screen: Screen, AppBar: AppBar, IconBtn: IconBtn,
     BigButton: BigButton, GhostButton: GhostButton, AnswerChip: AnswerChip,
     ProgressDots: ProgressDots, levelMeta: levelMeta, LightRow: LightRow,
-    Slot: Slot, Sheet: Sheet, TrustBadge: TrustBadge,
+    Slot: Slot, Sheet: Sheet, TrustBadge: TrustBadge, toast: toast,
+    trustMeta: trustMeta, normTrustLevel: normTrustLevel,
   });
 })();

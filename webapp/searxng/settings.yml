@@ -1,0 +1,20 @@
+# Minimale SearXNG-Konfiguration für den Reparatur-Helfer.
+# Wichtig: `json` muss in search.formats stehen, damit Open WebUI / die App
+# Ergebnisse programmatisch (als JSON) abfragen können.
+use_default_settings: true
+
+server:
+  # In Produktion durch einen langen Zufallswert ersetzen
+  # (z. B. `openssl rand -hex 32`). Nur lokal/Demo so belassen.
+  secret_key: "bitte-aendern-lokaler-demo-key-min-32-zeichen"
+  limiter: false
+  image_proxy: true
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+ui:
+  default_locale: "de"

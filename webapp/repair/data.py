@@ -83,6 +83,46 @@ TOASTER: dict = {
         "note": "Häufiges, gut dokumentiertes Problem bei diesem Toaster-Typ.",
     },
     "recommend": "self",
+    # Vergleich 4-Pfade (PROJ-5 / STUFE1.md §4) — auch bei grünem Gerät gerendert
+    "compare": {
+        "repair": {
+            "geld": "0–5 €",
+            "zeit": "ca. 30 Min.",
+            "umwelt": "Gerät bleibt vollständig erhalten",
+            "hinweis": "Meist nur Reinigung — kein Ersatzteil nötig",
+        },
+        "pro": {
+            "geld": "30–60 €",
+            "zeit": "ca. 1 Woche (Werkstatt-Termin)",
+            "umwelt": "Gerät bleibt erhalten",
+            "hinweis": "Lohnt sich, wenn Eigenreparatur scheitert",
+        },
+        "neu": {
+            "geld": "25–80 €",
+            "zeit": "sofort lieferbar",
+            "umwelt": "≈ 8 kg CO₂ + Elektroschrott",
+            "versteckt": [
+                "Neueinrichtung",
+                "Transport/Logistik",
+                "Bedienung neu lernen",
+                "Verkabelung",
+                "Ausfallzeit",
+            ],
+        },
+        "entsorgung": {
+            "geld": "— (kostenlos über Wertstoffhof)",
+            "zeit": "sofort",
+            "umwelt": "Elektroschrott, Ressourcenverlust — Reparatur wäre besser",
+            "hinweis": "Nur wenn Reparatur wirtschaftlich keinen Sinn ergibt",
+        },
+        "empfehlung": "repair",
+        "begruendung": (
+            "Selbst reparieren ist klar die beste Wahl: kein Kostenrisiko, "
+            "schnellste Lösung und minimaler Ressourcenverbrauch. "
+            "Der Neukauf verursacht unnötig CO₂ und Elektroschrott."
+        ),
+        "geschaetzt": True,
+    },
     # Schritt 5 — Begleitung
     "steps": [
         {
@@ -196,10 +236,45 @@ MIKROWELLE: dict = {
         "note": "Die genaue Ursache ist aus der Ferne nicht sicher — die Gefahreneinschätzung dagegen schon.",
     },
     "recommend": "pro",
-    # Vergleich für die ehrliche Abwägung (Konzept D18)
+    # Vergleich 4-Pfade (PROJ-5 / STUFE1.md §4)
     "compare": {
-        "repair": {"geld": "60–110 €", "zeit": "1–2 Wochen", "umwelt": "Gerät bleibt erhalten"},
-        "neu": {"geld": "ab ≈ 80 €", "zeit": "sofort", "umwelt": "≈ 35 kg CO₂ + Elektroschrott"},
+        "repair": {
+            "geld": "— (nicht sinnvoll machbar ohne Fachkunde)",
+            "zeit": "—",
+            "umwelt": "Theoretisch: Gerät bleibt erhalten",
+            "hinweis": "Eigenreparatur an Hochspannungs-Komponenten lebensgefährlich",
+        },
+        "pro": {
+            "geld": "60–110 €",
+            "zeit": "1–2 Wochen",
+            "umwelt": "Gerät bleibt erhalten",
+            "hinweis": "Empfohlen — einzige sichere Option für Magnetron/Diode",
+        },
+        "neu": {
+            "geld": "ab ≈ 80 €",
+            "zeit": "sofort lieferbar",
+            "umwelt": "≈ 35 kg CO₂ + Elektroschrott",
+            "versteckt": [
+                "Neueinrichtung",
+                "Transport/Logistik",
+                "Bedienung neu lernen",
+                "Verkabelung",
+                "Ausfallzeit",
+            ],
+        },
+        "entsorgung": {
+            "geld": "— (kostenlos über Wertstoffhof)",
+            "zeit": "sofort",
+            "umwelt": "35 kg CO₂ bereits verbraucht — Ressourcenverlust",
+            "hinweis": "Nur wenn Profi-Reparatur wirtschaftlich nicht lohnt",
+        },
+        "empfehlung": "pro",
+        "begruendung": (
+            "Fachwerkstatt ist die einzig sichere Wahl: Hochspannungs-Komponenten "
+            "können auch ausgesteckt lebensgefährliche Ladung halten. "
+            "Profi-Reparatur lohnt wirtschaftlich knapp gegenüber Neukauf und schont die Umwelt."
+        ),
+        "geschaetzt": True,
     },
     # Reparaturpfad ist bewusst kurz und endet im sicheren Abbruch
     "steps": [

@@ -5,7 +5,7 @@ potenziell lückenhaften) Roh-Dict ein vollständiges, schema-konformes
 ``device``-Objekt — oder wirft ``DeviceValidationError``, wenn der Input
 unrettbar kaputt ist (kein Dict, keinerlei verwertbarer Inhalt).
 
-Schema-Vertrag siehe ``webapp/SPEC.md``.
+Schema-Vertrag: ``webapp/SPEC.md`` + ``webapp/STUFE1.md`` §4.
 """
 
 from __future__ import annotations
@@ -24,6 +24,21 @@ LIGHT_ICONS = {
     "Kosten": "💶",
     "Machbarkeit": "📦",
 }
+
+# 4-Pfad-Compare (PROJ-5 / STUFE1.md §4)
+_COMPARE_RECOMMEND_MAP = {
+    "self": "repair",
+    "local": "pro",
+    "pro": "pro",
+    "replace": "neu",
+}
+_DEFAULT_VERSTECKT = [
+    "Neueinrichtung",
+    "Transport/Logistik",
+    "Bedienung neu lernen",
+    "Verkabelung",
+    "Ausfallzeit",
+]
 
 
 class DeviceValidationError(ValueError):
@@ -149,19 +164,46 @@ def _normalize_confidence(raw) -> dict:
     }
 
 
-def _normalize_compare(raw) -> dict | None:
-    if not isinstance(raw, dict):
-        return None
+def _compare_path(d, include_versteckt: bool = False) -> dict:
+    """Normalisiert einen einzelnen Vergleichspfad (repair/pro/neu/entsorgung)."""
+    d = d if isinstance(d, dict) else {}
+    out = {
+        "geld": _s(d.get("geld")) or "—",
+        "zeit": _s(d.get("zeit")) or "—",
+        "umwelt": _s(d.get("umwelt")) or "—",
+    }
+    if include_versteckt:
+        raw_v = d.get("versteckt")
+        if isinstance(raw_v, list) and raw_v:
+            out["versteckt"] = [_s(v) for v in raw_v if _s(v)]
+        else:
+            out["versteckt"] = list(_DEFAULT_VERSTECKT)
+    else:
+        out["hinweis"] = _s(d.get("hinweis"))
+    return out
 
-    def side(d) -> dict:
-        d = d if isinstance(d, dict) else {}
-        return {
-            "geld": _s(d.get("geld")) or "—",
-            "zeit": _s(d.get("zeit")) or "—",
-            "umwelt": _s(d.get("umwelt")) or "—",
-        }
 
-    return {"repair": side(raw.get("repair")), "neu": side(raw.get("neu"))}
+def _normalize_compare(raw, recommend: str | None = None) -> dict:
+    """Normalisiert compare IMMER auf 4-Pfad-Form (PROJ-5 / STUFE1.md §4).
+
+    Toleriert alte 2-Pfad-Form (repair + neu) und hebt sie auf neue Form.
+    Erzwingt empfehlung, begruendung, geschaetzt.
+    """
+    raw = raw if isinstance(raw, dict) else {}
+
+    empfehlung = _s(raw.get("empfehlung"))
+    if empfehlung not in ("repair", "pro", "neu", "entsorgung"):
+        empfehlung = _COMPARE_RECOMMEND_MAP.get(recommend or "", "pro")
+
+    return {
+        "repair": _compare_path(raw.get("repair")),
+        "pro": _compare_path(raw.get("pro")),
+        "neu": _compare_path(raw.get("neu"), include_versteckt=True),
+        "entsorgung": _compare_path(raw.get("entsorgung")),
+        "empfehlung": empfehlung,
+        "begruendung": _s(raw.get("begruendung")),
+        "geschaetzt": bool(raw.get("geschaetzt", True)),
+    }
 
 
 def _normalize_success(raw) -> dict:
@@ -208,7 +250,7 @@ def normalize_device(raw: dict) -> dict:
     lights = _normalize_lights(raw.get("lights"))
 
     # Sicherheits-Leitplanke: wenn Sicherheit stop -> harte Konsequenzen
-    sicherheit = next((l for l in lights if l["key"] == "Sicherheit"), None)
+    sicherheit = next((lgt for lgt in lights if lgt["key"] == "Sicherheit"), None)
     if sicherheit and sicherheit["level"] == "stop":
         accent = "stop"
         recommend = "pro"
@@ -230,14 +272,7 @@ def normalize_device(raw: dict) -> dict:
         "success": _normalize_success(raw.get("success")),
     }
 
-    # compare nur sinnvoll, wenn accentPath == "stop"
-    compare = _normalize_compare(raw.get("compare"))
-    if accent == "stop":
-        device["compare"] = compare or {
-            "repair": {"geld": "—", "zeit": "—", "umwelt": "Gerät bleibt erhalten"},
-            "neu": {"geld": "—", "zeit": "sofort", "umwelt": "Elektroschrott"},
-        }
-    elif compare is not None:
-        device["compare"] = compare
+    # compare IMMER erzeugen (auch bei accentPath=="gut"), 4-Pfad-Form (PROJ-5)
+    device["compare"] = _normalize_compare(raw.get("compare"), recommend=recommend)
 
     return device
