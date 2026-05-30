@@ -78,7 +78,7 @@ flowchart LR
 * *Reparateur* — führt die Reparatur durch.
 * *Teile-Beschaffer* — besorgt die Ersatzteile.
 
-NOTE: „Diagnostiker" und „Reparateur" überlappen in der Praxis stark — sie nur dann
+NOTE: „Diagnostiker“ und „Reparateur“ überlappen in der Praxis stark — sie nur dann
 als getrennte Rollen führen, wenn die App Ferndiagnose und Ausführung an
 verschiedene Personen vermittelt.
 
@@ -102,7 +102,7 @@ Beispielhafte Ausprägungen aus dem Brainstorming:
 * *Ängstliche Erstnutzer:innen* — Kern der Selbstwirksamkeits-Mission; genau die
   Gruppe, die die App gewinnen will.
 
-NOTE: „Ehrenamtlich vs. wirtschaftlich orientiert" ist eine Eigenschaft von
+NOTE: „Ehrenamtlich vs. wirtschaftlich orientiert“ ist eine Eigenschaft von
 *Anbietern*, keine Nutzer-Persona — siehe <<oekosystem>>.
 
 [[warn-ampel]]
@@ -141,7 +141,7 @@ flowchart LR
 == Zwei Schichten: Triage und Reparatur
 
 Die App trennt *Breite* und *Tiefe*. Das löst den Widerspruch zwischen „möglichst
-umfangreich (alles, was sich reparieren lässt — auch Auto)" und „Sicherheit/Haftung":
+umfangreich (alles, was sich reparieren lässt — auch Auto)“ und „Sicherheit/Haftung“:
 
 [cols="1,4"]
 |===
@@ -181,6 +181,9 @@ erzeugt daraus ein teilbares Protokoll. Geführte Fragen (KI-gestützt, gerätea
 * Was wurde bereits getestet — mit welchem Ergebnis?
 * Was ist (vermutlich) das Problem?
 
+TIP: Wie ausgefüllte Protokolle konkret aussehen — inklusive Warn-Ampel und
+Strukturpfad durch die Customer Journey — zeigen die <<protokoll-beispiele,Beispiel-Protokolle>>.
+
 === Was das Protokoll darüber hinaus leistet
 
 [mermaid]
@@ -197,14 +200,14 @@ flowchart TD
 
 . *Portables Artefakt / Brücke DIY ↔ Profi.* Exportier- und teilbar — zur Werkstatt,
   ins Repair Café, ins Forum, an die Hersteller-Hotline. Spart Diagnosezeit →
-  günstiger für den Nutzer; niemand „fährt umsonst".
+  günstiger für den Nutzer; niemand „fährt umsonst“.
 . *Daten-Schwungrad (löst das Kaltstart-Problem).* Anonymisierte Protokolle füttern
   mit Einwilligung die kuratierte Fehlerzustand-Sammlung („Symptom X bei Gerät Y war
-  in N Fällen Ursache Z"). Die App wird durch Nutzung schlauer.
+  in N Fällen Ursache Z“). Die App wird durch Nutzung schlauer.
 . *Übergabe-Dokument zwischen Rollen.* Ein geteiltes Protokoll für Eigentümer /
-  Nutzer / Diagnostiker / Reparateur — adressiert „Nutzer ≠ Eigentümer".
+  Nutzer / Diagnostiker / Reparateur — adressiert „Nutzer ≠ Eigentümer“.
 . *Reparatur-Tagebuch / Gerätegedächtnis.* Das Protokoll bleibt pro Gerät erhalten:
-  „Dieser Fehler war schon mal da — damals half X."
+  „Dieser Fehler war schon mal da — damals half X.“
 . *Selbstwirksamkeit auch ohne Erfolg.* Selbst wenn die Reparatur scheitert oder
   abgegeben wird: Der Nutzer hat das Problem _systematisch_ eingegrenzt — erlerntes
   Können, genau das soziale Ziel der App.
@@ -226,8 +229,8 @@ flowchart TD
   A -->|grün/gelb| E{Entscheidung}
   A -->|rot| Prof[Profi / Repair Café]
   E -->|selbst| B[Begleitung] --> R{Ergebnis}
-  E --> Prof
-  E --> Ent[Fachgerecht entsorgen]
+  E -->|Profi| Prof
+  E -->|entsorgen| Ent[Fachgerecht entsorgen]
   R -->|Erfolg| W[Reflexion & Wirkung]
   R -->|Misserfolg| Prof
   Prof --> W
@@ -238,7 +241,7 @@ flowchart TD
   class W green
 ....
 
-. *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht").
+. *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht“).
 . *Problemaufnahme-Protokoll* — geführte Triage (Schicht A), siehe <<protokoll>>.
 . *Diagnose* — KI führt durch kuratierte Rückfragen (siehe <<ki>>).
 . *Einschätzung* — die Warn-Ampel mit Konfidenz-/Begründungshinweis.
@@ -246,6 +249,174 @@ flowchart TD
 . *Begleitung* — Schritt-für-Schritt-Anleitung, Adressen, Ersatzteile, Förderung.
 . *Ergebnis* — Erfolg **oder** Misserfolg (beide Pfade müssen gedacht sein).
 . *Reflexion / Wirkung* — gerettete Geräte, gespartes Geld/CO₂, Bestärkung.
+
+[[protokoll-beispiele]]
+== Beispiel-Protokolle (illustrativ)
+
+Vier exemplarische Reparaturanfragen, die zeigen, wie ein
+<<protokoll,Problemaufnahme-Protokoll>> konkret aussieht und welchen *Strukturpfad*
+die Anfrage durch die <<warn-ampel,Warn-Ampel>> und die Customer Journey nimmt. Die
+Beispiele sind bewusst über die Achsen gestreut: ein grüner DIY-Fall, ein roter
+sicherheitskritischer Fall, ein gelber Fall mit abweichendem Eigentum (D14) und ein
+nicht-reparierbarer Fall mit KI-Fallback (D2) und Entsorgung.
+
+[NOTE]
+====
+Jedes Protokoll folgt demselben Aufbau: *Kopf* (Gerät/Eigentum) → *Schicht A: Problemaufnahme*
+(die geführten Fragen aus <<protokoll>>) → *Diagnose & Quelle* (Vertrauens-Indikator, siehe
+<<ki>>) → *Warn-Ampel* (vier Achsen) → *Empfehlung & nächster Schritt*. Der jeweils
+darunter dargestellte *Strukturpfad* hebt die im Customer-Journey-Diagramm tatsächlich
+durchlaufenen Knoten farbig hervor.
+====
+
+=== Beispiel 1 — Toaster heizt nicht mehr (grün, Selbsthilfe)
+
+[cols="1,3"]
+|===
+| Feld | Inhalt
+
+| Gerät / Kategorie | Toaster · Haushaltskleingerät · < 200 €
+| Eigentum | Nutzer = Eigentümer
+| Symptom | Hebel rastet nicht ein, Drähte bleiben kalt.
+| Bedingungen | Tritt immer auf, unabhängig von der Steckdose.
+| Seit wann / letzte Änderung | Seit gestern; zuvor Krümelschublade zum Reinigen herausgezogen.
+| Bereits getestet | Andere Steckdose probiert → keine Änderung.
+| Nutzer-Vermutung | Krümelschublade sitzt nicht richtig / Hebelmechanik blockiert.
+| Diagnose (KI) | Wahrscheinliche Ursache: Sicherheitskontakt der Krümelschublade
+nicht geschlossen. Rückfrage: „Lässt sich die Schublade hörbar einrasten?“
+| Quelle / Konfidenz | Kuratierte Quelle vorhanden · Konfidenz hoch 🟢
+| Warn-Ampel | Sicherheit 🟢 (Netzstecker ziehen genügt) · Komplexität 🟢 · Kosten 🟢 · Machbarkeit 🟢
+| Empfehlung | *Selbst machen* → Schicht B DIY-Anleitung: Stecker ziehen, Schublade bis
+zum Einrasten einsetzen, ggf. Kontaktbereich reinigen.
+|===
+
+[mermaid]
+....
+flowchart TD
+  P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)"]
+  T --> D[Diagnose · KI] --> A{Warn-Ampel}
+  A -->|grün| E{Entscheidung}
+  E -->|selbst| B[Begleitung · DIY] --> R{Ergebnis}
+  R -->|Erfolg| W[Reflexion & Wirkung]
+  classDef path fill:#bbf7d0,stroke:#16a34a,stroke-width:2px
+  class P,T,D,A,E,B,R,W path
+....
+
+=== Beispiel 2 — Auto bremst schlecht (rot, sicherheitskritisch)
+
+[cols="1,3"]
+|===
+| Feld | Inhalt
+
+| Gerät / Kategorie | PKW · Mobilität · > 1000 €
+| Eigentum | Nutzer = Eigentümer
+| Symptom | Bremspedal lässt sich weit durchtreten, Bremse quietscht beim Verzögern.
+| Bedingungen | Verstärkt bei nasser Fahrbahn und nach längerer Standzeit.
+| Seit wann / letzte Änderung | Seit etwa zwei Wochen, langsam zunehmend.
+| Bereits getestet | Bremsflüssigkeitsstand geprüft → sichtbar unter Minimum.
+| Nutzer-Vermutung | Abgenutzte Bremsbeläge oder Undichtigkeit im Bremssystem.
+| Diagnose (KI) | Wahrscheinliche Ursache: verschlissene Beläge und/oder
+Leckage — sicherheitsrelevantes Bauteil. Rückfrage: „Steht das Fahrzeug aktuell oder
+wird es noch gefahren?“
+| Quelle / Konfidenz | Kuratierte Quelle vorhanden · Konfidenz hoch 🟢
+| Warn-Ampel | Sicherheit 🔴 (Personengefahr) · Komplexität 🔴 · Kosten 🟡 · Machbarkeit 🟡
+| Empfehlung | *Profi / Werkstatt.* Keine DIY-Anleitung (Schicht B bleibt aus —
+„warnen statt sperren“, D15). Stattdessen *präzises Werkstatt-Protokoll* zur Mitnahme.
+Deutliche Sicherheitswarnung: Fahrzeug bis zur Prüfung möglichst nicht bewegen.
+|===
+
+[mermaid]
+....
+flowchart TD
+  P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)"]
+  T --> D[Diagnose · KI] --> A{Warn-Ampel}
+  A -->|rot| Prof["Profi / Werkstatt<br/>+ Werkstatt-Protokoll"]
+  Prof --> W[Reflexion & Wirkung]
+  classDef path fill:#bbf7d0,stroke:#16a34a,stroke-width:2px
+  classDef red fill:#fecaca,stroke:#dc2626,stroke-width:2px
+  class P,T,D,A,W path
+  class Prof red
+....
+
+=== Beispiel 3 — Waschmaschine pumpt nicht ab (gelb, Eigentümer ≠ Nutzer)
+
+[cols="1,3"]
+|===
+| Feld | Inhalt
+
+| Gerät / Kategorie | Waschmaschine · Haushaltsgroßgerät · 200–1000 €
+| Eigentum | *Nutzer ≠ Eigentümer:* Mieter nutzt das Gerät, Eigentümer ist der
+Vermieter; Kostenträger laut Mietvertrag zu klären (Vermerk nach D14).
+| Symptom | Wasser bleibt nach dem Waschgang in der Trommel, Fehlercode im Display.
+| Bedingungen | Bei jedem Programm reproduzierbar.
+| Seit wann / letzte Änderung | Seit zwei Tagen; davor ohne Auffälligkeiten.
+| Bereits getestet | Tür mehrfach geöffnet/geschlossen → keine Änderung.
+| Nutzer-Vermutung | Abflussschlauch verstopft oder Flusensieb zugesetzt.
+| Diagnose (KI) | Wahrscheinliche Ursache: verstopftes Flusensieb / blockierte
+Laugenpumpe. Rückfrage: „Lässt sich das Flusensieb vorne unten erreichen?“
+| Quelle / Konfidenz | Kuratierte Quelle vorhanden · Konfidenz mittel 🟡
+| Warn-Ampel | Sicherheit 🟡 (Restwasser/Strom) · Komplexität 🟡 · Kosten 🟡 · Machbarkeit 🟢
+| Empfehlung | *Selbst machen mit Vorsicht:* Strom trennen, Restwasser auffangen,
+Flusensieb reinigen. *Eigentums-/Kostenvermerk im Protokoll* (D14) — vor dem Eingriff
+Rücksprache mit dem Vermieter empfohlen; bei Misserfolg sicherer Wechsel zum Profi.
+|===
+
+[mermaid]
+....
+flowchart TD
+  P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)<br/>+ Eigentumsvermerk D14"]
+  T --> D[Diagnose · KI] --> A{Warn-Ampel}
+  A -->|gelb| E{Entscheidung}
+  E -->|selbst| B[Begleitung · DIY] --> R{Ergebnis}
+  R -->|Erfolg| W[Reflexion & Wirkung]
+  R -->|Misserfolg| Prof[Profi / Werkstatt]
+  Prof --> W
+  classDef path fill:#fef9c3,stroke:#ca8a04,stroke-width:2px
+  classDef red fill:#fecaca,stroke:#dc2626,stroke-width:2px
+  class P,T,D,A,E,B,R,W path
+  class Prof red
+....
+
+=== Beispiel 4 — Bluetooth-Kopfhörer ohne Akkulaufzeit (nicht reparierbar, KI-Fallback)
+
+[cols="1,3"]
+|===
+| Feld | Inhalt
+
+| Gerät / Kategorie | Bluetooth-Kopfhörer · Unterhaltungselektronik · < 200 €
+| Eigentum | Nutzer = Eigentümer
+| Symptom | Hält nach dem Laden nur wenige Minuten, schaltet dann ab.
+| Bedingungen | Auch direkt nach vollständigem Laden.
+| Seit wann / letzte Änderung | Schleichend über die letzten Monate.
+| Bereits getestet | Mit zwei Ladekabeln geladen → gleiches Verhalten.
+| Nutzer-Vermutung | Akku verschlissen.
+| Diagnose (KI) | Wahrscheinliche Ursache: gealterter Lithium-Akku; Gehäuse
+verklebt, Akku proprietär verbaut. *Keine kuratierte Quelle für dieses Modell* →
+KI-Eigenrecherche, *deutlich gekennzeichnet* (D2).
+| Quelle / Konfidenz | KI-Fallback · Konfidenz niedrig 🟡 · Hinweis „KI kann Fehler machen“
+| Warn-Ampel | Sicherheit 🟡 (Li-Akku) · Komplexität 🔴 (verklebt) · Kosten 🔴 (Teil teurer
+als Neugerät) · Machbarkeit 🔴 (proprietär/verklebt)
+| Empfehlung | *Reparatur lohnt nicht / nicht sinnvoll selbst machbar.* Transparente
+Gegenüberstellung (D18): Austausch ist hier wirtschaftlicher und ökologisch vertretbar.
+*Fachgerechte Entsorgung* über Elektroschrott-Sammelstelle; ehrlich abraten statt
+beschönigen.
+|===
+
+[mermaid]
+....
+flowchart TD
+  P[Problem erfassen] --> T["Triage-Protokoll<br/>(Schicht A)"]
+  T --> D["Diagnose · KI<br/>(Fallback, gekennzeichnet)"] --> A{Warn-Ampel}
+  A -->|Machbarkeit/Kosten rot| E{Entscheidung}
+  E -->|entsorgen| Ent[Fachgerecht entsorgen]
+  Ent --> W[Reflexion & Wirkung]
+  classDef path fill:#bbf7d0,stroke:#16a34a,stroke-width:2px
+  classDef fallback fill:#fef9c3,stroke:#ca8a04,stroke-width:2px
+  classDef red fill:#fecaca,stroke:#dc2626,stroke-width:2px
+  class P,T,A,E,W path
+  class D fallback
+  class Ent red
+....
 
 == Eingabe & Datenschutz
 
@@ -321,7 +492,7 @@ flowchart TD
 === Vertrauens-Indikator (Designprinzip)
 
 * Jede KI-Aussage trägt einen *Konfidenz-* und *Begründungshinweis*.
-* Der Hinweis „die KI kann Fehler machen" erscheint **immer**.
+* Der Hinweis „die KI kann Fehler machen“ erscheint **immer**.
 * Er *skaliert mit der Kritikalität*: je gefährlicher die Reparatur, desto
   deutlicher der Hinweis und desto klarer seine Begründung/Quelle.
 
@@ -335,27 +506,29 @@ menschlich kontrolliert). Import aus Quellen und Community-Beiträge kommen spä
 
 * *Ampel statt Hard-Stop:* Die App *warnt* abgestuft (Sicherheits-Achse), lässt den
   mündigen Nutzer aber entscheiden. Je kritischer, desto deutlicher die Warnung.
-* *Ehrliches Abraten:* Die App muss „lohnt sich nicht" / „nicht selbst machen" /
-  „nicht reparierbar — fachgerecht entsorgen" klar sagen können (inkl.
+* *Ehrliches Abraten:* Die App muss „lohnt sich nicht“ / „nicht selbst machen“ /
+  „nicht reparierbar — fachgerecht entsorgen“ klar sagen können (inkl.
   Entsorgungs-/Recyclingweg). Vertrauen entsteht durch Abraten, nicht durch
   Dauer-Ermutigung.
 * *Garantie-/Gewährleistungs-Hinweis* vor dem ersten Eingriff.
 * *Misserfolgs-Pfad:* Was, wenn die Reparatur scheitert oder das Gerät schlimmer
   dran ist? Sicherer Rückweg zur Fachkraft + ermutigende Rahmung („Versuchen war
-  richtig").
+  richtig“).
 
+[[einstieg-ton]]
 == Niederschwelliger Einstieg & ehrlicher Ton
 
-* *Adaptive Anleitungstiefe:* dieselbe Reparatur in Stufen „Anfänger / geübt" —
+* *Adaptive Anleitungstiefe:* dieselbe Reparatur in Stufen „Anfänger / geübt“ —
   mehr Erklärung und Sicherheitshinweise für Unerfahrene, knapper für Geübte.
 * *Einfache Sprache + Mehrsprachigkeit* (Vorlesefunktion, siehe Voice-Eingabe).
 * *Ehrlicher Ton (Leitprinzip):* ermutigen, aber *nichts beschönigen*. Klar sagen,
   wenn es schwierig, unsicher oder aufwändig wird. Den Nutzer vom *zu frühen Aufgeben*
   abhalten — ihn aber *nicht überfordern*.
 * *Fähigkeits-Rückfrage bei Unsicherheit:* Ist die KI unsicher über das Können des
-  Nutzers, fragt sie lieber einmal mehr nach („Traust du dir das zu?") — u. a. über
+  Nutzers, fragt sie lieber einmal mehr nach („Traust du dir das zu?“) — u. a. über
   eine *Bewertung der letzten Antwort/Anfrage* durch den Nutzer.
 
+[[steuerung]]
 == Steuerung & Alternativen
 
 Der Nutzer steuert den Prozess *jederzeit* selbst:
@@ -411,15 +584,19 @@ Es muss Anbieter geben, die die Ersatzteile liefern.
 
 == Datenquellen
 
+NOTE: Die folgenden Quellen sind das *Zielbild*. Zum MVP-Start gilt <<decision-log,D13>>:
+es wird zunächst mit einer eigenen, KI-erstellten Datengrundlage gearbeitet, die danach
+menschlich weiterentwickelt und sukzessive mit diesen Quellen angereichert wird.
+
 * *Anleitungen/Defekte:* Handbücher, Foren, Herstellerinformationen, YouTube &
   Online-Workshops, iFixit (Lizenzlage prüfen), Online-Shops mit Austausch-Anleitungen.
 * *Repair Cafés / Werkstätten:* bestehende offene Datenbanken (z. B.
   `reparatur-initiativen.de`) statt Eigenpflege; ggf. OpenStreetMap.
 * *Förderung (als Nutzer-Feature):* Die App zeigt passende Förderprogramme zum Gerät/
-  Standort an. Der „Reparatur-Bonus" ist *kein Bundesprogramm*, sondern fragmentiert
+  Standort an. Der „Reparatur-Bonus“ ist *kein Bundesprogramm*, sondern fragmentiert
   pro Bundesland (z. B. Sachsen: https://www.sab.sachsen.de/reparaturbonus[SAB-Reparaturbonus])
   mit wechselnden Budgets und Stopps; dazu kommen *kommunale/lokale Programme*. Daher
-  kuratierte, klein gehaltene Liste mit Feld „Stand / gültig-bis" und Hinweis auf
+  kuratierte, klein gehaltene Liste mit Feld „Stand / gültig-bis“ und Hinweis auf
   mögliches Auslaufen.
 
 == Gerätekategorien
@@ -450,6 +627,7 @@ Die App stellt den *Gesamtaufwand* gegenüber:
   Transport, Verkabelung).
 * *Reparatur:* Reparaturkosten + Zeit − ggf. Förderung.
 
+[[finanzierung]]
 == Finanzierung der App
 
 Gemeinnützige Ausrichtung. Tragende Säulen:
@@ -461,8 +639,10 @@ Gemeinnützige Ausrichtung. Tragende Säulen:
 
 [WARNING]
 ====
-Bestell-/Partner-Erlöse berühren den anfangs bewusst ausgeschlossenen Provisions-/
-Affiliate-Pfad. Leitplanke gegen Verzerrung: Die Empfehlung folgt _immer_ der
+*Entwicklung dieser Entscheidung:* Ursprünglich waren Affiliate-/Provisionsmodelle
+bewusst ausgeschlossen, um die Empfehlung nicht zu verzerren. Mit der Bestellfunktion
+und Ersatzteil-Partnerschaften kehrt dieser Pfad bewusst zurück — abgesichert durch
+eine Leitplanke gegen Verzerrung: Die Empfehlung folgt _immer_ der
 <<warn-ampel,Warn-Ampel>> (günstigste/sinnvollste Lösung zuerst);
 die Bestelloption ist *nachgelagert und transparent gekennzeichnet*.
 ====
@@ -497,30 +677,26 @@ Reparatur-Tagebuch, Selbstwirksamkeit auch ohne Erfolg und *KI-Entscheidungsprot
 | D8 | *Finanzierung:* gemeinnützige Ausrichtung — kommunale Förderung, EU-Förderprogramme,
 lokale Sponsoren sowie Partnerschaften mit Ersatzteilanbietern inkl. *integrierter
 Bestellfunktion*; ergänzend Freemium. +
-⚠️ *Spannung zur ursprünglichen Haltung:* Bestell-/Partner-Erlöse berühren den anfangs
-bewusst ausgeschlossenen Provisions-/Affiliate-Pfad. Damit der Provisionsanreiz die
-Empfehlung nicht verzerrt, gilt: Empfehlung folgt _immer_ der Warn-Ampel (günstigste/
-sinnvollste Lösung zuerst), Bestelloption ist nachgelagert und transparent gekennzeichnet.
+⚠️ *Entwicklung:* Affiliate/Provision war ursprünglich ausgeschlossen; kehrt mit der
+Bestellfunktion bewusst zurück. Leitplanke: Empfehlung folgt _immer_ der Warn-Ampel
+(günstigste/sinnvollste Lösung zuerst), Bestelloption nachgelagert und gekennzeichnet.
+Details: <<finanzierung,Finanzierung der App>>.
 | D9 | *Eingabe-Wege:* Text/geführte Fragen, Foto/Video, Sprache/Voice, Barcode/Modell-Scan.
 | D10 | *Datenschutz:* Cloud-first für KI-Qualität & schnelles Lernen. Der Anwender muss
 sich *bewusst sein, dass seine Daten zu Trainingszwecken verwendet werden können* (klare
 Einwilligung). Die detaillierte Datenschutz-Umsetzung ist ein *eigenes Projekt*.
-| D11 | *Niederschwelliger Einstieg:* adaptive Anleitungstiefe (Anfänger/geübt), einfache
-Sprache + Mehrsprachigkeit. *Ehrlicher Ton:* ermutigen, aber nichts beschönigen — klar
-sagen, wenn es schwierig/unsicher/aufwändig wird; den Nutzer vom zu frühen Aufgeben
-abhalten, ihn aber nicht überfordern. Bei Unsicherheit über die Fähigkeiten lieber einmal
-mehr rückfragen ('Traust du dir das zu?'), u. a. über eine Bewertung der letzten Antwort.
-| D12 | *Steuerung & Misserfolgs-Pfad:* Nutzer kann den Prozess jederzeit lenken —
-Reparatur bevorzugen, bei zu hoher Komplexität/Unsicherheit auf professionelle Reparatur
-wechseln, oder Austausch/Alternativgeräte ansehen. Vergleich stets über Kosten-Nutzen,
-Zeitfaktor und ökologische Kosten.
+| D11 | *Niederschwelliger Einstieg & ehrlicher Ton:* adaptive Anleitungstiefe, einfache
+Sprache, ermutigen ohne zu beschönigen, Fähigkeits-Rückfrage bei Unsicherheit.
+Details: <<einstieg-ton,Niederschwelliger Einstieg & ehrlicher Ton>>.
+| D12 | *Steuerung & Misserfolgs-Pfad:* Nutzer lenkt jederzeit (Reparatur / Profi /
+Austausch); Vergleich über Kosten-Nutzen, Zeit und Ökologie. Details: <<steuerung,Steuerung & Alternativen>>.
 | D13 | *Datengrundlage (MVP):* keine externen Daten zum Start — eine _eigene
 Datengrundlage_ wird (KI-gestützt) erstellt, mit der zunächst gearbeitet wird; Menschen
 entwickeln sie danach weiter. Keine regionale Einschränkung.
 | D14 | *Eigentum im Protokoll:* Ist der Nutzer nicht der Eigentümer, wird das im
 Ergebnisprotokoll vermerkt — inkl. Angabe des Eigentümers und *wer die Kosten übernimmt*.
 | D15 | *Keine Hard-Stop-Schwelle:* Es gibt keine Geräteklasse, die Schicht B komplett
-abriegelt — durchgängig „warnen statt sperren" (D1).
+abriegelt — durchgängig „warnen statt sperren“ (D1).
 | D16 | *Haftung:* liegt *immer beim Anwender*; beauftragt er eine Firma, liegt sie bei
 dieser. Die App gibt Hilfestellung, übernimmt keine Verantwortung für die Ausführung.
 | D17 | *Sprachen zum Start:* Deutsch und Englisch. Assistive Technik (Screenreader, große
