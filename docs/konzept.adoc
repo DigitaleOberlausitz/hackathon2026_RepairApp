@@ -1,0 +1,281 @@
+= Konzept: Repair App
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+[IMPORTANT]
+====
+Diese Datei enthält *ausschließlich das Konzept* — *keine* konkreten Anweisungen
+für die Implementierung. Sie ist die lebende Konzeptbeschreibung und wächst mit dem
+Projekt. Struktur: zuerst die *Vision*, dann das *fachliche Konzept*, am Ende das
+*Decision-Log* (bereits getroffene Entscheidungen) und die *offenen Fragen*.
+====
+
+== Vision & Ziel
+
+Eine KI-gestützte Reparatur-App, die Menschen befähigt, eine *bewusste
+Entscheidung zwischen Reparatur und Neukauf* zu treffen — und sie anschließend
+durch die Reparatur begleitet.
+
+Die App gibt Hilfestellung dazu,
+
+* welche Defekte vorliegen können,
+* welche Reparaturmöglichkeiten es gibt und was man ggf. selbst lösen kann,
+* welche Adressen und Menschen helfen können (Repair Café, Reparaturbetriebe),
+* wo man Ersatzteile erhält,
+* welche Fördermittel die Reparatur unterstützen,
+* welcher Aufwand ein Geräteaustausch dagegen bedeutet (Neueinrichtung, Bedienung
+  neu lernen, Transport-Logistik, Verkabelung, Handwerker, Ausfallzeiten).
+
+=== Drei Werthebel
+
+[cols="1,4"]
+|===
+| Ökologisch | Reparatur als nachhaltige Alternative zum Wegwerfen sichtbar machen.
+| Finanziell | Den tatsächlichen Mehrwert einer Reparatur gegenüber dem Neukauf aufzeigen.
+| Sozial | Selbstwirksamkeit fördern — Menschen ermutigen, sich künftig mehr zuzutrauen.
+|===
+
+Übergeordnetes Ziel: *Bewusstsein schaffen*, dass eine Reparatur in vielen Fällen
+die sinnvollere Alternative ist, und konkrete Hilfsmittel an die Hand geben.
+
+== Zielgruppen
+
+[NOTE]
+====
+Bewusst getrennt: *Rollen in einem Reparaturvorgang* (situativ, eine Person kann
+mehrere ausfüllen) vs. *Nutzer-Segmente* (überdauernde Eigenschaften). Diese beiden
+Ebenen waren im ursprünglichen Brainstorming vermischt.
+====
+
+=== Rollen in einem Reparaturvorgang
+
+* *Eigentümer* — trägt das Risiko, wägt Reparatur vs. Neuanschaffung ab, will Werterhalt.
+* *Nutzer* — will, dass das Gerät wieder funktioniert; Ausfallzeit gering halten.
+  Muss *nicht* der Eigentümer sein.
+* *Diagnostiker / Wissensträger* — weiß, was das Problem ist.
+* *Reparateur* — führt die Reparatur durch.
+* *Teile-Beschaffer* — besorgt die Ersatzteile.
+
+NOTE: „Diagnostiker" und „Reparateur" überlappen in der Praxis stark — sie nur dann
+als getrennte Rollen führen, wenn die App Ferndiagnose und Ausführung an
+verschiedene Personen vermittelt.
+
+=== Nutzer-Segmente (als Achsen statt Schubladen)
+
+Besser als Dimensionen modelliert, weil sich Typen überschneiden (jemand kann
+gleichzeitig einkommensschwach, idealistisch und technisch versiert sein):
+
+* *Budget* — wie viel Geld steht zur Verfügung?
+* *Zeit* — wie viel Zeit kann/will die Person investieren?
+* *Können* — technisches Verständnis, Fähigkeit zur Selbsthilfe.
+* *Motivation* — wie wichtig sind Nachhaltigkeit, Lernen, Selbstwirksamkeit?
+
+Beispielhafte Ausprägungen aus dem Brainstorming:
+
+* *Idealist:innen* — wissen, dass Reparatur teuer/aufwändig ist, priorisieren aber
+  Mehrwert, neues Wissen und Nachhaltigkeit.
+* *Zeitknapp, aber zahlungskräftig* — ersetzen Geräte vermutlich einfach.
+* *Einkommensschwach* — für sie ist Reparatur oft teurer als ein neues (schlechtes)
+  Gerät, das nach zwei Jahren wieder kaputtgeht.
+* *Ängstliche Erstnutzer:innen* — Kern der Selbstwirksamkeits-Mission; genau die
+  Gruppe, die die App gewinnen will.
+
+NOTE: „Ehrenamtlich vs. wirtschaftlich orientiert" ist eine Eigenschaft von
+*Anbietern*, keine Nutzer-Persona — siehe <<oekosystem>>.
+
+== Kernfunktion: die Warn-Ampel
+
+Das Herzstück der App. Pro Gerät + Defekt bündelt eine *Warn-Ampel über
+Kostenaufwand, Komplexität und Sicherheit* mehrere Achsen zu einer verständlichen
+Einschätzung und mündet in eine Handlungsempfehlung.
+
+[cols="1,3,3"]
+|===
+| Achse | Frage | Beispiel
+
+| Sicherheit (Risiko) | Kann ich mich verletzen? | 🟢 Toaster-Kabel ↔ 🔴 Mikrowellen-Kondensator
+| Komplexität (Aufwand) | Zeit, Werkzeug, Können nötig? | 🟢 Schraube nachziehen ↔ 🔴 Löten
+| Kostenaufwand | Lohnt es sich vs. Neukauf? | inkl. Reparatur-Bonus
+| Machbarkeit | Gibt es Ersatzteile überhaupt? | 🔴 verklebt / proprietär
+|===
+
+Die Ampel ist der *Entscheidungs-Knotenpunkt*: aus ihr leitet sich die Empfehlung
+*selbst machen / Repair Café / Profi / fachgerecht entsorgen* ab. Sie ist zugleich
+das Alleinstellungsmerkmal — kein bekannter Wettbewerber bietet diese Achsen
+integriert an. Grundhaltung: *warnen statt sperren* — der mündige Nutzer entscheidet,
+je kritischer desto deutlicher die Warnung.
+
+== Customer Journey (Ende zu Ende)
+
+Der durchgängige Ablauf, der die App vom Themen-Sammelsurium zum Produkt macht:
+
+. *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht").
+. *Diagnose* — KI führt durch kuratierte Rückfragen (siehe <<ki>>).
+. *Einschätzung* — die Warn-Ampel mit Konfidenz-/Begründungshinweis.
+. *Entscheidung* — selbst / Café / Profi / entsorgen.
+. *Begleitung* — Schritt-für-Schritt-Anleitung, Adressen, Ersatzteile, Förderung.
+. *Ergebnis* — Erfolg **oder** Misserfolg (beide Pfade müssen gedacht sein).
+. *Reflexion / Wirkung* — gerettete Geräte, gespartes Geld/CO₂, Bestärkung.
+
+[[ki]]
+== KI & Wissensbasis
+
+=== Diagnose-Modell: KI führt durch kuratierte Struktur
+
+Pro Gerät existiert eine gepflegte *Fehlerzustand-Sammlung* (Symptom → wahrscheinliche
+Ursache, mit Sicherheits- und Komplexitäts-Einstufung). Die KI übersetzt freie
+Nutzereingaben, formuliert Rückfragen und schlägt Defekte vor — bevorzugt aus der
+kuratierten Sammlung.
+
+==== Inhaltsmodell eines Fehlerzustands (konzeptionell)
+
+* Gerätekategorie / ggf. Modell
+* Symptom(e) — was der Nutzer beobachtet
+* wahrscheinliche Ursache / Defekt
+* Diagnose-Rückfragen zur Abgrenzung
+* Sicherheits-Stufe (Ampel)
+* Komplexitäts-Stufe (Ampel)
+* benötigte Teile / Werkzeug
+* Anleitung / Quelle
+* Konfidenz & Herkunft (kuratiert vs. KI-ermittelt)
+
+=== Wissensquelle: kuratierte Quellen mit Fallback
+
+* *Primär:* Auswertung kuratierter Quellen (iFixit, Hersteller-Handbücher, kuratierte
+  Defekt-Sammlung). Die KI fasst zusammen und *belegt mit Quelle*, statt frei zu
+  diagnostizieren.
+* *Fallback:* Liegt keine Quelle vor, ermittelt und bewertet die KI selbst — und
+  *kennzeichnet das deutlich*.
+
+=== Vertrauens-Indikator (Designprinzip)
+
+* Jede KI-Aussage trägt einen *Konfidenz-* und *Begründungshinweis*.
+* Der Hinweis „die KI kann Fehler machen" erscheint **immer**.
+* Er *skaliert mit der Kritikalität*: je gefährlicher die Reparatur, desto
+  deutlicher der Hinweis und desto klarer seine Begründung/Quelle.
+
+=== Fehlerzustände befüllen (Startstrategie)
+
+*KI-gestützter Entwurf + Experten-Review:* Die KI erzeugt Entwürfe pro Gerät, ein
+Mensch prüft sie und *bestätigt die Sicherheits-Einstufung* (Sicherheit bleibt
+menschlich kontrolliert). Import aus Quellen und Community-Beiträge kommen später dazu.
+
+== Sicherheit & Haftung
+
+* *Ampel statt Hard-Stop:* Die App *warnt* abgestuft (Sicherheits-Achse), lässt den
+  mündigen Nutzer aber entscheiden. Je kritischer, desto deutlicher die Warnung.
+* *Ehrliches Abraten:* Die App muss „lohnt sich nicht" / „nicht selbst machen" /
+  „nicht reparierbar — fachgerecht entsorgen" klar sagen können (inkl.
+  Entsorgungs-/Recyclingweg). Vertrauen entsteht durch Abraten, nicht durch
+  Dauer-Ermutigung.
+* *Garantie-/Gewährleistungs-Hinweis* vor dem ersten Eingriff.
+* *Misserfolgs-Pfad:* Was, wenn die Reparatur scheitert oder das Gerät schlimmer
+  dran ist? Sicherer Rückweg zur Fachkraft + ermutigende Rahmung („Versuchen war
+  richtig").
+
+[[oekosystem]]
+== Stakeholder & Ökosystem
+
+=== Hersteller
+
+Spannungsfeld: Interesse an Reparierbarkeit (Langlebigkeit, Verkaufsargument,
+Gewährleistung, Ersatzteile) vs. Gegeninteressen — Reparatur schafft Konkurrenz zum
+Neuverkauf, gute Reparierbarkeit erhöht Konstruktions-Komplexität und beeinflusst das
+Produktdesign.
+
+NOTE: Hersteller sind als Datenlieferant/Partner überwiegend unrealistisch (Interesse
+oft *gegen* Drittreparatur) — außer im Kontext der EU-Right-to-Repair-Pflichten.
+
+=== Reparatur-Anbieter
+
+* Wirtschaftlichkeit vs. Neuverkauf.
+* Professionell vs. Amateur → Problem der Gewährleistung.
+* Sichtbarkeit: Wer im Laden Hilfe bekommt, kauft das nächste Gerät evtl. dort.
+* *Interessenkonflikt:* Anbieter sind zugleich Partner (wollen Leads) und Konkurrenz
+  (günstige DIY-Anleitungen entziehen Umsatz) — noch aufzulösen.
+
+=== Repair Cafés & Ehrenamt
+
+Lokale, kostengünstige Unterstützung. Ehrenamtliche/private Helfer vs.
+wirtschaftlich orientierte Mitarbeiter.
+
+=== Logistik
+
+Es muss Anbieter geben, die die Ersatzteile liefern.
+
+== Datenquellen
+
+* *Anleitungen/Defekte:* Handbücher, Foren, Herstellerinformationen, YouTube &
+  Online-Workshops, iFixit (Lizenzlage prüfen), Online-Shops mit Austausch-Anleitungen.
+* *Repair Cafés / Werkstätten:* bestehende offene Datenbanken (z. B.
+  `reparatur-initiativen.de`) statt Eigenpflege; ggf. OpenStreetMap.
+* *Förderung:* Der „Reparatur-Bonus" ist *kein Bundesprogramm*, sondern fragmentiert
+  pro Bundesland mit wechselnden Budgets und Stopps. Daher kuratierte, klein gehaltene
+  Liste mit Feld „Stand / gültig-bis" und Hinweis auf mögliches Auslaufen.
+
+== Gerätekategorien
+
+Nach Typ:
+
+* *Haushaltsgroßgeräte:* Waschmaschine, Spülmaschine, Kühl-/Gefrierschrank,
+  Herd/Backofen, Trockner.
+* *Haushaltskleingeräte:* Toaster, Kaffeemaschine, Mixer, Föhn, Wasserkocher,
+  Staubsauger, Bügeleisen.
+* *Unterhaltungselektronik:* Fernseher, Soundbar, Spielkonsole, Kopfhörer.
+* *IT & Mobil:* Laptop, PC, Tablet, Smartphone, Router, Drucker, Monitor.
+* *Werkzeug & Garten:* Akkuschrauber, Rasenmäher, Heckenschere.
+* *Mobilität:* Fahrrad, E-Bike, E-Scooter, Auto.
+* *Wohnen & Möbel:* Möbel, Türen, Sanitär, Beleuchtung, Handwerkerarbeiten in
+  Wohnung/Haus.
+* *Kleidung & Textil:* Reißverschluss, Nähte, Schuhe.
+* *Smart Home:* vernetzte Geräte, Sensoren.
+
+Nach Preis: weniger als 200 €, 200–1000 €, über 1000 €.
+
+== Kostenbetrachtung
+
+Die App stellt den *Gesamtaufwand* gegenüber:
+
+* *Neukauf:* Anschaffungspreis + Einrichtungskosten + Zeit (Bedienung neu lernen,
+  Transport, Verkabelung).
+* *Reparatur:* Reparaturkosten + Zeit − ggf. Förderung.
+
+== Decision-Log (getroffene Entscheidungen)
+
+[cols="1,4"]
+|===
+| # | Entscheidung
+
+| D1 | *Warn-Ampel* als Kernfunktion; Achsen Sicherheit · Komplexität · Kostenaufwand ·
+Machbarkeit. *Warnen statt sperren* — mündiger Nutzer.
+| D2 | *Wissensquelle:* kuratierte Quellen zuerst; KI-Eigenrecherche nur als
+gekennzeichneter Fallback.
+| D3 | *Vertrauens-Indikator:* Konfidenz + Begründung bei jeder KI-Aussage, eskalierend
+mit Kritikalität; Fehler-Hinweis immer.
+| D4 | *Diagnose:* KI führt durch kuratierte Fehlerzustände (statt freiem Dialog oder
+starrem Entscheidungsbaum).
+| D5 | *Fehlerzustände befüllen:* KI-gestützter Entwurf + Experten-Review;
+Sicherheits-Einstufung menschlich kontrolliert.
+|===
+
+== Offene Fragen / zu klärende Edge Cases
+
+* *Geschäftsmodell:* Wer ist der zahlende Kunde? (Affiliate Ersatzteile, Lead-Gebühr
+  Werkstätten, Förderung/Stiftung, Freemium) — und wie wird der Konflikt zwischen
+  Provisionsanreiz und Nachhaltigkeitsmission gelöst?
+* *MVP-Zuschnitt:* Welche Gerätekategorie(n) und Region zuerst? (Idee: risikoarme
+  Haushaltskleingeräte + ein Bundesland mit aktivem Reparatur-Bonus; Auto /
+  230-V-Festinstallation / Gas zunächst nur vermitteln, nicht anleiten.)
+* *Foto-Datenschutz:* Dürfen Gerätefotos in die Cloud / an ein KI-Modell? On-Device-
+  Option? Hinweis auf Hintergrund/Personen/Seriennummern. DSGVO-Einwilligung.
+* *Nutzer ≠ Eigentümer:* Mietgerät, Arbeitgeber-Laptop, geliehen — nur Hinweis,
+  Bestätigung oder Funktionseinschränkung?
+* *Misserfolgs-Pfad:* Konkrete Ausgestaltung von Abbruch und sicherem Rückweg.
+* *Hard-Stop-Schwelle:* Gibt es Geräteklassen, bei denen die App trotz „Warnen"-Prinzip
+  doch komplett abriegelt?
+* *Rechtliches:* Haftung bei Fehldiagnose, Disclaimer, iFixit-Lizenzlage, Einschränkungen.
+* *KI-Kosten:* Kosten pro Anfrage (besonders Bild-Diagnose) — Kostenmodell.
+* *Niederschwelliger Einstieg:* Barrierefreiheit, einfache Sprache, Mehrsprachigkeit,
+  Voice-/Freihand-Modus während der Reparatur.
