@@ -327,19 +327,31 @@ def _resolve_backend():
     return None, None, False
 
 
-def diagnose(text: str) -> dict:
+def diagnose(
+    text: str,
+    kategorie: str = "",
+    answers: list | None = None,
+    lang: str = "de",
+) -> dict:
     """Diagnostiziert Freitext → ``{"device": {...}, "source": "ai"|"fallback", "diagnosis": {...}}``.
 
     Scheitert nie hart: bei jedem Problem sauberer Seed-Fallback.
-    diagnosis enthält {status, score, reason} (PROJ-4).
+    diagnosis enthält {status, score, reason, trust} (PROJ-4/25) und additiv:
+    {kandidaten, abgrenzung, unklar} (PROJ-17).
+
+    Signatur additiv erweitert: bestehende Aufrufe ``diagnose(text)`` bleiben gültig.
     """
     text = (text or "").strip()
     if not text:
-        return _fallback(text)
+        result = _fallback(text)
+        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
+        return result
 
     client, model, is_local = _resolve_backend()
     if client is None:
-        return _fallback(text)
+        result = _fallback(text)
+        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
+        return result
 
     try:
         timeout = float(os.environ.get("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
@@ -349,7 +361,12 @@ def diagnose(text: str) -> dict:
     # Qwen3 & Co. erzeugen sonst lange <think>-Ketten vor dem JSON — auf der CPU
     # zu teuer. "/no_think" schaltet das für lokale Modelle ab (harmlos für
     # andere); für die Cloud bleibt der Prompt unverändert.
-    system_prompt = SYSTEM_PROMPT + "\n\n/no_think" if is_local else SYSTEM_PROMPT
+    # Sprachdirektive (PROJ-24): KI antwortet in der gewählten Sprache.
+    from .i18n import lang_directive, ist_falsche_sprache
+    lang_hint = lang_directive(lang)
+    system_prompt = SYSTEM_PROMPT + f"\n\n{lang_hint}"
+    if is_local:
+        system_prompt += "\n\n/no_think"
 
     try:
         response = client.chat.completions.create(
@@ -364,14 +381,71 @@ def diagnose(text: str) -> dict:
         )
         content = response.choices[0].message.content
         if not content:
-            return _fallback(text)
+            result = _fallback(text)
+            result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
+            return result
+
+        # Sprach-Prüfung (heuristisch) — bei falscher Sprache einmalig wiederholen
+        if ist_falsche_sprache(content, lang):
+            try:
+                response2 = client.chat.completions.create(
+                    model=model,
+                    response_format={"type": "json_object"},
+                    temperature=0.4,
+                    timeout=timeout,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Problembeschreibung: {text}"},
+                    ],
+                )
+                content2 = response2.choices[0].message.content
+                if content2:
+                    content = content2
+            except Exception:
+                pass  # Ersten Versuch behalten
 
         raw = json.loads(_clean_json_text(content))
         device = normalize_device(raw)
         diagnosis = _build_diagnosis(device, "ai")
+        diagnosis = _add_kuratierte_felder(diagnosis, text, kategorie, answers, lang)
         return {"device": device, "source": "ai", "diagnosis": diagnosis}
     except (json.JSONDecodeError, DeviceValidationError):
-        return _fallback(text)
+        result = _fallback(text)
+        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
+        return result
     except Exception:
         # Netzwerk, API-Fehler, alles andere — Demo muss laufen.
-        return _fallback(text)
+        result = _fallback(text)
+        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
+        return result
+
+
+def _add_kuratierte_felder(
+    diagnosis: dict,
+    text: str,
+    kategorie: str,
+    answers: list | None,
+    lang: str,
+) -> dict:
+    """Ergänzt die kuratierte Diagnose-Felder additiv (PROJ-17).
+
+    Bestehende Felder (status, score, reason, trust) bleiben UNVERÄNDERT.
+    Fügt hinzu: kandidaten, abgrenzung, unklar.
+    """
+    try:
+        from . import diagnose_kuratiert
+        kuratiert = diagnose_kuratiert.diagnose(
+            text=text,
+            kategorie=kategorie or "",
+            answers=answers,
+            lang=lang,
+        )
+        diagnosis["kandidaten"] = kuratiert.get("kandidaten", [])
+        diagnosis["abgrenzung"] = kuratiert.get("abgrenzung", {"offen": []})
+        diagnosis["unklar"] = kuratiert.get("unklar", False)
+    except Exception:
+        # Niemals hart scheitern — Felder mit sicheren Defaults auffüllen
+        diagnosis.setdefault("kandidaten", [])
+        diagnosis.setdefault("abgrenzung", {"offen": []})
+        diagnosis.setdefault("unklar", False)
+    return diagnosis

@@ -23,6 +23,7 @@ from . import anbieter as _anbieter
 from . import ersatzteile as _ersatzteile
 from . import entsorgung as _entsorgung
 from . import produktsuche as _produktsuche
+from .i18n import t as _t
 
 # ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
 
@@ -215,6 +216,39 @@ def _collect(state: dict, vorgang_meta: dict) -> dict:
 
     trust = _trust_from_state(state)
 
+    # ─── Stufe 3: neue State-Felder (PROJ-15/19/20/21/22/23/27) ─────────────
+    lang = str(state.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+
+    # PROJ-19 Rückruf
+    rueckruf_raw = state.get("rueckruf") or {}
+    rueckruf = rueckruf_raw if isinstance(rueckruf_raw, dict) else {}
+
+    # PROJ-20 Datenlöschung
+    datentragend = state.get("datentragend")
+    abgabe = _s(state.get("abgabe"), "")
+    datenloeschung_raw = state.get("datenloeschung") or {}
+    datenloeschung = datenloeschung_raw if isinstance(datenloeschung_raw, dict) else {}
+
+    # PROJ-21 Mehrfachdefekte
+    defekte_raw = state.get("defekte")
+    defekte = defekte_raw if isinstance(defekte_raw, list) else []
+    gesamt_fazit_raw = state.get("gesamtFazit")
+    gesamt_fazit = gesamt_fazit_raw if isinstance(gesamt_fazit_raw, dict) else None
+
+    # PROJ-22 Consent
+    consent_raw = state.get("consent") or {}
+    consent = consent_raw if isinstance(consent_raw, dict) else {}
+
+    # PROJ-23 Schwungrad
+    schwungrad_raw = state.get("schwungrad") or {}
+    schwungrad = schwungrad_raw if isinstance(schwungrad_raw, dict) else {}
+
+    # PROJ-27 Medien
+    medien_raw = state.get("medien")
+    medien = medien_raw if isinstance(medien_raw, list) else []
+
     return {
         "vid": vid,
         "created": created,
@@ -253,6 +287,17 @@ def _collect(state: dict, vorgang_meta: dict) -> dict:
         "sel_alternative": sel_alternative,
         "sel_parts": sel_parts,
         "trust": trust,
+        # Stufe 3
+        "lang": lang,
+        "rueckruf": rueckruf,
+        "datentragend": datentragend,
+        "abgabe": abgabe,
+        "datenloeschung": datenloeschung,
+        "defekte": defekte,
+        "gesamt_fazit": gesamt_fazit,
+        "consent": consent,
+        "schwungrad": schwungrad,
+        "medien": medien,
     }
 
 
@@ -500,6 +545,93 @@ def render_txt(state: dict, vorgang_meta: dict) -> str:
                 lines.append(f"   Hinweis: {_s(p.get('alternativhinweis'), '')}")
     else:
         lines.append("noch nicht ermittelt")
+
+    # ─── Stufe 3: neue Abschnitte (PROJ-19/20/21/22/23/27) ────────────────────
+
+    lang = c.get("lang", "de")
+
+    # PROJ-19 Rückruf (nur wenn hit==True)
+    rueckruf = c.get("rueckruf") or {}
+    if rueckruf.get("hit"):
+        lines += ["", _t("export.recall.titel", lang), sep("─", 30)]
+        art = _s(rueckruf.get("art"), "rueckruf")
+        art_label = _t(f"recall.titel.{art}", lang) if art in ("rueckruf", "sicherheitsmangel") else art
+        lines.append(f"Art     : {art_label}")
+        lines.append(f"{_t('export.recall.grund', lang)} : {_s(rueckruf.get('grund'), '—')}")
+        lines.append(f"{_t('export.recall.quelle', lang)} : {_s(rueckruf.get('quelle'), '—')}")
+        lines.append(f"{_t('export.recall.stand', lang)} : {_s(rueckruf.get('stand'), '—')}")
+        if rueckruf.get("gueltigBis"):
+            lines.append(f"{_t('export.recall.gueltig_bis', lang)} : {_s(rueckruf.get('gueltigBis'), '—')}")
+        lines.append(f"{_t('export.recall.vorgehen', lang)} : {_s(rueckruf.get('vorgehen'), '—')}")
+
+    # PROJ-20 Datenlöschung (nur wenn abgabe=="dritte")
+    if c.get("abgabe") == "dritte":
+        lines += ["", _t("export.datenloeschung.titel", lang), sep("─", 30)]
+        dl = c.get("datenloeschung") or {}
+        backup_done = dl.get("backup", False)
+        loeschen_done = dl.get("loeschen", False)
+        abmelden_done = dl.get("abmelden", False)
+        bewusst = dl.get("bewusstUebersprungen", False)
+        lines.append(f"{'✅' if backup_done else '☐'}  {_t('export.datenloeschung.backup', lang)}")
+        lines.append(f"{'✅' if loeschen_done else '☐'}  {_t('export.datenloeschung.loeschen', lang)}")
+        lines.append(f"{'✅' if abmelden_done else '☐'}  {_t('export.datenloeschung.abmelden', lang)}")
+        if bewusst:
+            lines.append(f"⚠  {_t('export.datenloeschung.bewusst_uebersprungen', lang)}")
+
+    # PROJ-21 Mehrfachdefekte (nur wenn ≥2 Defekte)
+    defekte = c.get("defekte") or []
+    gesamt_fazit = c.get("gesamt_fazit")
+    if isinstance(defekte, list) and len(defekte) >= 2:
+        lines += ["", _t("export.mehrfachdefekte.titel", lang), sep("─", 30)]
+        for i, d in enumerate(defekte, 1):
+            if not isinstance(d, dict):
+                continue
+            dname = _s(d.get("name") or d.get("id"), f"Defekt {i}")
+            drec = _s(d.get("recommend"), "")
+            lines.append(f"{i}. {dname} — Empfehlung: {drec}")
+            dlights = d.get("lights") if isinstance(d.get("lights"), list) else []
+            for light in dlights:
+                if not isinstance(light, dict):
+                    continue
+                lines.append(f"   {_s(light.get('icon'), '')} {_s(light.get('key'), '')}: {_level_symbol(str(light.get('level', '')))} — {_s(light.get('note'), '')}")
+        if isinstance(gesamt_fazit, dict):
+            lines += ["", f"  ⇒ {_t('export.mehrfachdefekte.knackpunkt', lang)}: {_s(gesamt_fazit.get('knackpunktId'), '—')}"]
+            lines.append(f"  ⇒ Gesamt-Level: {_level_symbol(str(gesamt_fazit.get('level', '')))} · Empfehlung: {_s(gesamt_fazit.get('recommend'), '—')}")
+            if gesamt_fazit.get("begruendung"):
+                lines.append(f"  {_t('export.mehrfachdefekte.begruendung', lang)}: {_s(gesamt_fazit.get('begruendung'), '')}")
+
+    # PROJ-22 Consent (nur wenn Status != offen)
+    consent = c.get("consent") or {}
+    consent_status = _s(consent.get("status"), "offen")
+    if consent_status != "offen":
+        lines += ["", _t("export.consent.titel", lang), sep("─", 30)]
+        status_key = f"export.consent.{consent_status}" if consent_status in ("erteilt", "abgelehnt", "widerrufen") else ""
+        status_label = _t(status_key, lang) if status_key else consent_status
+        lines.append(f"Status : {status_label}")
+        if consent.get("zeitpunkt"):
+            lines.append(f"{_t('export.consent.zeitpunkt', lang)} : {_s(consent.get('zeitpunkt'), '—')}")
+
+    # PROJ-23 Schwungrad (nur wenn beigetragen==True)
+    schwungrad = c.get("schwungrad") or {}
+    if schwungrad.get("beigetragen"):
+        lines += ["", _t("export.schwungrad.titel", lang), sep("─", 30)]
+        lines.append(f"{_t('export.schwungrad.beitrag_id', lang)} : {_s(schwungrad.get('beitragId'), '—')}")
+        ausgeschlossen = schwungrad.get("ausgeschlossen") or []
+        if ausgeschlossen:
+            lines.append(f"{_t('export.schwungrad.ausgeschlossen', lang)}: {', '.join(str(x) for x in ausgeschlossen)}")
+
+    # PROJ-27 Medien (nur wenn vorhanden)
+    medien = c.get("medien") or []
+    if isinstance(medien, list) and medien:
+        lines += ["", _t("export.medien.titel", lang), sep("─", 30)]
+        for m in medien:
+            if not isinstance(m, dict):
+                continue
+            lines.append(
+                f"• {_t('export.medien.art', lang)}: {_s(m.get('art'), '?')} "
+                f"| {_t('export.medien.referenz', lang)}: {_s(m.get('ref') or m.get('id'), '—')}"
+                + (f" ({_s(m.get('hinweis'), '')})" if m.get("hinweis") else "")
+            )
 
     lines += [
         "",
@@ -867,6 +999,119 @@ def render_html(state: dict, vorgang_meta: dict) -> str:
                 f"<em>({_e(_s(p.get('verfuegbarkeit'), ''))})</em>{order_html}{alt_hint}</li>"
             )
         parts.append(section("Gemerkte Ersatzteile", f"<ul>{''.join(items)}</ul>"))
+
+    # ─── Stufe 3: neue Abschnitte ─────────────────────────────────────────────
+
+    lang = c.get("lang", "de")
+
+    # PROJ-19 Rückruf
+    rueckruf = c.get("rueckruf") or {}
+    if rueckruf.get("hit"):
+        art = _s(rueckruf.get("art"), "rueckruf")
+        art_label = _t(f"recall.titel.{art}", lang) if art in ("rueckruf", "sicherheitsmangel") else art
+        r_html = (
+            f"<p><strong>{_e(art_label)}</strong></p>"
+            f"<p><span class='label'>{_e(_t('export.recall.grund', lang))}:</span> {_e(_s(rueckruf.get('grund'), '—'))}</p>"
+            f"<p><span class='label'>{_e(_t('export.recall.quelle', lang))}:</span> {_e(_s(rueckruf.get('quelle'), '—'))}</p>"
+            f"<p><span class='label'>{_e(_t('export.recall.stand', lang))}:</span> {_e(_s(rueckruf.get('stand'), '—'))}</p>"
+        )
+        if rueckruf.get("gueltigBis"):
+            r_html += f"<p><span class='label'>{_e(_t('export.recall.gueltig_bis', lang))}:</span> {_e(_s(rueckruf.get('gueltigBis'), '—'))}</p>"
+        r_html += f"<p><span class='label'>{_e(_t('export.recall.vorgehen', lang))}:</span> {_e(_s(rueckruf.get('vorgehen'), '—'))}</p>"
+        parts.append(section(_t("export.recall.titel", lang), r_html))
+
+    # PROJ-20 Datenlöschung
+    if c.get("abgabe") == "dritte":
+        dl = c.get("datenloeschung") or {}
+        def _check(done): return "✅" if done else "☐"
+        dl_html = (
+            f"<p>{_check(dl.get('backup'))} {_e(_t('export.datenloeschung.backup', lang))}</p>"
+            f"<p>{_check(dl.get('loeschen'))} {_e(_t('export.datenloeschung.loeschen', lang))}</p>"
+            f"<p>{_check(dl.get('abmelden'))} {_e(_t('export.datenloeschung.abmelden', lang))}</p>"
+        )
+        if dl.get("bewusstUebersprungen"):
+            dl_html += f"<p><strong>⚠ {_e(_t('export.datenloeschung.bewusst_uebersprungen', lang))}</strong></p>"
+        parts.append(section(_t("export.datenloeschung.titel", lang), dl_html))
+
+    # PROJ-21 Mehrfachdefekte
+    defekte = c.get("defekte") or []
+    gesamt_fazit = c.get("gesamt_fazit")
+    if isinstance(defekte, list) and len(defekte) >= 2:
+        md_rows = []
+        for i, d in enumerate(defekte, 1):
+            if not isinstance(d, dict):
+                continue
+            dname = _e(_s(d.get("name") or d.get("id"), f"Defekt {i}"))
+            drec = _e(_s(d.get("recommend"), ""))
+            lights_html = ""
+            dlights = d.get("lights") if isinstance(d.get("lights"), list) else []
+            for light in dlights:
+                if not isinstance(light, dict):
+                    continue
+                key = _e(light.get("key", "?"))
+                icon = _e(light.get("icon", ""))
+                level = str(light.get("level", ""))
+                note = _e(light.get("note", ""))
+                cls = f"level-{level}" if level in ("gut", "mittel", "stop") else ""
+                lights_html += f"<span>{icon} {key}: <span class='{cls}'>{_e(_level_label(level))}</span></span> "
+            md_rows.append(f"<li><strong>{dname}</strong> — {drec}<br><small>{lights_html}</small></li>")
+        md_html = f"<ol>{''.join(md_rows)}</ol>"
+        if isinstance(gesamt_fazit, dict):
+            knack = _e(_s(gesamt_fazit.get("knackpunktId"), "—"))
+            gf_level = str(gesamt_fazit.get("level", ""))
+            gf_rec = _e(_s(gesamt_fazit.get("recommend"), "—"))
+            gf_beg = _e(_s(gesamt_fazit.get("begruendung"), ""))
+            cls = f"level-{gf_level}" if gf_level in ("gut", "mittel", "stop") else ""
+            md_html += (
+                f"<p><span class='label'>{_e(_t('export.mehrfachdefekte.knackpunkt', lang))}:</span> {knack}</p>"
+                f"<p><span class='label'>Gesamt-Level:</span> <span class='{cls}'>{_e(_level_label(gf_level))}</span>"
+                f" · <span class='label'>Empfehlung:</span> {gf_rec}</p>"
+            )
+            if gf_beg:
+                md_html += f"<p class='freitext'>{gf_beg}</p>"
+        parts.append(section(_t("export.mehrfachdefekte.titel", lang), md_html))
+
+    # PROJ-22 Consent
+    consent = c.get("consent") or {}
+    consent_status = _s(consent.get("status"), "offen")
+    if consent_status != "offen":
+        status_key = f"export.consent.{consent_status}" if consent_status in ("erteilt", "abgelehnt", "widerrufen") else ""
+        status_label = _t(status_key, lang) if status_key else consent_status
+        cs_html = f"<p><span class='label'>Status:</span> {_e(status_label)}</p>"
+        if consent.get("zeitpunkt"):
+            cs_html += f"<p><span class='label'>{_e(_t('export.consent.zeitpunkt', lang))}:</span> {_e(_s(consent.get('zeitpunkt'), '—'))}</p>"
+        parts.append(section(_t("export.consent.titel", lang), cs_html))
+
+    # PROJ-23 Schwungrad
+    schwungrad = c.get("schwungrad") or {}
+    if schwungrad.get("beigetragen"):
+        sw_html = f"<p><span class='label'>{_e(_t('export.schwungrad.beitrag_id', lang))}:</span> {_e(_s(schwungrad.get('beitragId'), '—'))}</p>"
+        ausgeschlossen = schwungrad.get("ausgeschlossen") or []
+        if ausgeschlossen:
+            sw_html += (
+                f"<p><span class='label'>{_e(_t('export.schwungrad.ausgeschlossen', lang))}:</span> "
+                + ", ".join(_e(str(x)) for x in ausgeschlossen)
+                + "</p>"
+            )
+        parts.append(section(_t("export.schwungrad.titel", lang), sw_html))
+
+    # PROJ-27 Medien
+    medien = c.get("medien") or []
+    if isinstance(medien, list) and medien:
+        med_items = []
+        for m in medien:
+            if not isinstance(m, dict):
+                continue
+            art = _e(_s(m.get("art"), "?"))
+            ref = _e(_s(m.get("ref") or m.get("id"), "—"))
+            hinweis = _e(_s(m.get("hinweis"), ""))
+            med_items.append(
+                f"<li><span class='label'>{_e(_t('export.medien.art', lang))}:</span> {art} | "
+                f"<span class='label'>{_e(_t('export.medien.referenz', lang))}:</span> <code>{ref}</code>"
+                + (f" <span class='freitext'>({hinweis})</span>" if hinweis else "")
+                + "</li>"
+            )
+        parts.append(section(_t("export.medien.titel", lang), f"<ul>{''.join(med_items)}</ul>"))
 
     # Disclaimer
     parts.append(

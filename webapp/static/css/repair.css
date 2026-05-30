@@ -735,3 +735,529 @@ body {
 .rk-theme-mutig .rk-parts-keep:hover,
 .rk-theme-mutig .rk-svc-select.on,
 .rk-theme-mutig .rk-parts-keep.on { color: var(--accent-ink); }
+
+/* ==========================================================================
+   STUFE 3 — Neue Komponenten (PROJ-15 … PROJ-24, PROJ-27)
+   Alle Farben über CSS-Variablen (Ampel-Tokens --gut/--mittel/--stop +
+   --accent/--accent2). Keine harten Hex-Werte außer #fff dort wo Kontrast
+   auf --stop-Rot es erfordert (wie in Stufe 1/2 bereits etabliert).
+   Baut auf Stufe-0/1/2-Atomen auf (rk-trust, rk-sheet, rk-confirm …).
+   ========================================================================== */
+
+/* ---------- Sprach-Switcher (PROJ-24) ----------
+   Body-Level-Leiste analog .rk-themebar (außerhalb .rk-phone). */
+.rk-langswitch {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #ffffff; border: 1px solid #d8d3ca; border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 1px 2px rgba(20,18,14,.06);
+}
+.rk-langswitch-btn {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: .02em;
+  padding: 7px 13px; border-radius: 7px; color: #5f5b52;
+  transition: background .18s, color .18s;
+}
+.rk-langswitch-btn:hover { color: #16140f; }
+.rk-langswitch-btn.rk-langswitch-on { background: #16140f; color: #ffffff; }
+
+/* „Nur auf Deutsch verfügbar" — Badge neben Inhalten die nurDeutsch==true */
+.rk-onlyde {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  white-space: nowrap; vertical-align: middle;
+}
+
+/* ---------- Consent-Gate (PROJ-22) ----------
+   Prominentes, klar lesbares Gate/Sheet — kein X/Schließen.
+   Erscheint als Scrim-Overlay (analog rk-sheet-scrim + rk-sheet). */
+.rk-consent {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.rk-consent-head {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 18px; line-height: 1.2; letter-spacing: var(--display-tracking);
+  color: var(--ink); margin: 0; text-wrap: balance;
+}
+.rk-consent-body {
+  font-size: 13.5px; line-height: 1.55; color: var(--ink-soft);
+}
+.rk-consent-body b { color: var(--ink); }
+.rk-consent-train {
+  padding: 11px 13px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.rk-consent-train b { color: var(--ink); }
+.rk-consent-ref {
+  font-size: 12px; color: var(--accent2);
+  text-decoration: underline; text-underline-offset: 2px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.rk-consent-btns {
+  display: flex; flex-direction: column; gap: var(--gap); margin-top: 4px;
+}
+.rk-consent-yes {
+  width: 100%; padding: 14px 16px;
+  background: var(--accent2); color: #fff;
+  border-radius: var(--radius-sm); font-weight: 700; font-size: 14px;
+  text-align: center; box-shadow: var(--shadow-sm);
+  transition: transform var(--motion), opacity var(--motion);
+}
+.rk-consent-yes:active { transform: translateY(1px); opacity: .88; }
+.rk-consent-no {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--ink-soft); text-align: center;
+  transition: border-color var(--motion), color var(--motion);
+}
+.rk-consent-no:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+/* Status + Widerruf (sichtbares Control, jederzeit erreichbar) */
+.rk-consent-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+  padding: 6px 11px; background: var(--surface-2); border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+}
+.rk-consent-revoke {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--stop-ink); border: 1px solid color-mix(in srgb, var(--stop) 35%, transparent);
+  border-radius: var(--radius-pill); padding: 5px 11px;
+  background: var(--stop-bg);
+  transition: opacity var(--motion), transform var(--motion);
+}
+.rk-consent-revoke:active { opacity: .82; transform: translateY(1px); }
+
+/* ---------- Kuratierte Diagnose (PROJ-17) ----------
+   Kandidaten-Screen zwischen triage und ampel. */
+.rk-diag {
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+.rk-diag-head {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 20px; line-height: 1.15; letter-spacing: var(--display-tracking);
+  color: var(--ink); margin: 0; text-wrap: balance;
+}
+/* Kandidaten-Karte */
+.rk-diag-cand {
+  width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 13px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--motion), transform var(--motion), opacity var(--motion);
+}
+.rk-diag-cand:hover { border-color: var(--accent2); }
+.rk-diag-cand:active { transform: translateY(1px); }
+/* Selektierter Kandidat */
+.rk-diag-cand-sel {
+  border-color: var(--accent2); border-width: 1.5px;
+  box-shadow: 0 0 0 2px var(--accent2-soft);
+  background: color-mix(in srgb, var(--accent2-soft) 40%, var(--surface));
+}
+/* Ausgeschiedener Kandidat (durch Abgrenzungsantwort) — gedämpft */
+.rk-diag-cand-out {
+  opacity: .42; pointer-events: none;
+  filter: grayscale(.5);
+  border-style: dashed;
+}
+.rk-diag-cause {
+  font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.25;
+}
+/* Herkunft + Quelle (Recherche-Herkunft) */
+.rk-diag-src {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft);
+  letter-spacing: .02em; display: flex; align-items: center; gap: 5px;
+}
+/* Abgrenzungs-Rückfrage */
+.rk-diag-frage {
+  margin-top: 4px; padding: 13px 14px;
+  background: var(--accent2-soft); border: 1px solid color-mix(in srgb, var(--accent2) 20%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px; color: var(--ink); line-height: 1.5;
+  display: flex; flex-direction: column; gap: 9px;
+  animation: rkFade var(--motion) ease;
+}
+.rk-diag-frage b { color: var(--accent2); font-weight: 700; }
+.rk-diag-opt {
+  width: 100%; text-align: left; padding: 11px 14px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); font-size: 13.5px; color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--motion), background var(--motion), transform var(--motion);
+}
+.rk-diag-opt:hover { border-color: var(--accent2); }
+.rk-diag-opt:active { transform: translateY(1px); background: var(--accent2-soft); border-color: var(--accent2); }
+/* Unklar-Hinweis im Diagnose-Screen */
+.rk-diag-unclear {
+  padding: 12px 13px;
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--mittel) 28%, transparent);
+  font-size: 13px; font-weight: 600; line-height: 1.4;
+}
+
+/* ---------- Rückruf-Stopp (PROJ-19) ----------
+   Deutlich anders als Garantie-Gate (rk-gate — gelb/mittel).
+   Nutzt --stop-Tokens. Zwei visuell unterscheidbare Varianten. */
+.rk-recall {
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+/* Gemeinsamer prominenter Stopp-Header-Block */
+.rk-recall > .rk-recall-rueckruf,
+.rk-recall > .rk-recall-sicherheitsmangel {
+  border-radius: var(--radius-sm); padding: 14px 15px;
+  font-size: 14px; font-weight: 700; line-height: 1.4;
+  display: flex; flex-direction: column; gap: 4px;
+}
+/* Formaler Rückruf — starkes Rot */
+.rk-recall-rueckruf {
+  background: var(--stop-bg);
+  color: var(--stop-ink);
+  border: 2px solid color-mix(in srgb, var(--stop) 45%, transparent);
+}
+/* Sicherheitsmangel ohne offiziellen Rückruf — Orange/Mittel, deutlich aber eigenständig */
+.rk-recall-sicherheitsmangel {
+  background: var(--mittel-bg);
+  color: var(--mittel-ink);
+  border: 2px solid color-mix(in srgb, var(--mittel) 45%, transparent);
+}
+/* Badge über dem Recall-Block (bei sicherem Modell-Treffer) */
+.rk-recall-badge {
+  display: inline-flex; align-items: center; gap: 5px; align-self: flex-start;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  background: var(--stop); color: #fff; white-space: nowrap;
+}
+/* Detail-Zeilen */
+.rk-recall-grund {
+  font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.4;
+}
+.rk-recall-quelle {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+  display: flex; align-items: center; gap: 5px;
+}
+.rk-recall-stand {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+}
+/* Handlungsempfehlung (Vorgehen) — hervorgehoben */
+.rk-recall-vorgehen {
+  padding: 11px 13px;
+  background: color-mix(in srgb, var(--stop-bg) 60%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--stop) 25%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.5; color: var(--stop-ink);
+}
+.rk-recall-vorgehen b { font-weight: 700; }
+/* Fortfahren trotz Rückruf (warnen statt sperren) */
+.rk-recall-continue {
+  width: 100%; text-align: center; padding: 11px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--ink-soft);
+  transition: border-color var(--motion), color var(--motion);
+}
+.rk-recall-continue:hover { border-color: var(--stop); color: var(--ink); }
+/* Modell-unsicher Hinweis (kein harter Treffer) */
+.rk-recall-unsure {
+  padding: 10px 13px;
+  background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.5;
+  font-style: italic;
+}
+
+/* ---------- Mehrfachdefekt-Fazit (PROJ-21) ----------
+   Wrapper/Sortier-Layout um bestehende rk-ampelcard.
+   rk-ampelcard selbst NICHT verändert. */
+.rk-defekt-list {
+  display: flex; flex-direction: column; gap: var(--gap); margin-top: 4px;
+}
+/* Wrapper je Defekt-Ampelkarte mit Rang-Markierung */
+.rk-defekt-rank {
+  position: relative;
+}
+.rk-defekt-rank::before {
+  content: attr(data-rank);
+  position: absolute; top: -8px; left: 14px; z-index: 2;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  background: var(--accent2); color: #fff;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+}
+/* Gesamt-Fazit-Block */
+.rk-fazit {
+  margin-top: 16px; padding: 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 10px;
+  animation: rkFade var(--motion) ease;
+}
+.rk-fazit-head {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--ink-soft);
+}
+.rk-fazit-reco {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 18px; letter-spacing: var(--display-tracking); color: var(--ink);
+  margin: 0; line-height: 1.2;
+}
+/* Knackpunkt (hervorgehoben) */
+.rk-fazit-knack {
+  padding: 11px 13px;
+  background: var(--stop-bg); color: var(--stop-ink);
+  border: 1.5px solid color-mix(in srgb, var(--stop) 30%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 700; line-height: 1.4;
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.rk-fazit-knack::before { content: '⚠️'; flex: none; font-style: normal; font-weight: normal; }
+.rk-fazit-why {
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.55; font-style: italic;
+}
+
+/* ---------- Datenlöschung (PROJ-20) ----------
+   3 unabhängig markierbare Schritte; Warn-Zustand beim Überspringen. */
+.rk-wipe {
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+.rk-wipe-head {
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-size: 20px; line-height: 1.15; letter-spacing: var(--display-tracking);
+  color: var(--ink); margin: 0; text-wrap: balance;
+}
+/* Ein Schritt der Checkliste */
+.rk-wipe-step {
+  width: 100%; text-align: left;
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 15px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: border-color var(--motion), background var(--motion), transform var(--motion);
+}
+.rk-wipe-step:active { transform: translateY(1px); }
+/* Checkbox-Bereich */
+.rk-wipe-check {
+  width: 20px; height: 20px; flex: none; margin-top: 1px;
+  border: 2px solid var(--line-strong); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: background var(--motion), border-color var(--motion);
+  color: transparent;
+}
+/* Aktiver (angehakter) Schritt */
+.rk-wipe-on .rk-wipe-check {
+  background: var(--gut); border-color: var(--gut); color: #fff;
+}
+.rk-wipe-on .rk-wipe-check::after { content: '✓'; }
+.rk-wipe-on {
+  border-color: var(--gut); background: var(--gut-bg);
+}
+/* Textbereich des Schritts */
+.rk-wipe-disp {
+  flex: 1; display: flex; flex-direction: column; gap: 3px;
+  font-size: 14px; color: var(--ink); line-height: 1.4;
+}
+.rk-wipe-disp small { font-size: 12px; color: var(--ink-soft); }
+/* Warnhinweis beim Überspringen */
+.rk-wipe-warn {
+  padding: 12px 13px;
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  border: 1px solid color-mix(in srgb, var(--mittel) 35%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; line-height: 1.4;
+  animation: rkFade var(--motion) ease;
+}
+/* „Trotzdem überspringen"-Aktion (warnen statt sperren) */
+.rk-wipe-skip {
+  width: 100%; text-align: center; padding: 11px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--ink-soft);
+  transition: border-color var(--motion), color var(--motion);
+}
+.rk-wipe-skip:hover { border-color: var(--mittel); color: var(--mittel-ink); }
+
+/* ---------- Multimodal (PROJ-27) ----------
+   Medien-Vorschau, Eingabe-Buttons, Sprach/Scan-Feedback. */
+.rk-media {
+  display: flex; flex-direction: column; gap: var(--gap); margin-top: 8px;
+}
+.rk-media-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.rk-media-item {
+  position: relative; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  overflow: hidden; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.rk-media-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.rk-media-art {
+  position: absolute; bottom: 4px; left: 4px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  background: rgba(8,6,12,.65); color: #fff;
+  padding: 2px 6px; border-radius: var(--radius-pill);
+}
+.rk-media-remove {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(8,6,12,.55); color: #fff;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  transition: background var(--motion);
+}
+.rk-media-remove:hover { background: var(--stop); }
+
+/* Medien-Einwilligung (vor erster Aufnahme) */
+.rk-media-consent {
+  padding: 12px 13px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--ink-soft); line-height: 1.5;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.rk-media-consent b { color: var(--ink); }
+
+/* Capture-Buttons (Foto, Sprache, Scan) */
+.rk-cap-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 14px 6px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 10.5px; color: var(--ink-soft); text-align: center; line-height: 1.2;
+  transition: border-color var(--motion), transform var(--motion), background var(--motion);
+}
+.rk-cap-btn:active { transform: translateY(1px); border-color: var(--accent); background: var(--accent-soft); }
+.rk-cap-btn span { font-size: 21px; }
+.rk-cap-photo { /* kein eigener Modifier nötig — Basis reicht */ }
+.rk-cap-voice { /* kein eigener Modifier nötig — Basis reicht */ }
+.rk-cap-scan  { /* kein eigener Modifier nötig — Basis reicht */ }
+/* Nicht verfügbare Modalität */
+.rk-cap-unavail {
+  opacity: .42; pointer-events: none; filter: grayscale(.6);
+}
+
+/* Sprach-Live-Indikator (während Aufnahme läuft) */
+.rk-voice-live {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 13px;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; color: var(--accent-ink);
+  animation: rkPulse 1.1s ease-in-out infinite;
+}
+@keyframes rkPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .65; }
+}
+/* Erkannter Text zur Korrektur */
+.rk-voice-correct {
+  padding: 10px 13px;
+  background: var(--surface); border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px; color: var(--ink); line-height: 1.5;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rk-voice-correct small { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); }
+
+/* Scan-Ergebnis (Barcode/Modell erkannt) */
+.rk-scan-result {
+  padding: 10px 13px;
+  background: var(--gut-bg); border: 1px solid color-mix(in srgb, var(--gut) 30%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; color: var(--gut-ink); line-height: 1.4;
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* Qualitäts-Hinweis (zu dunkel / unscharf) */
+.rk-quality-warn {
+  padding: 10px 12px;
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  border: 1px solid color-mix(in srgb, var(--mittel) 30%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; font-weight: 600; line-height: 1.4;
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* „Zurück zur Texteingabe" (jederzeit sichtbarer Fallback) */
+.rk-to-text {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; color: var(--accent2); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer; transition: opacity var(--motion);
+}
+.rk-to-text:hover { opacity: .75; }
+
+/* ---------- Lotse-Steuerleiste (PROJ-18) ----------
+   Persistente Steueroptionen (weiter · Profi/Café · Austausch · Entsorgen · Abbrechen).
+   Primary / Secondary / Abort visuell unterschieden. */
+.rk-steer {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px var(--pad);
+  border-top: 1px solid var(--line); background: var(--surface);
+  align-items: center;
+}
+.rk-steer-btn {
+  flex: 1 1 auto; min-width: 0;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; text-align: center; white-space: nowrap;
+  transition: transform var(--motion), opacity var(--motion), background var(--motion);
+}
+.rk-steer-btn:active { transform: translateY(1px); }
+/* Primäre Aktion (weiter) */
+.rk-steer-primary {
+  background: var(--accent); color: var(--accent-ink);
+  box-shadow: var(--shadow-sm);
+}
+/* Sekundäre Aktionen (Profi/Café, Austausch, Entsorgen) */
+.rk-steer-secondary {
+  background: var(--surface-2); color: var(--ink);
+  border: 1px solid var(--line);
+}
+.rk-steer-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+/* Abbruch */
+.rk-steer-abort {
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line);
+  font-weight: 500;
+}
+.rk-steer-abort:hover { color: var(--stop-ink); border-color: var(--stop); }
+
+/* ==========================================================================
+   STUFE 3 — Werkstatt-Overrides
+   Kantig, technisch: dickere Ränder, starke Linie.
+   ========================================================================== */
+.rk-theme-werkstatt .rk-consent-yes { box-shadow: var(--shadow); }
+.rk-theme-werkstatt .rk-diag-cand,
+.rk-theme-werkstatt .rk-diag-frage,
+.rk-theme-werkstatt .rk-recall-vorgehen,
+.rk-theme-werkstatt .rk-wipe-step,
+.rk-theme-werkstatt .rk-fazit,
+.rk-theme-werkstatt .rk-media-item,
+.rk-theme-werkstatt .rk-voice-correct,
+.rk-theme-werkstatt .rk-media-consent { border-width: 1.5px; border-color: var(--line-strong); }
+.rk-theme-werkstatt .rk-steer { border-top-width: 1.5px; border-color: var(--line-strong); }
+.rk-theme-werkstatt .rk-steer-primary { box-shadow: var(--shadow); }
+.rk-theme-werkstatt .rk-recall-rueckruf { border-width: 2.5px; }
+.rk-theme-werkstatt .rk-recall-sicherheitsmangel { border-width: 2.5px; }
+
+/* ==========================================================================
+   STUFE 3 — Mutig-Overrides
+   Dunkel, ausdrucksstark: keine flachen Schatten, kräftigere Kontraste.
+   ========================================================================== */
+.rk-theme-mutig .rk-consent-yes { box-shadow: none; }
+.rk-theme-mutig .rk-diag-cand,
+.rk-theme-mutig .rk-wipe-step,
+.rk-theme-mutig .rk-fazit { box-shadow: none; }
+.rk-theme-mutig .rk-steer-primary { box-shadow: none; }
+.rk-theme-mutig .rk-steer-secondary:hover { background: var(--accent2-soft); }
+/* Recall im Mutig-Theme: Randlos, reiner Farbflächen-Kontrast */
+.rk-theme-mutig .rk-recall-rueckruf,
+.rk-theme-mutig .rk-recall-sicherheitsmangel { border-width: 0; }
+/* Voice-Live-Puls bleibt — bewusste Animationsausnahme, da Nutzerfeedback */

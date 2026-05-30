@@ -13,14 +13,19 @@
   var Slot = window.Slot, Sheet = window.Sheet, TrustBadge = window.TrustBadge;
   var normTrustLevel = window.normTrustLevel;
 
+  /* ---- i18n helper (PROJ-24) — delegates to app.js catalog via window.RKt ---- */
+  function t(key) {
+    return (window.RKt && window.RKt(key)) || key;
+  }
+
   /* ---- Vertrauen aus state.trust ODER device.confidence ableiten (PROJ-25) ---- */
   function deriveTrust(trust, device) {
-    var t = trust || {};
+    var tr = trust || {};
     var conf = (device && device.confidence) || {};
     return {
-      level: t.level || normTrustLevel(conf.level),
-      source: t.source || conf.source || 'kuratiert',
-      reason: t.reason || conf.note || '',
+      level: tr.level || normTrustLevel(conf.level),
+      source: tr.source || conf.source || 'kuratiert',
+      reason: tr.reason || conf.note || '',
     };
   }
 
@@ -63,21 +68,27 @@
   function StartScreen(props) {
     var devices = props.devices || {};
     var deviceList = Object.keys(devices).map(function (k) { return devices[k]; });
-    var methods = [
-      { e: '📝', t: 'Tippen oder einsprechen' },
-      { e: '📷', t: 'Foto machen' },
-      { e: '🔖', t: 'Etikett scannen' },
-    ];
+    var lang = props.lang || 'de';
+
+    // PROJ-27: Voice-Ergebnis in Freitext einfügen
+    function handleVoiceResult(transcript) {
+      if (props.setDraft) props.setDraft(transcript);
+      // In das Input-Feld schreiben falls vorhanden
+      var inp = document.querySelector('.rk-input-ph[type=”text”]');
+      if (inp) { inp.value = transcript; }
+    }
 
     var input = h('button', { class: 'rk-input', onClick: function () { props.setChooser(true); } },
-      h('span', { class: 'rk-input-ph' }, '„Mein Toaster wirft das Brot nicht mehr aus …“'),
+      h('span', { class: 'rk-input-ph' }, '„Mein Toaster wirft das Brot nicht mehr aus …”'),
       h('span', { class: 'rk-input-mic' }, '🎙️')
     );
     if (props.onDiagnose) {
       input = h('div', { class: 'rk-input' },
         h('input', {
           class: 'rk-input-ph', type: 'text',
-          placeholder: '„Mein Toaster wirft das Brot nicht mehr aus …“',
+          placeholder: lang === 'en'
+            ? '”My toaster doesn\'t pop the bread up anymore …”'
+            : '„Mein Toaster wirft das Brot nicht mehr aus …”',
           value: props.draft || '',
           style: { flex: '1', minWidth: '0', border: '0', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit' },
           onInput: function (e) { props.setDraft(e.target.value); },
@@ -87,37 +98,57 @@
       );
     }
 
-    return Screen({
-      bar: null,
-      children: [
-        h('div', { class: 'rk-brand' },
-          h('span', { class: 'rk-brand-mark' }, '🔧'),
-          h('span', { class: 'rk-brand-name' }, 'Reparatur-Helfer')
-        ),
-        h('h1', { class: 'rk-hero' }, 'Was ist', h('br', {}), 'kaputt?'),
-        h('p', { class: 'rk-hero-sub' }, 'Erzähl einfach, was los ist — als würdest du es einem Bekannten beschreiben.'),
-        input,
-        h('div', { class: 'rk-methods' }, methods.map(function (m) {
-          return h('button', { class: 'rk-method', onClick: function () { props.setChooser(true); } },
-            h('span', { class: 'rk-method-e' }, m.e),
-            h('span', { class: 'rk-method-t' }, m.t)
-          );
-        })),
-        h('div', { class: 'rk-mine' },
-          h('div', { class: 'rk-mine-head' }, 'Meine Geräte'),
-          deviceList.map(function (d) { return deviceRow(d, function () { props.onPick(d.id); }, false); })
-        ),
-        Sheet({
-          open: props.chooser, onClose: function () { props.setChooser(false); }, title: 'Beispiel zum Ausprobieren',
-          children: [
-            h('p', { class: 'rk-sheet-note' }, 'In dieser Demo sind zwei Geräte hinterlegt — eines geht gut aus, eines ist ein klarer Fall fürs Abraten.'),
-            deviceList.map(function (d) {
-              return deviceRow(d, function () { props.setChooser(false); props.onPick(d.id); }, true);
-            })
-          ]
-        })
-      ]
+    // PROJ-27: echte Modalitäts-Buttons (MediaPanel)
+    var mediaPanel = window.MediaPanel ? window.MediaPanel({
+      medienConsent: props.medienConsent,
+      medien: props.medien || [],
+      lang: lang,
+      setMediaConsentOpen: props.setMediaConsentOpen,
+      uploadMedium: props.uploadMedium,
+      removeMedium: props.removeMedium,
+      onVoiceResult: handleVoiceResult,
+      onBarcodeResult: function (val) {
+        if (props.setDraft) props.setDraft(val);
+      },
+    }) : null;
+
+    var consentGate = ConsentGateOverlay({
+      show: !!props.showConsentGate,
+      onErteilen: props.onConsentErteilen,
+      onAblehnen: props.onConsentAblehnen,
     });
+
+    var children = [
+      consentGate,
+      h('div', { class: 'rk-brand' },
+        h('span', { class: 'rk-brand-mark' }, '🔧'),
+        h('span', { class: 'rk-brand-name' }, lang === 'en' ? 'Repair Helper' : 'Reparatur-Helfer')
+      ),
+      h('h1', { class: 'rk-hero' }, lang === 'en' ? 'What is' : 'Was ist', h('br', {}), lang === 'en' ? 'broken?' : 'kaputt?'),
+      h('p', { class: 'rk-hero-sub' }, lang === 'en'
+        ? 'Just describe what\'s happening — as if you were telling a friend.'
+        : 'Erzähl einfach, was los ist — als würdest du es einem Bekannten beschreiben.'),
+      input,
+      mediaPanel,
+      h('div', { class: 'rk-mine' },
+        h('div', { class: 'rk-mine-head' }, lang === 'en' ? 'My devices' : 'Meine Geräte'),
+        deviceList.map(function (d) { return deviceRow(d, function () { props.onPick(d.id); }, false); })
+      ),
+      Sheet({
+        open: props.chooser, onClose: function () { props.setChooser(false); },
+        title: lang === 'en' ? 'Example to try' : 'Beispiel zum Ausprobieren',
+        children: [
+          h('p', { class: 'rk-sheet-note' }, lang === 'en'
+            ? 'This demo has two devices — one works out well, the other clearly needs a pro.'
+            : 'In dieser Demo sind zwei Geräte hinterlegt — eines geht gut aus, eines ist ein klarer Fall fürs Abraten.'),
+          deviceList.map(function (d) {
+            return deviceRow(d, function () { props.setChooser(false); props.onPick(d.id); }, true);
+          })
+        ]
+      })
+    ];
+
+    return Screen({ bar: null, children: children });
   }
 
   /* ===================== EIGENTUM (PROJ-1) ===================== */
@@ -129,6 +160,13 @@
       { key: 'no', label: 'Nein' },
       { key: 'unknown', label: 'Weiß nicht' },
     ];
+    var consentGate = ConsentGateOverlay({
+      show: !!props.showConsentGate,
+      onErteilen: props.onConsentErteilen,
+      onAblehnen: props.onConsentAblehnen,
+    });
+    var consentStatus = ConsentStatus({ consent: props.consent, onRevoke: props.onConsentRevoke });
+
     return Screen({
       bar: AppBar({
         left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
@@ -137,6 +175,7 @@
       }),
       footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: 'Weiter' }),
       children: [
+        consentGate,
         h('div', { class: 'rk-eyebrow' }, 'Aufnahme'),
         h('h2', { class: 'rk-q rk-q-tight rk-owner-q' }, 'Ist das dein Gerät?'),
         h('p', { class: 'rk-q-hint' }, 'Nur wichtig, falls Garantie oder Kosten eine Rolle spielen. Du musst nichts angeben.'),
@@ -163,7 +202,8 @@
               onInput: function (e) { props.setDraftCostBearer(e.target.value); }
             })
           ) : null
-        )
+        ),
+        consentStatus
       ]
     });
   }
@@ -221,6 +261,70 @@
     var device = props.device;
     var stop = device.accentPath === 'stop';
     var activeLight = props.activeLight;
+    var defekte = props.defekte || [];
+    var gesamtFazit = props.gesamtFazit || null;
+    var hasMultiDefekte = defekte.length >= 2;
+
+    var children = [
+      h('div', { class: 'rk-eyebrow' }, 'Einschätzung'),
+      h('h2', { class: 'rk-q rk-q-tight' }, 'Worauf du dich einlässt'),
+    ];
+
+    // Mehrfachdefekte: je-Defekt-Ampeln (PROJ-21) — bleibt permanent sichtbar
+    if (hasMultiDefekte && window.GesamtFazitBlock) {
+      children.push(window.GesamtFazitBlock({ defekte: defekte, gesamtFazit: gesamtFazit }));
+    }
+
+    // Standard-Ampelkarte (Einzelfall oder Fallback)
+    children.push(
+      h('div', { class: 'rk-ampelcard' }, device.lights.map(function (l) {
+        return LightRow({ light: l, onInfo: function () { props.setActiveLight(l); } });
+      }))
+    );
+
+    children.push(
+      h('div', { class: 'rk-verdict ' + (stop ? 'rk-verdict-stop' : 'rk-verdict-go') },
+        h('div', { class: 'rk-verdict-title' }, (stop ? '🔴 ' : '🟢 ') + device.verdictTitle),
+        h('p', { class: 'rk-verdict-body' }, device.verdictBody)
+      ),
+      (function () {
+        var tr = deriveTrust(props.trust, device);
+        return TrustBadge(tr.level, tr.source, tr.reason, { onClick: function () { props.setConf(true); }, strong: stop });
+      })(),
+      h('div', { class: 'rk-aiwarn ' + (stop ? 'rk-aiwarn-strong' : '') },
+        (stop ? '⚠️ Besonders hier gilt: ' : '') + 'Die KI kann sich irren — sieh das als Orientierung, nicht als Urteil.'
+      )
+    );
+
+    // Lotse-Steuerleiste (PROJ-18)
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      children.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
+
+    children.push(
+      Sheet({
+        open: !!activeLight, onClose: function () { props.setActiveLight(null); },
+        title: activeLight ? (activeLight.icon + ' ' + activeLight.key) : '',
+        children: activeLight ? [
+          h('p', { class: 'rk-sheet-note', style: { color: levelMeta(activeLight.level).ink } }, activeLight.note),
+          h('div', { class: 'rk-sheet-level' },
+            h('span', { class: 'rk-light-face', style: { background: levelMeta(activeLight.level).dot } }),
+            levelMeta(activeLight.level).face + ' Bewertung: ' + levelMeta(activeLight.level).label
+          )
+        ] : null
+      }),
+      Sheet({
+        open: props.conf, onClose: function () { props.setConf(false); }, title: 'Woher kommt diese Einschätzung?',
+        children: [
+          h('p', { class: 'rk-sheet-note' }, 'Quelle: ', h('b', {}, device.confidence.source)),
+          h('p', { class: 'rk-sheet-note' }, 'Wie sicher: ', h('b', {}, device.confidence.level)),
+          h('p', { class: 'rk-sheet-note' }, device.confidence.note),
+          h('div', { class: 'rk-sheet-hr' }),
+          h('p', { class: 'rk-sheet-fine' }, 'Die App verbietet dir nichts — je riskanter die Sache, desto deutlicher die Warnung. Die Verantwortung für dein Handeln bleibt bei dir.')
+        ]
+      })
+    );
+
     return Screen({
       bar: AppBar({
         left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
@@ -228,45 +332,7 @@
         right: docBtn(props.onProtocol)
       }),
       footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: 'Was möchtest du tun?' }),
-      children: [
-        h('div', { class: 'rk-eyebrow' }, 'Einschätzung'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Worauf du dich einlässt'),
-        h('div', { class: 'rk-ampelcard' }, device.lights.map(function (l) {
-          return LightRow({ light: l, onInfo: function () { props.setActiveLight(l); } });
-        })),
-        h('div', { class: 'rk-verdict ' + (stop ? 'rk-verdict-stop' : 'rk-verdict-go') },
-          h('div', { class: 'rk-verdict-title' }, (stop ? '🔴 ' : '🟢 ') + device.verdictTitle),
-          h('p', { class: 'rk-verdict-body' }, device.verdictBody)
-        ),
-        (function () {
-          var tr = deriveTrust(props.trust, device);
-          return TrustBadge(tr.level, tr.source, tr.reason, { onClick: function () { props.setConf(true); }, strong: stop });
-        })(),
-        h('div', { class: 'rk-aiwarn ' + (stop ? 'rk-aiwarn-strong' : '') },
-          (stop ? '⚠️ Besonders hier gilt: ' : '') + 'Die KI kann sich irren — sieh das als Orientierung, nicht als Urteil.'
-        ),
-        Sheet({
-          open: !!activeLight, onClose: function () { props.setActiveLight(null); },
-          title: activeLight ? (activeLight.icon + ' ' + activeLight.key) : '',
-          children: activeLight ? [
-            h('p', { class: 'rk-sheet-note', style: { color: levelMeta(activeLight.level).ink } }, activeLight.note),
-            h('div', { class: 'rk-sheet-level' },
-              h('span', { class: 'rk-light-face', style: { background: levelMeta(activeLight.level).dot } }),
-              levelMeta(activeLight.level).face + ' Bewertung: ' + levelMeta(activeLight.level).label
-            )
-          ] : null
-        }),
-        Sheet({
-          open: props.conf, onClose: function () { props.setConf(false); }, title: 'Woher kommt diese Einschätzung?',
-          children: [
-            h('p', { class: 'rk-sheet-note' }, 'Quelle: ', h('b', {}, device.confidence.source)),
-            h('p', { class: 'rk-sheet-note' }, 'Wie sicher: ', h('b', {}, device.confidence.level)),
-            h('p', { class: 'rk-sheet-note' }, device.confidence.note),
-            h('div', { class: 'rk-sheet-hr' }),
-            h('p', { class: 'rk-sheet-fine' }, 'Die App verbietet dir nichts — je riskanter die Sache, desto deutlicher die Warnung. Die Verantwortung für dein Handeln bleibt bei dir.')
-          ]
-        })
-      ]
+      children: children
     });
   }
 
@@ -1168,6 +1234,68 @@
               h('div', { class: 'rk-foerder-disclaimer' }, 'Bestelloptionen sind Partner-Links (Provision) — kennzeichnungspflichtig, nie vorausgewählt.'))
             : null
         ) : null,
+      // PROJ-22: Consent-Status
+      (props.consent && props.consent.status !== 'offen')
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, 'Einwilligung'),
+          h('div', { class: 'rk-proto-val' },
+            (props.consent.status === 'erteilt' ? '✅ ' : props.consent.status === 'abgelehnt' ? '❌ ' : '↩️ ') +
+            (props.consent.status || '') +
+            (props.consent.zeitpunkt ? ' · ' + props.consent.zeitpunkt.substring(0, 19).replace('T', ' ') : '')
+          ),
+          (props.consent.status === 'erteilt' && props.onConsentRevoke)
+            ? h('button', { class: 'rk-consent-revoke', onClick: props.onConsentRevoke }, t('consent.widerrufen'))
+            : null
+        ) : null,
+      // PROJ-19: Rückruf
+      (props.rueckruf && props.rueckruf.hit)
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, '⛔ Rückruf / Sicherheitsmangel'),
+          h('div', { class: 'rk-proto-val' }, (props.rueckruf.art || 'rueckruf') + ': ' + (props.rueckruf.grund || '')),
+          props.rueckruf.quelle ? h('div', { class: 'rk-proto-val' }, 'Quelle: ' + props.rueckruf.quelle) : null,
+          props.rueckruf.stand ? h('div', { class: 'rk-proto-val' }, 'Stand: ' + props.rueckruf.stand) : null
+        ) : null,
+      // PROJ-20: Datenlöschung
+      (props.abgabe === 'dritte')
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, 'Datenlöschung vor Abgabe'),
+          h('div', { class: 'rk-proto-val' },
+            '💾 Backup: ' + ((props.datenloeschung && props.datenloeschung.backup) ? '✓' : '–') +
+            ' · 🗑️ Gelöscht: ' + ((props.datenloeschung && props.datenloeschung.loeschen) ? '✓' : '–') +
+            ' · 🔓 Abgemeldet: ' + ((props.datenloeschung && props.datenloeschung.abmelden) ? '✓' : '–') +
+            ((props.datenloeschung && props.datenloeschung.bewusstUebersprungen) ? ' · bewusst übersprungen' : '')
+          )
+        ) : null,
+      // PROJ-21: Mehrfachdefekte
+      (props.defekte && props.defekte.length >= 2)
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, 'Mehrfachdefekte (' + props.defekte.length + ')'),
+          props.defekte.map(function (d) {
+            return h('div', { class: 'rk-proto-val' }, d.name || d.id);
+          }),
+          props.gesamtFazit
+            ? h('div', { class: 'rk-proto-val' },
+              'Gesamt: ' + (props.gesamtFazit.recommend || '') +
+              (props.gesamtFazit.knackpunktId ? ' · Knackpunkt: ' + props.gesamtFazit.knackpunktId : ''))
+            : null
+        ) : null,
+      // PROJ-23: Schwungrad
+      (props.schwungrad && props.schwungrad.beigetragen)
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, 'Schwungrad-Beitrag'),
+          h('div', { class: 'rk-proto-val' }, 'Beitrag-ID: ' + (props.schwungrad.beitragId || '—')),
+          props.schwungrad.ausgeschlossen && props.schwungrad.ausgeschlossen.length
+            ? h('div', { class: 'rk-proto-val' }, 'Ausgeschlossen: ' + props.schwungrad.ausgeschlossen.join(', '))
+            : null
+        ) : null,
+      // PROJ-27: Medien-Anhänge
+      (props.medien && props.medien.length)
+        ? h('div', {},
+          h('div', { class: 'rk-proto-sec' }, 'Medien (' + props.medien.length + ')'),
+          props.medien.map(function (m) {
+            return h('div', { class: 'rk-proto-val' }, (m.art || '?') + ' · ' + (m.ref || m.id || ''));
+          })
+        ) : null,
       // PROJ-10: echte Export-Buttons
       h('div', { class: 'rk-proto-share' },
         h('button', { class: 'rk-share-btn', onClick: props.onExportText }, h('span', {}, '💬'), 'Text'),
@@ -1182,6 +1310,482 @@
     );
   }
 
+  /* ===================== STUFE-3 HELPER ===================== */
+
+  /* ---- Steuerleiste (PROJ-18) ---- */
+  function SteerBar(props) {
+    var opts = props.lotseOptionen || [];
+    if (!opts.length && !props.showDefault) return null;
+    // Default-Optionen falls keine geladen
+    var items = opts.length ? opts : [
+      { label: t('steer.profi'), ereignis: 'wechsel', ziel: 'vermittlung' },
+      { label: t('steer.entsorgen'), ereignis: 'wechsel', ziel: 'entsorgung' },
+      { label: t('steer.abbrechen'), ereignis: 'abbruch', ziel: '' },
+    ];
+    return h('div', { class: 'rk-steer' }, items.map(function (opt) {
+      var isPrimary = opt.ereignis === 'weiter';
+      var isAbort = opt.ereignis === 'abbruch';
+      return h('button', {
+        class: 'rk-steer-btn' + (isPrimary ? ' rk-steer-primary' : isAbort ? ' rk-steer-abort' : ' rk-steer-secondary'),
+        onClick: function () { if (props.onLotseAktion) props.onLotseAktion(opt.ereignis, opt.ziel); },
+      }, opt.label);
+    }));
+  }
+
+  /* ---- Consent-Gate-Overlay (PROJ-22) ---- */
+  function ConsentGateOverlay(props) {
+    if (!props.show) return null;
+    return h('div', { class: 'rk-consent' },
+      h('div', { class: 'rk-consent-head' }, t('consent.titel')),
+      h('div', { class: 'rk-consent-body' }, t('consent.body')),
+      h('div', { class: 'rk-consent-train' }, t('consent.trainingshinweis')),
+      h('div', { class: 'rk-consent-ref' }, t('consent.verweis')),
+      h('div', { class: 'rk-consent-btns' },
+        h('button', { class: 'rk-consent-yes', onClick: props.onErteilen }, t('consent.erteilen')),
+        h('button', { class: 'rk-consent-no', onClick: props.onAblehnen }, t('consent.ablehnen'))
+      )
+    );
+  }
+
+  /* ---- Consent-Widerruf-Control (PROJ-22) ---- */
+  function ConsentStatus(props) {
+    var consent = props.consent || {};
+    if (!consent.status || consent.status === 'offen') return null;
+    var label = t('consent.status.' + consent.status) || consent.status;
+    return h('div', { class: 'rk-consent-status' },
+      h('span', {}, label + (consent.zeitpunkt ? ' (' + consent.zeitpunkt.substring(0, 10) + ')' : '')),
+      (consent.status === 'erteilt')
+        ? h('button', { class: 'rk-consent-revoke', onClick: props.onRevoke }, t('consent.widerrufen'))
+        : null
+    );
+  }
+
+  /* ---- Only-DE badge (PROJ-24) ---- */
+  function OnlyDeBadge(lang, nurDeutsch) {
+    if (lang !== 'en' || !nurDeutsch) return null;
+    return h('span', { class: 'rk-onlyde' }, t('onlyde'));
+  }
+
+  /* ===================== RECALL SCREEN (PROJ-19) ===================== */
+  function RecallScreen(props) {
+    var device = props.device;
+    var r = props.rueckruf || {};
+    var art = r.art || 'rueckruf';
+    var artCls = art === 'sicherheitsmangel' ? 'rk-recall-sicherheitsmangel' : 'rk-recall-rueckruf';
+    var titel = t('recall.titel.' + art);
+
+    return Screen({
+      bar: AppBar({
+        left: IconBtn({ onClick: props.onBack, label: t('nav.zurueck'), children: BackIcon() }),
+        title: deviceTitle(device),
+        right: docBtn(props.onProtocol)
+      }),
+      footer: h('div', { class: 'rk-recall-continue' },
+        h('button', { class: 'rk-ghost rk-full', onClick: props.onContinue }, t('recall.weiter'))
+      ),
+      children: [
+        h('div', { class: 'rk-recall ' + artCls },
+          h('div', { class: 'rk-recall-badge' }, titel),
+          h('p', { class: 'rk-recall-grund' },
+            h('b', {}, t('recall.grund.label')), ' ', r.grund || ''),
+          r.quelle ? h('p', { class: 'rk-recall-quelle' },
+            h('b', {}, t('recall.quelle.label')), ' ', r.quelle) : null,
+          (r.stand || r.gueltigBis) ? h('p', { class: 'rk-recall-stand' },
+            h('b', {}, t('recall.stand.label')), ' ',
+            (r.stand || '') + (r.gueltigBis ? ' / ' + r.gueltigBis : '')) : null,
+          r.vorgehen ? h('p', { class: 'rk-recall-vorgehen' },
+            h('b', {}, t('recall.vorgehen.label')), ' ', r.vorgehen) : null,
+          h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, t('recall.hinweis')),
+          // modellUnsicher: kein harter Treffer
+          r.modellUnsicher
+            ? h('div', { class: 'rk-recall-unsure' }, t('recall.unsicher'))
+            : null
+        )
+      ]
+    });
+  }
+
+  /* ===================== DIAG SCREEN (PROJ-17 — kuratierte Diagnose-Schleife) ===================== */
+  function DiagScreen(props) {
+    var device = props.device;
+    var fz = props.fehlerzustand || {};
+    var kandidaten = fz.kandidaten || [];
+    var gewaehlt = fz.gewaehlt || '';
+    var abgrenzung = fz.abgrenzung || { offen: [], beantwortet: {} };
+    var beantwortet = abgrenzung.beantwortet || {};
+    var offeneFragen = abgrenzung.offen || [];
+
+    // Kandidaten nach Konfidenz sortieren
+    var sorted = kandidaten.slice().sort(function (a, b) {
+      var rank = { hoch: 0, mittel: 1, niedrig: 2 };
+      return (rank[a.konfidenz] || 1) - (rank[b.konfidenz] || 1);
+    });
+
+    // Kandidat ausgeblendet durch Abgrenzungsantworten?
+    function isOut(kand) {
+      // einfache Heuristik: wenn ein Kandidat-Tag einer beantworteten Frage widerspricht
+      return false; // erweiterbar
+    }
+
+    function konfidenzLabel(k) {
+      return t('diag.konfidenz.' + (k || 'mittel'));
+    }
+    function herkunftLabel(h_) {
+      if (h_ === 'kuratiert') return t('diag.herkunft.kuratiert');
+      return t('diag.herkunft.ki');
+    }
+
+    var children = [
+      h('div', { class: 'rk-eyebrow' }, t('diag.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight rk-diag-head' }, t('diag.titel')),
+    ];
+
+    // Kandidatenliste
+    if (sorted.length) {
+      children.push(h('div', { class: 'rk-diag' },
+        sorted.map(function (k) {
+          var sel = gewaehlt === k.id;
+          var out = isOut(k);
+          var cls = 'rk-diag-cand' + (sel ? ' rk-diag-cand-sel' : '') + (out ? ' rk-diag-cand-out' : '');
+          return h('div', { class: cls,
+            onClick: function () { if (!out) props.onSelectCandidate(k.id); }
+          },
+            h('div', { class: 'rk-diag-cause' }, k.ursache || k.id),
+            h('div', { class: 'rk-diag-src' },
+              h('span', {}, herkunftLabel(k.herkunft)),
+              ' · ',
+              h('span', {}, konfidenzLabel(k.konfidenz)),
+              k.quelle ? h('span', {}, ' · ' + k.quelle) : null
+            ),
+            TrustBadge(
+              k.konfidenz === 'hoch' ? 'hoch' : k.konfidenz === 'niedrig' ? 'niedrig' : 'mittel',
+              k.herkunft === 'kuratiert' ? 'kuratiert' : 'KI',
+              k.quelle || ''
+            )
+          );
+        })
+      ));
+    }
+
+    // Offene Abgrenzungsfragen
+    if (offeneFragen.length > 0) {
+      var frage = offeneFragen[0]; // jeweils eine Frage
+      var beantw = beantwortet[frage.q];
+      children.push(
+        h('div', { class: 'rk-diag-frage' },
+          h('div', { class: 'rk-eyebrow' }, t('diag.abgrenzung')),
+          h('p', { class: 'rk-q' }, frage.q),
+          h('div', { class: 'rk-answers' }, (frage.options || []).map(function (o) {
+            return AnswerChip({
+              active: beantw === o.a,
+              onClick: function () { props.onAbgrenzung(frage.q, o.a, o.tag); },
+              children: h('span', { class: 'rk-diag-opt' }, o.a)
+            });
+          }))
+        )
+      );
+    }
+
+    // Weiter/Unklar
+    children.push(
+      h('div', { class: 'rk-diag' },
+        BigButton({
+          variant: gewaehlt ? 'primary' : 'soft',
+          onClick: props.onWeiter,
+          children: t('diag.weiter')
+        }),
+        h('button', { class: 'rk-ghost rk-full rk-diag-unclear', onClick: props.onUnklar },
+          t('diag.unklar'))
+      )
+    );
+
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      children.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
+
+    return Screen({
+      bar: AppBar({
+        left: IconBtn({ onClick: props.onBack, label: t('nav.zurueck'), children: BackIcon() }),
+        title: deviceTitle(device),
+        right: docBtn(props.onProtocol)
+      }),
+      children: children
+    });
+  }
+
+  /* ===================== WIPE SCREEN (PROJ-20 — Datenlöschung) ===================== */
+  function WipeScreen(props) {
+    var device = props.device;
+    var dl = props.datenloeschung || {};
+    var allDone = dl.backup && dl.loeschen && dl.abmelden;
+    var anyDone = dl.backup || dl.loeschen || dl.abmelden;
+    var steps = [
+      { field: 'backup', label: t('wipe.backup') },
+      { field: 'loeschen', label: t('wipe.loeschen') },
+      { field: 'abmelden', label: t('wipe.abmelden') },
+    ];
+
+    return Screen({
+      bar: AppBar({
+        left: IconBtn({ onClick: props.onBack, label: t('nav.zurueck'), children: BackIcon() }),
+        title: deviceTitle(device),
+        right: docBtn(props.onProtocol)
+      }),
+      footer: h('div', { class: 'rk-wipe-disp' },
+        BigButton({ variant: allDone ? 'primary' : 'soft', onClick: props.onWeiter, children: t('wipe.weiter') }),
+        !anyDone
+          ? h('button', { class: 'rk-ghost rk-full rk-wipe-skip', onClick: props.onSkip }, t('wipe.skip'))
+          : null
+      ),
+      children: [
+        h('div', { class: 'rk-eyebrow' }, t('wipe.eyebrow')),
+        h('div', { class: 'rk-wipe' },
+          h('h2', { class: 'rk-q rk-q-tight' }, t('wipe.titel')),
+          h('p', { class: 'rk-q-hint rk-wipe-head' }, t('wipe.hinweis')),
+          h('div', {},
+            steps.map(function (step) {
+              var on = !!dl[step.field];
+              return h('button', {
+                class: 'rk-wipe-step' + (on ? ' rk-wipe-on' : ''),
+                onClick: function () { props.onToggle(step.field); }
+              },
+                h('span', { class: 'rk-wipe-check' }, on ? '☑' : '☐'),
+                h('span', {}, step.label)
+              );
+            })
+          ),
+          (!anyDone)
+            ? h('div', { class: 'rk-wipe-warn' }, t('wipe.warn'))
+            : null
+        )
+      ]
+    });
+  }
+
+  /* ===================== MEDIA CONSENT SHEET (PROJ-27) ===================== */
+  function MediaConsentSheet(props) {
+    var sheet = h('div', { class: 'rk-sheet' },
+      h('div', { class: 'rk-sheet-grip' }),
+      h('div', { class: 'rk-sheet-title' }, t('media.consent.titel')),
+      h('div', { class: 'rk-sheet-body' },
+        h('div', { class: 'rk-media-consent' },
+          h('p', { class: 'rk-sheet-note' }, t('media.consent.body')),
+          h('div', { class: 'rk-consent-btns' },
+            h('button', { class: 'rk-consent-yes', onClick: props.onAccept }, t('media.consent.ok')),
+            h('button', { class: 'rk-consent-no', onClick: props.onDecline }, t('media.consent.nein'))
+          )
+        )
+      )
+    );
+    sheet.addEventListener('click', function (e) { e.stopPropagation(); });
+    var scrim = h('div', { class: 'rk-sheet-scrim' }, sheet);
+    return scrim;
+  }
+
+  /* ===================== MEDIA PANEL (PROJ-27, eingebettet in StartScreen) ===================== */
+  function MediaPanel(props) {
+    var medienConsent = props.medienConsent;
+    var medien = props.medien || [];
+    var lang = props.lang || 'de';
+
+    // Barcode-Detect-Support
+    var hasBarcodeDetector = typeof window.BarcodeDetector !== 'undefined';
+    // Speech-Support
+    var hasSpeech = typeof window.webkitSpeechRecognition !== 'undefined' || typeof window.SpeechRecognition !== 'undefined';
+    // Camera-Support
+    var hasCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+    function capturePhoto() {
+      if (!medienConsent) { props.setMediaConsentOpen(true); return; }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.onchange = function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        props.uploadMedium(file, 'foto', null);
+      };
+      input.click();
+    }
+
+    function captureVoice() {
+      if (!medienConsent) { props.setMediaConsentOpen(true); return; }
+      var SpeechRec = window.webkitSpeechRecognition || window.SpeechRecognition;
+      if (!SpeechRec) {
+        toast(t('media.unavail'));
+        return;
+      }
+      var rec = new SpeechRec();
+      rec.lang = lang === 'en' ? 'en-US' : 'de-DE';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+
+      // Live-Indikator
+      var indicator = document.getElementById('rk-voice-indicator');
+      if (indicator) indicator.style.display = 'block';
+
+      rec.onresult = function (e) {
+        var transcript = e.results[0][0].transcript;
+        if (indicator) indicator.style.display = 'none';
+        // Erkannten Text zur Korrektur anzeigen
+        var corrEl = document.getElementById('rk-voice-correct-el');
+        if (corrEl) {
+          corrEl.style.display = 'block';
+          corrEl.querySelector('.rk-voice-correct-text') && (corrEl.querySelector('.rk-voice-correct-text').textContent = transcript);
+        }
+        // Text in das Diagnose-Feld einfügen
+        if (props.onVoiceResult) props.onVoiceResult(transcript);
+      };
+      rec.onerror = function () {
+        if (indicator) indicator.style.display = 'none';
+        toast(t('media.unavail'));
+      };
+      rec.onend = function () {
+        if (indicator) indicator.style.display = 'none';
+      };
+      rec.start();
+    }
+
+    function scanBarcode() {
+      if (!medienConsent) { props.setMediaConsentOpen(true); return; }
+      if (!hasBarcodeDetector) {
+        toast(t('media.unavail'));
+        return;
+      }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          var detector = new window.BarcodeDetector();
+          detector.detect(img).then(function (barcodes) {
+            URL.revokeObjectURL(url);
+            if (barcodes && barcodes.length > 0) {
+              var val = barcodes[0].rawValue;
+              if (props.onBarcodeResult) props.onBarcodeResult(val);
+              toast(t('media.scanResult') + ' ' + val);
+            } else {
+              toast(t('media.unavail'));
+            }
+          }).catch(function () {
+            URL.revokeObjectURL(url);
+            toast(t('media.unavail'));
+          });
+        };
+        img.src = url;
+      };
+      input.click();
+    }
+
+    var btns = [
+      h('button', {
+        class: 'rk-cap-btn rk-cap-photo' + (!hasCamera && !medienConsent ? ' rk-cap-unavail' : ''),
+        onClick: capturePhoto,
+        title: t('media.foto'),
+      }, '📷'),
+      h('button', {
+        class: 'rk-cap-btn rk-cap-voice' + (!hasSpeech ? ' rk-cap-unavail' : ''),
+        onClick: captureVoice,
+        title: t('media.sprache'),
+      }, '🎙️'),
+      h('button', {
+        class: 'rk-cap-btn rk-cap-scan' + (!hasBarcodeDetector ? ' rk-cap-unavail' : ''),
+        onClick: scanBarcode,
+        title: t('media.barcode'),
+      }, '🔖'),
+    ];
+
+    var voiceIndicator = h('div', {
+      id: 'rk-voice-indicator', class: 'rk-voice-live',
+      style: { display: 'none' }
+    }, t('media.voiceLive'));
+
+    var voiceCorrect = h('div', {
+      id: 'rk-voice-correct-el', class: 'rk-voice-correct',
+      style: { display: 'none' }
+    },
+      h('span', {}, t('media.voiceCorrect')),
+      h('span', { class: 'rk-voice-correct-text' }, '')
+    );
+
+    var scanResult = h('div', { class: 'rk-scan-result', style: { display: 'none' } }, '');
+    var qualityWarn = h('div', { class: 'rk-quality-warn', style: { display: 'none' } }, t('media.qualityWarn'));
+
+    var toTextBtn = h('button', {
+      class: 'rk-to-text rk-ghost',
+      onClick: function () { if (props.onToText) props.onToText(); },
+    }, t('media.toText'));
+
+    // Medien-Vorschau
+    var grid = medien.length
+      ? h('div', { class: 'rk-media-grid' },
+        medien.map(function (m) {
+          return h('div', { class: 'rk-media-item' },
+            m.art === 'foto' || m.art === 'video'
+              ? h('div', { class: 'rk-media-thumb' },
+                h('span', { class: 'rk-media-art' }, m.art === 'foto' ? '📷' : '🎬'))
+              : h('div', { class: 'rk-media-thumb' }, h('span', { class: 'rk-media-art' }, '🎙️')),
+            h('button', { class: 'rk-media-remove', onClick: function () { if (props.removeMedium) props.removeMedium(m.id); } }, '✕')
+          );
+        })
+      )
+      : null;
+
+    return h('div', { class: 'rk-media' },
+      h('div', { class: 'rk-media' }, btns),
+      voiceIndicator,
+      voiceCorrect,
+      scanResult,
+      qualityWarn,
+      grid,
+      toTextBtn
+    );
+  }
+
+  /* ===================== MEHRFACHDEFEKTE GESAMT-FAZIT BLOCK (PROJ-21) ===================== */
+  function GesamtFazitBlock(props) {
+    var defekte = props.defekte || [];
+    var gesamtFazit = props.gesamtFazit;
+    if (!defekte.length) return null;
+
+    // Einzelampeln (immer sichtbar bei >=2)
+    var ampelListe = defekte.length >= 2
+      ? h('div', { class: 'rk-defekt-list' }, defekte.map(function (d, i) {
+        var lights = d.lights || [];
+        return h('div', { class: 'rk-defekt-rank', 'data-rank': i + 1 },
+          h('div', { class: 'rk-diag-cause' }, d.name || d.id),
+          h('div', { class: 'rk-ampelcard' }, lights.map(function (l) {
+            return LightRow({ light: l, onInfo: function () {} });
+          }))
+        );
+      }))
+      : null;
+
+    // Gesamt-Fazit (nur bei >=2)
+    var fazitBlock = (defekte.length >= 2 && gesamtFazit)
+      ? h('div', { class: 'rk-fazit' },
+        h('div', { class: 'rk-fazit-head' }, t('fazit.titel')),
+        h('div', { class: 'rk-fazit-reco' }, gesamtFazit.recommend || ''),
+        gesamtFazit.knackpunktId
+          ? h('div', { class: 'rk-fazit-knack' },
+            h('b', {}, t('fazit.knackpunkt')), ' ', gesamtFazit.knackpunktId)
+          : null,
+        gesamtFazit.begruendung
+          ? h('div', { class: 'rk-fazit-why' },
+            h('b', {}, t('fazit.begruendung')), ' ', gesamtFazit.begruendung)
+          : null
+      )
+      : null;
+
+    return h('div', {}, ampelListe, fazitBlock);
+  }
+
+  /* ===================== EXPORT — WINDOW-ASSIGNMENT (alle Screens) ===================== */
   Object.assign(window, {
     StartScreen: StartScreen, OwnershipScreen: OwnershipScreen, TriageScreen: TriageScreen,
     AmpelScreen: AmpelScreen, UnclearScreen: UnclearScreen, DecisionScreen: DecisionScreen,
@@ -1190,5 +1794,10 @@
     UnivTriageScreen: UnivTriageScreen, VermittlungScreen: VermittlungScreen,
     EntsorgungScreen: EntsorgungScreen, ProduktsucheScreen: ProduktsucheScreen,
     BeschaffungScreen: BeschaffungScreen,
+    // Stufe-3
+    RecallScreen: RecallScreen, DiagScreen: DiagScreen, WipeScreen: WipeScreen,
+    MediaConsentSheet: MediaConsentSheet, MediaPanel: MediaPanel,
+    GesamtFazitBlock: GesamtFazitBlock, SteerBar: SteerBar,
+    ConsentGateOverlay: ConsentGateOverlay, ConsentStatus: ConsentStatus,
   });
 })();
