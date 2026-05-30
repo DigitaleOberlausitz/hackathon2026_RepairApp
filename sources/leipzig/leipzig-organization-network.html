@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ressourcenschonung Leipzig – Akteursnetzwerk</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#090e14;--surface:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  --text:#e8edf2;--muted:#8a96a3;
+  --initiative:#4ade80;--behoerde:#60a5fa;--unternehmen:#f59e0b;--wissenschaft:#f472b6;--netzwerk:#a78bfa;
+  --accent:#a78bfa;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;height:100vh;width:100vw;}
+#canvas-container{position:absolute;inset:0;cursor:grab;}
+#canvas-container:active{cursor:grabbing;}
+canvas{display:block;}
+
+/* TOP BAR */
+#topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(to bottom,rgba(9,14,20,0.95),transparent);z-index:10;pointer-events:none;}
+#topbar h1{font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;}
+#topbar span{font-size:19px;font-weight:600;color:var(--text);letter-spacing:-.02em;display:block;}
+#add-btn{position:absolute;top:16px;right:24px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:7px;padding:9px 16px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:#c4b5fd;z-index:11;transition:all .15s;pointer-events:all;}
+#add-btn:hover{background:rgba(167,139,250,0.25);}
+
+/* FILTERS */
+#filters{position:absolute;top:72px;left:24px;display:flex;flex-direction:column;gap:6px;z-index:10;}
+.filter-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:2px;}
+.filter-btn{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);transition:all .15s;width:215px;}
+.filter-btn:hover{background:rgba(255,255,255,0.07);}
+.filter-btn.inactive{opacity:.3;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cnt{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+#strength-filter{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px;width:215px;}
+#strength-filter label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;display:block;margin-bottom:7px;}
+#str-slider{width:100%;accent-color:var(--accent);cursor:pointer;}
+#str-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right;margin-top:4px;}
+
+#reset-btn{position:absolute;top:72px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);z-index:10;transition:all .15s;display:none;}
+#reset-btn:hover{color:var(--text);}
+
+/* INFO PANEL */
+#info-panel{position:absolute;right:24px;top:50%;transform:translateY(-50%);width:295px;background:rgba(9,14,20,0.93);border:1px solid var(--border);border-radius:12px;padding:20px;z-index:10;backdrop-filter:blur(12px);display:none;animation:slideIn .2s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-50%) translateX(10px);}to{opacity:1;transform:translateY(-50%) translateX(0);}}
+#ip-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
+#ip-dot{width:12px;height:12px;border-radius:50%;margin-top:3px;flex-shrink:0;}
+#ip-name{font-size:15px;font-weight:600;line-height:1.3;}
+#ip-type{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+#ip-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+#ip-url{display:block;font-size:11px;color:#60a5fa;font-family:'DM Mono',monospace;margin-bottom:12px;word-break:break-all;text-decoration:none;}
+#ip-url:hover{text-decoration:underline;}
+#ip-tags{margin-bottom:14px;}
+.tag{display:inline-block;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--muted);margin:2px;}
+.sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;}
+.ci{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
+.ci:last-child{border-bottom:none;}
+.ci-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ci-bars{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+
+/* TOOLTIP */
+#tooltip{position:absolute;background:rgba(9,14,20,0.95);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;z-index:20;display:none;max-width:250px;backdrop-filter:blur(8px);}
+#tt-t{font-weight:600;margin-bottom:5px;}
+#tt-a{color:var(--muted);font-size:11px;line-height:1.6;}
+
+/* LEGEND */
+#legend{position:absolute;bottom:24px;left:24px;display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;z-index:10;}
+.leg{display:flex;align-items:center;gap:6px;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+#hint{position:absolute;bottom:24px;right:24px;font-size:10px;color:rgba(138,150,163,.4);font-family:'DM Mono',monospace;text-align:right;z-index:10;line-height:1.8;}
+
+/* MODAL */
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#modal-bg.open{display:flex;}
+#modal{background:#0f1620;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:28px;width:480px;max-width:96vw;max-height:90vh;overflow-y:auto;}
+#modal h2{font-size:18px;font-weight:600;margin-bottom:4px;}
+#modal p.sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:6px;}
+.form-row input,.form-row textarea,.form-row select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical;}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{border-color:rgba(167,139,250,.5);}
+.form-row textarea{min-height:75px;}
+.form-row select option{background:#0f1620;}
+.form-row input[type="range"]{padding:0;height:20px;}
+.strength-row{display:flex;align-items:center;gap:12px;}
+.strength-row input{flex:1;}
+#str-display{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);min-width:20px;}
+.form-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+.btn-cancel{background:transparent;border:1px solid var(--border);border-radius:7px;padding:9px 18px;cursor:pointer;font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn-cancel:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+.btn-submit{background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.5);border-radius:7px;padding:9px 20px;cursor:pointer;font-size:13px;color:#c4b5fd;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s;}
+.btn-submit:hover{background:rgba(167,139,250,.3);}
+.conn-select{display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:8px;}
+.conn-opt{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:3px 0;}
+.conn-opt input{width:auto;background:none;border:none;padding:0;cursor:pointer;}
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);border-radius:8px;padding:12px 20px;color:#4ade80;font-size:13px;font-family:'DM Mono',monospace;z-index:200;display:none;animation:fadeUp .3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+
+<div id="topbar">
+  <div>
+    <h1>Stadtnetzwerk Leipzig</h1>
+    <span>Ressourcenschonung</span>
+  </div>
+</div>
+<button id="add-btn" onclick="openModal()">＋ Akteur eintragen</button>
+
+<div id="filters">
+  <div class="filter-label">Akteurstypen</div>
+  <button class="filter-btn" data-type="initiative" onclick="toggleF('initiative')"><div class="dot" style="background:#4ade80"></div>Initiativen & NGOs<span class="cnt" id="cnt-initiative">0</span></button>
+  <button class="filter-btn" data-type="behoerde"  onclick="toggleF('behoerde')"><div class="dot"  style="background:#60a5fa"></div>Behörden & Politik<span class="cnt" id="cnt-behoerde">0</span></button>
+  <button class="filter-btn" data-type="unternehmen" onclick="toggleF('unternehmen')"><div class="dot" style="background:#f59e0b"></div>Unternehmen<span class="cnt" id="cnt-unternehmen">0</span></button>
+  <button class="filter-btn" data-type="wissenschaft" onclick="toggleF('wissenschaft')"><div class="dot" style="background:#f472b6"></div>Wissenschaft<span class="cnt" id="cnt-wissenschaft">0</span></button>
+  <button class="filter-btn" data-type="netzwerk" onclick="toggleF('netzwerk')"><div class="dot" style="background:#a78bfa"></div>Netzwerke & Bündnisse<span class="cnt" id="cnt-netzwerk">0</span></button>
+  <div id="strength-filter">
+    <label>Mindest-Verbindungsstärke</label>
+    <input type="range" id="str-slider" min="1" max="5" value="1" step="1" oninput="setStr(this.value)">
+    <div id="str-val">ab Stärke 1</div>
+  </div>
+</div>
+
+<button id="reset-btn" onclick="resetFocus()">↩ Übersicht</button>
+
+<div id="info-panel">
+  <div id="ip-header"><div id="ip-dot"></div><div id="ip-name"></div></div>
+  <div id="ip-type"></div>
+  <div id="ip-desc"></div>
+  <a id="ip-url" href="#" target="_blank"></a>
+  <div id="ip-tags"></div>
+  <div class="sec">Verbindungen</div>
+  <div id="ip-conns"></div>
+</div>
+
+<div id="tooltip"><div id="tt-t"></div><div id="tt-a"></div></div>
+
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:#4ade80"></div>Initiativen/NGOs</div>
+  <div class="leg"><div class="leg-dot" style="background:#60a5fa"></div>Behörden</div>
+  <div class="leg"><div class="leg-dot" style="background:#f59e0b"></div>Unternehmen</div>
+  <div class="leg"><div class="leg-dot" style="background:#f472b6"></div>Wissenschaft</div>
+  <div class="leg"><div class="leg-dot" style="background:#a78bfa"></div>Netzwerke</div>
+</div>
+<div id="hint">Linksklick+Ziehen — drehen<br>Scrollrad — Zoom<br>Klick auf Akteur — Fokus<br>Rechtsklick+Ziehen — verschieben</div>
+
+<!-- MODAL -->
+<div id="modal-bg">
+  <div id="modal">
+    <h2>Akteur eintragen</h2>
+    <p class="sub">Trage deine Organisation ins Netzwerk ein. Die Daten sind lokal gespeichert.</p>
+    <div class="form-row">
+      <label>Name der Organisation *</label>
+      <input id="f-name" type="text" placeholder="z.B. Repair Café Connewitz">
+    </div>
+    <div class="form-row">
+      <label>Akteurstyp *</label>
+      <select id="f-type">
+        <option value="initiative">Initiative / Verein / NGO</option>
+        <option value="behoerde">Stadtbehörde / Kommunalpolitik</option>
+        <option value="unternehmen">Unternehmen / Startup</option>
+        <option value="wissenschaft">Wissenschaft / Hochschule</option>
+        <option value="netzwerk">Netzwerk / Bündnis</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Kurzbeschreibung</label>
+      <textarea id="f-desc" placeholder="Was macht eure Organisation? Welchen Beitrag zur Ressourcenschonung?"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Website</label>
+      <input id="f-url" type="url" placeholder="https://...">
+    </div>
+    <div class="form-row">
+      <label>Schwerpunkt-Tags (kommasepariert)</label>
+      <input id="f-tags" type="text" placeholder="z.B. Repair, Upcycling, Bildung">
+    </div>
+    <div class="form-row">
+      <label>Verbindungen zu bestehenden Akteuren</label>
+      <div class="conn-select" id="conn-list"></div>
+    </div>
+    <div class="form-row" id="str-form-row" style="display:none">
+      <label>Verbindungsstärke: <span id="str-display">3</span></label>
+      <div class="strength-row">
+        <span style="font-size:11px;color:var(--muted)">schwach</span>
+        <input type="range" id="f-strength" min="1" max="5" value="3" oninput="document.getElementById('str-display').textContent=this.value">
+        <span style="font-size:11px;color:var(--muted)">stark</span>
+      </div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-submit" onclick="submitActor()">Eintragen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Akteur eingetragen!</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// REAL RESEARCH-BASED DATA
+// ═══════════════════════════════════════════════════════════════
+const ACTORS = [
+  // ── INITIATIVEN / NGOs ──────────────────────────────────────
+  { id:0,  name:"Café Kaputt",                    type:"initiative",   url:"https://www.cafekaputt.de",                      desc:"Repair Café mit ehrenamtlichen Reparateur:innen – schont Ressourcen durch Verlängerung der Lebensdauer von Alltagsgegenständen. Gewinner Leipziger Zukunftspreis.",            tags:["Repair","Ehrenamt"],             x:-3.0,y:0.6,z:0.3  },
+  { id:1,  name:"Verschenkekiste e.V.",            type:"initiative",   url:"https://verschenkekiste.de",                     desc:"Verschenkeladen: Weitergabe von Gebrauchsgütern statt Entsorgung. Niedrigschwelliges Angebot für Ressourcenschonung im Alltag.",                                                tags:["Sharing","Weitergabe"],          x:-2.5,y:-0.8,z:-0.5 },
+  { id:2,  name:"Foodsharing Leipzig",             type:"initiative",   url:"https://foodsharing.de",                         desc:"Rettung von Lebensmitteln bei Betrieben und Privatpersonen – verhindert Nahrungsmittelverschwendung.",                                                                          tags:["Lebensmittel","Anti-Waste"],     x:-3.5,y:0.2,z:-1.0  },
+  { id:3,  name:"BUND Leipzig / AK Ressourcen",   type:"initiative",   url:"https://www.bund-leipzig.de",                    desc:"Ehrenamtlicher Arbeitskreis Ressourcen & Recycling des BUND Leipzig. Umweltbildung, Abfallvermeidung, Stellungnahmen.",                                                         tags:["Naturschutz","Lobbying"],        x:-2.2,y:1.6,z:0.9  },
+  { id:4,  name:"Ökolöwe – Umweltbund Leipzig",   type:"initiative",   url:"https://www.oekoloewe.de",                       desc:"Umwelt- und Naturschutzverein für Stadtgrün, Mobilität, Ressourceneffizienz und politische Interessenvertretung.",                                                               tags:["Stadtgrün","Policy","Mobilität"],x:-1.5,y:2.2,z:-0.3  },
+  { id:5,  name:"LeipzigZero",                    type:"initiative",   url:"https://www.leipzigzero.de",                     desc:"Zivilgesellschaftliche Initiative für Klimaneutralität Leipzigs bis 2035. Vernetzt Zivilgesellschaft, Wirtschaft und Politik.",                                                  tags:["Klima","Energie","Advocacy"],   x:0.2,y:1.9,z:0.7   },
+  { id:6,  name:"kunZstoffe",                     type:"initiative",   url:"https://kunzstoffe.de",                          desc:"Materialupcycling-Initiative: sammelt Restmaterialien und gibt sie weiter. Betreibt krimZkrams-Laden. Mitglied im Bündnis Abfallvermeidung.",                                  tags:["Upcycling","Material"],          x:-3.8,y:-0.3,z:0.8  },
+  { id:7,  name:"Trash Galore",                   type:"initiative",   url:"https://www.trashgalore.de",                     desc:"Materialbörse: holt Restmaterialien bei Unternehmen ab und vermittelt sie an Initiativen weiter. Schließt Materialkreisläufe.",                                                 tags:["Material","Kreislauf"],          x:-4.2,y:0.5,z:-0.8  },
+  { id:8,  name:"materialbuffet",                 type:"initiative",   url:"https://materialbuffet.de",                      desc:"2nd-Hand-Baumarkt in Leipzig – Wiederverwendung von Baumaterialien, Werkzeug und Einrichtungsgegenständen.",                                                                   tags:["Baumaterial","2ndHand"],        x:-4.5,y:-1.0,z:0.2  },
+  { id:9,  name:"CleanUp Leipzig",                type:"initiative",   url:"https://www.cleanupleipzig.de",                  desc:"Organisiert Müllsammelaktionen und Cleanups in der ganzen Stadt, sensibilisiert für Abfallvermeidung.",                                                                         tags:["Cleanup","Öffentlichkeit"],     x:-3.0,y:1.5,z:-1.5  },
+  { id:10, name:"Die Quernetzer",                 type:"netzwerk",     url:"https://die-quernetzer.de",                      desc:"Vernetzungsexperten: bringen Fachleute aus sozialem und Umweltbereich zusammen. Koordination des Bündnisses Abfallvermeidung.",                                                 tags:["Vernetzung","Koordination"],    x:-1.8,y:-1.5,z:1.0  },
+  { id:11, name:"Restlos (Mütterzentrum)",        type:"initiative",   url:"https://www.muetterzentrum-leipzig.de",          desc:"Kreatives Upcycling-Projekt des Mütterzentrums Leipzig – kreative Verarbeitung von Restmaterialien. Gewinner Leipziger Zukunftspreis.",                                         tags:["Upcycling","Kreativ"],           x:-2.8,y:-1.8,z:-0.5 },
+  { id:12, name:"Lieber Lose",                    type:"unternehmen",  url:"https://www.lieberlose.de",                      desc:"Unverpacktladen im Leipziger Westen – Vollsortiment ohne Verpackungsmüll, sensibilisiert für Ressourcenschonung im Konsum.",                                                   tags:["Unverpackt","Konsum"],          x:-1.0,y:-2.0,z:-1.0 },
+  { id:13, name:"Gemeinwohl-Ökonomie Mitteld.",   type:"netzwerk",     url:"https://www.ecogood.org",                        desc:"Regionalnetz GWÖ Mitteldeutschland – fördert Unternehmen bei Gemeinwohlbilanz und nachhaltigem Wirtschaften.",                                                                  tags:["GWÖ","Wirtschaft","Gemeinwohl"],x:0.5,y:-1.8,z:1.2   },
+
+  // ── BEHÖRDEN / POLITIK ───────────────────────────────────────
+  { id:14, name:"Umweltamt Leipzig",              type:"behoerde",     url:"https://www.leipzig.de/umwelt-und-verkehr/umwelt-und-naturschutz",desc:"Städtische Behörde für Umweltschutz, Stadtklima, Abfallwirtschaft und Zero-Waste-Strategie der Stadt Leipzig.",                                                 tags:["Verwaltung","Abfall","Klima"],  x:1.8,y:0.6,z:0.0   },
+  { id:15, name:"Referat Nachhaltige Entwicklung",type:"behoerde",     url:"https://www.leipzig.de/rathaus/verwaltung/dezernate-aemter-behoerden/referat-nachhaltige-entwicklung-und-klimaschutz",desc:"Koordiniert den Nachhaltigkeitsprozess der Stadt, trägt das Forum Nachhaltiges Leipzig und die Zero-Waste-Strategie.",tags:["Nachhaltigkeit","Koordination"],x:2.5,y:1.5,z:-0.5  },
+  { id:16, name:"Wirtschaftsförderung Leipzig",   type:"behoerde",     url:"https://www.leipzig.de/wirtschaft",              desc:"Fördert nachhaltiges Wirtschaften, Kreislaufwirtschaft-Startups und den Smart Infrastructure Hub.",                                                                                tags:["Förderung","Innovation"],       x:3.2,y:0.3,z:0.5   },
+  { id:17, name:"Amt für Stadtgrün",              type:"behoerde",     url:"https://www.leipzig.de/umwelt-und-verkehr/stadtgruen-und-naturschutz",desc:"Verantwortlich für Grünflächen, Baumschutz, urbane Landwirtschaft und Stadtklima-Infrastruktur.",                                                       tags:["Grünflächen","Urban Farming"],  x:2.0,y:2.2,z:-1.0  },
+  { id:18, name:"Stadtreinigung Leipzig",         type:"behoerde",     url:"https://stadtreinigung-leipzig.de",              desc:"Kommunales Unternehmen für Abfallwirtschaft, Zero-Waste-Strategie und Konzeptladen 2. Liebe. Kooperationspartner im Bündnis Abfallvermeidung.",                                 tags:["Abfall","Infrastruktur"],       x:1.5,y:-0.8,z:-0.5  },
+  { id:19, name:"Stadtratsfraktion Grüne",        type:"behoerde",     url:"https://gruene-fraktion-leipzig.de",             desc:"Politische Fraktion mit Schwerpunkten Klimaschutz, Verkehr und Umweltpolitik im Stadtrat Leipzig.",                                                                              tags:["Politik","Klima"],              x:3.0,y:1.8,z:0.8   },
+
+  // ── UNTERNEHMEN ─────────────────────────────────────────────
+  { id:20, name:"Stadtwerke Leipzig",             type:"unternehmen",  url:"https://www.swl.de",                             desc:"Stadtwerke Leipzig – Energie, Wärme und Wasser. Wachsender Anteil erneuerbarer Energien, Klimaschutzprojekte.",                                                                  tags:["Energie","Infrastruktur"],      x:3.5,y:-0.8,z:0.3  },
+  { id:21, name:"SpinLab (HHL)",                  type:"unternehmen",  url:"https://www.spinlab.co",                         desc:"Accelerator und Innovationslab der HHL – fördert Startups u.a. im Bereich Nachhaltigkeit, Smart Infrastructure und Kreislaufwirtschaft.",                                       tags:["Startup","Innovation"],         x:2.8,y:-1.8,z:-0.8  },
+  { id:22, name:"inab – Solidar. Recyclingstation",type:"unternehmen", url:"https://www.inab-jugend.de/leipzig",             desc:"Annahmestelle für Baumaterialien, Holz, Möbel – Aufbereitung und kostenlose Weitergabe. Verbindet Kreislaufwirtschaft mit sozialer Inklusion.",                               tags:["Recycling","Sozial","Material"],x:1.8,y:-2.5,z:0.0   },
+  { id:23, name:"Aufbauwerk Region Leipzig",      type:"unternehmen",  url:"https://aufbauwerk-leipzig.com",                 desc:"Regionaler Entwicklungsakteur mit Projekten zu Klimaschutz, Kreislaufwirtschaft (Wiederschön, WEEEWASTE) und Smart City.",                                                       tags:["Entwicklung","SmartCity"],      x:2.2,y:-1.2,z:1.5  },
+
+  // ── WISSENSCHAFT ────────────────────────────────────────────
+  { id:24, name:"HHL Leipzig Graduate School",    type:"wissenschaft", url:"https://www.hhl.de",                             desc:"Wirtschaftshochschule – Initiator des GemeinwohlAtlas Leipzig, des Runden Tisches Gemeinwohl und des Gemeinwohlparlaments. Forschung zu Public Value.",                          tags:["Gemeinwohl","Forschung"],       x:1.2,y:2.8,z:1.0   },
+  { id:25, name:"Universität Leipzig (Green Off.)",type:"wissenschaft",url:"https://www.uni-leipzig.de/universitaet/profil/nachhaltigkeit-und-umweltschutz",desc:"Studentisch geführtes Green Office, Nachhaltigkeitsstrategie 2024–2030, Fairtrade-University. Verknüpft Forschung und Nachhaltigkeitspraxis.",tags:["Bildung","Nachhaltigkeit"],    x:0.8,y:3.2,z:-0.5  },
+
+  // ── NETZWERKE / BÜNDNISSE ────────────────────────────────────
+  { id:26, name:"Bündnis Abfallvermeidung",        type:"netzwerk",    url:"https://buendnis-abfallvermeidung.de",           desc:"Aktives Netzwerk von Vereinen und Initiativen zur Abfallvermeidung, Kreislaufwirtschaft und Mehrweglösungen. Eingebunden in die Zero-Waste-Strategie der Stadt.",                 tags:["Vernetzung","Abfall","Mehrweg"],x:-1.0,y:0.5,z:2.0   },
+  { id:27, name:"Forum Nachhaltiges Leipzig",      type:"netzwerk",    url:"https://nachhaltiges-leipzig.de",                desc:"Offene Bewegung für nachhaltige Stadtentwicklung, getragen von der Stadt Leipzig. Verleiht Zukunftspreis, koordiniert Akteursnetzwerk.",                                          tags:["Vernetzung","Nachhaltigkeit"],  x:0.0,y:1.0,z:1.5   },
+  { id:28, name:"Runder Tisch Gemeinwohl",         type:"netzwerk",    url:"https://www.forumgemeinwohl.org/runder-tisch-leipzig",desc:"45+ Institutionen aus Wirtschaft, Politik, Wissenschaft und Zivilgesellschaft. Seit 2022 – hat das Gemeinwohlparlament initiiert.",                                    tags:["Gemeinwohl","Dialog","50+Inst."],x:1.0,y:0.0,z:2.5  },
+  { id:29, name:"IHK zu Leipzig",                 type:"netzwerk",    url:"https://www.leipzig.ihk.de",                     desc:"Koordiniert Kreislaufwirtschaft-Strategien für Unternehmen, Mehrwegberatung für Gastronomiebetriebe und Vernetzung mit der Stadtstrategie Zero Waste.",                        tags:["Wirtschaft","Kreislauf","KMU"], x:2.5,y:-0.3,z:2.0  },
+];
+
+const CONNECTIONS = [
+  {a:26,b:0, strength:5,acts:["Mitglied im Bündnis","Gemeinsame Öffentlichkeit","Events"]},
+  {a:26,b:1, strength:5,acts:["Mitglied im Bündnis","Verschenken als Ressourcenschutz"]},
+  {a:26,b:2, strength:4,acts:["Mitglied im Bündnis","Lebensmittelrettung koordiniert"]},
+  {a:26,b:3, strength:5,acts:["BUND AK Ressourcen ist Gründungsmitglied","Kernteam Bündnis"]},
+  {a:26,b:6, strength:5,acts:["Mitglied im Bündnis","Materialinitiativen-Kern"]},
+  {a:26,b:7, strength:4,acts:["Mitglied im Bündnis","Materiallogistik"]},
+  {a:26,b:9, strength:4,acts:["Mitglied im Bündnis","Sauberkeit als Grundlage"]},
+  {a:26,b:10,strength:5,acts:["Die Quernetzer koordinieren das Bündnis","Vernetzungsarbeit"]},
+  {a:26,b:11,strength:4,acts:["Mitglied im Bündnis","Upcycling-Workshops"]},
+  {a:26,b:14,strength:4,acts:["Kooperationspartner Stadt","Zero-Waste-Strategie eingebunden"]},
+  {a:26,b:18,strength:4,acts:["Stadtreinigung als Kooperationspartner","Infrastruktur"]},
+  {a:27,b:26,strength:4,acts:["Bündnis als Teil des Nachhaltigkeitsnetzwerks","Förderung"]},
+  {a:27,b:5, strength:4,acts:["LeipzigZero im Forum vernetzt","Klimaneutralitätsziele"]},
+  {a:27,b:4, strength:4,acts:["Ökolöwe aktiver Partner","Stadtentwicklung"]},
+  {a:27,b:15,strength:5,acts:["Stadt Leipzig trägt das Forum","Referat Koordination","Zukunftspreis"]},
+  {a:27,b:14,strength:4,acts:["Umweltamt Kooperationspartner","Themenabstimmung"]},
+  {a:28,b:24,strength:5,acts:["HHL hat RTG initiiert","GemeinwohlAtlas","Wissenschaftliche Begleitung"]},
+  {a:28,b:19,strength:4,acts:["Stadtratsfraktion als Mitglied","Politische Verbindung"]},
+  {a:28,b:20,strength:3,acts:["Stadtwerke am Runden Tisch","Gemeinwohlorientierung"]},
+  {a:28,b:29,strength:3,acts:["IHK beteiligt am Runden Tisch","Wirtschaftsperspektive"]},
+  {a:28,b:15,strength:4,acts:["Referat NE als städtischer Partner","Gemeinwohlparlament"]},
+  {a:3, b:4, strength:5,acts:["Jahrestreffen","Gemeinsame Kampagnen","Positionspapiere","Mitgliederwerbung"]},
+  {a:3, b:14,strength:3,acts:["Naturschutzgutachten","Stakeholder-Dialoge"]},
+  {a:4, b:17,strength:4,acts:["Stadtgarten-Kooperationen","Baumschutz","Grünachsenprogramm"]},
+  {a:4, b:19,strength:3,acts:["Politikberatung Stadtrat","Anträge Umweltausschuss"]},
+  {a:5, b:14,strength:4,acts:["Klimaneutralitätsstrategie","Daten","Dialoge"]},
+  {a:5, b:19,strength:5,acts:["Fraktionsarbeit","Anträge","Veranstaltungen","Aktionspläne"]},
+  {a:14,b:16,strength:3,acts:["Förderprogramme Kreislaufwirtschaft","Netzwerktreffen"]},
+  {a:14,b:18,strength:4,acts:["Zero-Waste-Strategie gemeinsam","Infrastruktur Abfall"]},
+  {a:14,b:15,strength:5,acts:["Gleiche Dezernatslinie","Klimaschutzprogramm","Jahresplanung"]},
+  {a:16,b:21,strength:4,acts:["SpinLab-Förderung","Smart-Infrastructure-Hub","Gründungsunterstützung"]},
+  {a:16,b:23,strength:3,acts:["Projektförderung Aufbauwerk","Stadtentwicklung"]},
+  {a:16,b:29,strength:4,acts:["Wirtschaftsstrategie","Kreislaufwirtschaft KMU-Beratung"]},
+  {a:24,b:25,strength:3,acts:["Hochschulkooperation","Fairtrade-Aktivitäten","Forschungsaustausch"]},
+  {a:24,b:21,strength:5,acts:["SpinLab ist Teil der HHL","Startup-Ecosystem"]},
+  {a:21,b:23,strength:2,acts:["Innovationsaustausch","Startup-Netzwerk"]},
+  {a:20,b:29,strength:3,acts:["Energieeffizienz KMU","IHK-Netzwerk"]},
+  {a:22,b:6, strength:3,acts:["Beide im Materialkreislauf","Upcycling-Kooperation"]},
+  {a:22,b:8, strength:3,acts:["Baumaterial-Weitergabe","Kreislaufmodelle"]},
+  {a:7, b:6, strength:4,acts:["Materiallogistik gemeinsam","Abholung und Weitergabe"]},
+  {a:8, b:22,strength:3,acts:["2nd-Hand-Baumaterialien gemeinsam","Synergien"]},
+  {a:13,b:27,strength:3,acts:["GWÖ im Forum Nachhaltigkeit","Unternehmensperspektive"]},
+  {a:13,b:29,strength:3,acts:["Gemeinwohlbilanz und IHK","Wirtschaftsnetz"]},
+  {a:10,b:27,strength:3,acts:["Quernetzer im Nachhaltigkeitsnetzwerk","Events"]},
+  {a:11,b:26,strength:4,acts:["Restlos als Mitglied","Upcycling-Angebote im Bündnis"]},
+  {a:0, b:1, strength:3,acts:["Repair und Weitergabe ergänzen sich","Gemeinsame Events"]},
+  {a:18,b:23,strength:3,acts:["Wiederschön-Laden Kooperation","Kreislaufwirtschaft Praxis"]},
+];
+
+// ─── CONFIG ──────────────────────────────────────────────────
+const C3 = {initiative:0x4ade80,behoerde:0x60a5fa,unternehmen:0xf59e0b,wissenschaft:0xf472b6,netzwerk:0xa78bfa};
+const CSS= {initiative:"#4ade80",behoerde:"#60a5fa",unternehmen:"#f59e0b",wissenschaft:"#f472b6",netzwerk:"#a78bfa"};
+const LBL= {initiative:"Initiative / NGO",behoerde:"Behörde / Politik",unternehmen:"Unternehmen",wissenschaft:"Wissenschaft",netzwerk:"Netzwerk / Bündnis"};
+
+// ─── STATE ───────────────────────────────────────────────────
+let AF={initiative:true,behoerde:true,unternehmen:true,wissenschaft:true,netzwerk:true};
+let minStr=1, focused=null;
+let scene,camera,renderer,raycaster,mouse;
+let nodes=[],edges=[];
+let isDrag=false,isRight=false,prev={x:0,y:0};
+let sph={theta:0.4,phi:1.2,radius:16};
+let pan={x:0,y:0};
+
+// ─── INIT ────────────────────────────────────────────────────
+function init(){
+  const cont=document.getElementById('canvas-container');
+  scene=new THREE.Scene(); scene.background=new THREE.Color(0x090e14);
+  scene.fog=new THREE.FogExp2(0x090e14,0.025);
+  camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,200);
+  camApply();
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  cont.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const dl=new THREE.DirectionalLight(0xffffff,0.7); dl.position.set(5,10,5); scene.add(dl);
+  scene.add(new THREE.PointLight(0x6366f1,1.5,25));
+  // Stars
+  const sg=new THREE.BufferGeometry(),sp=[];
+  for(let i=0;i<1200;i++) sp.push((Math.random()-.5)*150,(Math.random()-.5)*150,(Math.random()-.5)*150);
+  sg.setAttribute('position',new THREE.Float32BufferAttribute(sp,3));
+  scene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0x8a96a3,size:0.06,transparent:true,opacity:.3})));
+  raycaster=new THREE.Raycaster(); mouse=new THREE.Vector2();
+  build(); updateCounts();
+  renderer.domElement.addEventListener('mousedown',onDown);
+  renderer.domElement.addEventListener('mousemove',onMove);
+  renderer.domElement.addEventListener('mouseup',onUp);
+  renderer.domElement.addEventListener('wheel',onWheel,{passive:true});
+  renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  loop();
+}
+
+function build(){
+  nodes.forEach(m=>scene.remove(m)); edges.forEach(e=>scene.remove(e));
+  nodes=[]; edges=[];
+  ACTORS.forEach(a=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(0.28,32,32),new THREE.MeshStandardMaterial({color:C3[a.type],emissive:C3[a.type],emissiveIntensity:0.3,roughness:0.25,metalness:0.15}));
+    m.position.set(a.x,a.y,a.z); m.userData={id:a.id}; scene.add(m);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.32,.38,32),new THREE.MeshBasicMaterial({color:C3[a.type],side:THREE.DoubleSide,transparent:true,opacity:.15}));
+    ring.userData.isRing=true; m.add(ring); nodes.push(m);
+  });
+  CONNECTIONS.forEach((c,i)=>{
+    const A=ACTORS[c.a],B=ACTORS[c.b];
+    const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(A.x,A.y,A.z),new THREE.Vector3(B.x,B.y,B.z)]);
+    const line=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x8a96a3,transparent:true,opacity:.1+c.strength*.06}));
+    line.userData={ci:i}; scene.add(line); edges.push(line);
+  });
+  vis();
+}
+
+function vis(){
+  ACTORS.forEach((a,i)=>{nodes[i].visible=AF[a.type];});
+  CONNECTIONS.forEach((c,i)=>{
+    edges[i].visible=AF[ACTORS[c.a].type]&&AF[ACTORS[c.b].type]&&c.strength>=minStr;
+  });
+  if(focused!==null){
+    const conn=new Set();
+    CONNECTIONS.forEach(c=>{if(c.a===focused)conn.add(c.b);if(c.b===focused)conn.add(c.a);});
+    nodes.forEach((m,i)=>{
+      if(!m.visible)return;
+      if(i===focused||conn.has(i)){m.material.emissiveIntensity=.55;m.material.transparent=false;m.material.opacity=1;m.scale.setScalar(i===focused?2.0:1.15);}
+      else{m.material.emissiveIntensity=.08;m.material.transparent=true;m.material.opacity=.2;m.scale.setScalar(.9);}
+    });
+    edges.forEach((e,i)=>{
+      const c=CONNECTIONS[i];
+      if(c.a===focused||c.b===focused){e.material.opacity=.5+c.strength*.08;e.material.color.setHex(0xffffff);}
+      else{e.material.opacity=.04;e.material.color.setHex(0x8a96a3);}
+    });
+  } else {
+    nodes.forEach(m=>{m.material.emissiveIntensity=.3;m.material.transparent=false;m.material.opacity=1;m.scale.setScalar(1);});
+    edges.forEach((e,i)=>{e.material.opacity=.1+CONNECTIONS[i].strength*.06;e.material.color.setHex(0x8a96a3);});
+  }
+}
+
+function camApply(){
+  camera.position.set(sph.radius*Math.sin(sph.phi)*Math.sin(sph.theta)+pan.x,sph.radius*Math.cos(sph.phi)+pan.y,sph.radius*Math.sin(sph.phi)*Math.cos(sph.theta));
+  camera.lookAt(pan.x,pan.y,0);
+}
+function camAnim(to,dur=700){
+  const s0={...sph},p0={...pan},t0=performance.now();
+  function step(now){const t=Math.min((now-t0)/dur,1),e=t<.5?2*t*t:-1+(4-2*t)*t;sph.radius=s0.radius+(to.r-s0.radius)*e;sph.theta=s0.theta+(to.th-s0.theta)*e;sph.phi=s0.phi+(to.ph-s0.phi)*e;pan.x=p0.x+(to.px-p0.x)*e;pan.y=p0.y+(to.py-p0.y)*e;camApply();if(t<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+function onDown(e){isDrag=true;isRight=e.button===2;prev={x:e.clientX,y:e.clientY};}
+function onMove(e){
+  if(isDrag){const dx=e.clientX-prev.x,dy=e.clientY-prev.y;prev={x:e.clientX,y:e.clientY};if(isRight){pan.x-=dx*.01;pan.y+=dy*.01;}else{sph.theta-=dx*.005;sph.phi=Math.max(.2,Math.min(Math.PI-.2,sph.phi-dy*.005));}camApply();return;}
+  mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
+  const tt=document.getElementById('tooltip');let found=false;
+  for(const edge of edges){if(!edge.visible)continue;const c=CONNECTIONS[edge.userData.ci];const A=ACTORS[c.a],B=ACTORS[c.b];const mid=new THREE.Vector3((A.x+B.x)/2,(A.y+B.y)/2,(A.z+B.z)/2).project(camera);const sx=(mid.x+1)/2*innerWidth,sy=(1-mid.y)/2*innerHeight;if(Math.hypot(sx-e.clientX,sy-e.clientY)<22){tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px';document.getElementById('tt-t').textContent=A.name+' ↔ '+B.name+' ('+c.strength+'/5)';document.getElementById('tt-a').innerHTML=c.acts.map(x=>'· '+x).join('<br>');found=true;break;}}
+  if(!found)tt.style.display='none';
+}
+function onUp(e){isDrag=false;mouse.x=(e.clientX/innerWidth)*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;raycaster.setFromCamera(mouse,camera);const hits=raycaster.intersectObjects(nodes.filter(m=>m.visible));if(hits.length){const id=hits[0].object.userData.id;if(id!==undefined)doFocus(id);}}
+function onWheel(e){sph.radius=Math.max(3,Math.min(40,sph.radius+e.deltaY*.02));camApply();}
+function doFocus(id){
+  focused=id;const a=ACTORS[id];
+  camAnim({r:7,th:sph.theta,ph:1.4,px:a.x*.4,py:a.y*.4});
+  const panel=document.getElementById('info-panel');panel.style.display='block';
+  document.getElementById('ip-dot').style.background=CSS[a.type];
+  document.getElementById('ip-name').textContent=a.name;
+  document.getElementById('ip-type').textContent=LBL[a.type];
+  document.getElementById('ip-desc').textContent=a.desc;
+  const urlEl=document.getElementById('ip-url');
+  if(a.url&&a.url!=='#'){urlEl.href=a.url;urlEl.textContent=a.url.replace('https://','');urlEl.style.display='block';}else{urlEl.style.display='none';}
+  document.getElementById('ip-tags').innerHTML=a.tags.map(t=>`<span class="tag">${t}</span>`).join('');
+  const conns=CONNECTIONS.filter(c=>c.a===id||c.b===id).sort((x,y)=>y.strength-x.strength);
+  document.getElementById('ip-conns').innerHTML=conns.map(c=>{const oid=c.a===id?c.b:c.a,o=ACTORS[oid];return`<div class="ci"><div class="ci-dot" style="background:${CSS[o.type]}"></div><span>${o.name}</span><span class="ci-bars">${'▮'.repeat(c.strength)}${'▯'.repeat(5-c.strength)}</span></div>`;}).join('');
+  document.getElementById('reset-btn').style.display='block';vis();
+}
+function resetFocus(){focused=null;document.getElementById('info-panel').style.display='none';document.getElementById('reset-btn').style.display='none';camAnim({r:16,th:0.4,ph:1.2,px:0,py:0});vis();}
+function toggleF(t){AF[t]=!AF[t];document.querySelector(`[data-type="${t}"]`).classList.toggle('inactive',!AF[t]);vis();}
+function setStr(v){minStr=+v;document.getElementById('str-val').textContent='ab Stärke '+v;vis();}
+function updateCounts(){['initiative','behoerde','unternehmen','wissenschaft','netzwerk'].forEach(t=>{document.getElementById('cnt-'+t).textContent=ACTORS.filter(a=>a.type===t).length;});}
+function loop(){
+  requestAnimationFrame(loop);const t=performance.now()*.001;
+  if(!isDrag&&focused===null){sph.theta+=.0004;camApply();}
+  nodes.forEach((m,i)=>{if(!m.visible)return;const base=focused===i?2.0:1.0;m.scale.setScalar(base*(1+Math.sin(t*1.3+i*.8)*.032));m.children.forEach(c=>{if(c.userData.isRing)c.lookAt(camera.position);});});
+  renderer.render(scene,camera);
+}
+
+// ─── MODAL ───────────────────────────────────────────────────
+function openModal(){
+  const list=document.getElementById('conn-list');
+  list.innerHTML=ACTORS.map(a=>`<label class="conn-opt"><input type="checkbox" value="${a.id}"><div class="dot" style="background:${CSS[a.type]};width:7px;height:7px;border-radius:50%;flex-shrink:0;"></div>${a.name}</label>`).join('');
+  list.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.addEventListener('change',()=>{const any=[...list.querySelectorAll('input:checked')].length>0;document.getElementById('str-form-row').style.display=any?'block':'none';}));
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');clearForm();}
+function clearForm(){['f-name','f-desc','f-url','f-tags'].forEach(id=>{document.getElementById(id).value='';});document.getElementById('f-type').selectedIndex=0;document.getElementById('f-strength').value=3;document.getElementById('str-display').textContent='3';document.getElementById('str-form-row').style.display='none';}
+function submitActor(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){document.getElementById('f-name').style.borderColor='#f87171';setTimeout(()=>document.getElementById('f-name').style.borderColor='',1500);return;}
+  const type=document.getElementById('f-type').value;
+  const desc=document.getElementById('f-desc').value.trim()||'Neu eingetragener Akteur.';
+  const url=document.getElementById('f-url').value.trim()||'#';
+  const tags=document.getElementById('f-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const strength=+document.getElementById('f-strength').value;
+  const checked=[...document.querySelectorAll('#conn-list input:checked')].map(cb=>+cb.value);
+  // Random position
+  const angle=Math.random()*Math.PI*2;
+  const radius=3+Math.random()*3;
+  const id=ACTORS.length;
+  ACTORS.push({id,name,type,url,desc,tags,x:Math.cos(angle)*radius,y:(Math.random()-.5)*3,z:Math.sin(angle)*radius});
+  checked.forEach(aid=>{CONNECTIONS.push({a:id,b:aid,strength,acts:["Kooperation (selbst eingetragen)"]});});
+  build(); updateCounts(); closeModal();
+  const toast=document.getElementById('toast');toast.style.display='block';setTimeout(()=>toast.style.display='none',2500);
+  setTimeout(()=>doFocus(id),300);
+}
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))closeModal();});
+
+init();
+</script>
+</body>
+</html>

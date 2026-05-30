@@ -6,6 +6,8 @@
   * [Open Repair Data](https://github.com/openrepair/data)
   * [Open Repair Alliance dataset of open repair data](https://openrepair.org/open-data/downloads/)
 * [iFixit - Das kostenlose Reparaturhandbuch - für alles, geschrieben von allen](https://de.ifixit.com)
+  * [iFixit API](https://www.ifixit.com/api/2.0/doc/)
+  * [iFixit Bot](https://www.ifixit.com/go/fixbot)
 * Designs of Prusa under [Open Community License (OCL)](https://blog.prusa3d.com/de/open-sourcing-von-core-one-cad-dateien-unter-der-neuen-open-community-lizenz-ocl_127290/)
 
 ## Existing software
