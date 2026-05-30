@@ -235,6 +235,8 @@ flowchart TD
   T --> D[Diagnose · KI] --> A{Warn-Ampel}
   A -->|grün/gelb| E{Entscheidung}
   A -->|rot| Prof[Profi / Repair Café]
+  D -->|"keine Eingrenzung"| U["Unklar-Pfad<br/>(Protokoll trotzdem nutzbar)"]
+  U --> Prof
   E -->|selbst| B[Begleitung] --> R{Ergebnis}
   E -->|Profi| Prof
   E -->|entsorgen| Ent[Fachgerecht entsorgen]
@@ -244,8 +246,10 @@ flowchart TD
   Ent --> W
   classDef red fill:#fecaca,stroke:#dc2626
   classDef green fill:#bbf7d0,stroke:#16a34a
+  classDef gate fill:#fef9c3,stroke:#ca8a04
   class Prof,Ent red
   class W green
+  class U gate
 ....
 
 . *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht“).
@@ -256,6 +260,29 @@ flowchart TD
 . *Begleitung* — Schritt-für-Schritt-Anleitung, Adressen, Ersatzteile, Förderung.
 . *Ergebnis* — Erfolg **oder** Misserfolg (beide Pfade müssen gedacht sein).
 . *Reflexion / Wirkung* — gerettete Geräte, gespartes Geld/CO₂, Bestärkung.
+
+[[edge-cases]]
+== Edge-Cases & Sonderfälle
+
+Situationen, die die Customer Journey über den Standardablauf hinaus abdecken muss:
+
+* *Diagnose-Sackgasse (unklar-Pfad).* Kann die KI das Problem nicht sicher eingrenzen
+  (widersprüchliche Antworten, Symptom passt zu keinem Fehlerzustand), täuscht die App
+  *keine Sicherheit vor*: Sie sagt ehrlich, dass keine verlässliche Eingrenzung möglich
+  ist, exportiert aber das bis dahin gesammelte <<protokoll,Protokoll>> und leitet an
+  Profi / Repair Café / Community weiter (D20).
+* *Aktive Gewährleistung / Garantie.* Liegt ein _technischer Defekt_ vor und ist das
+  Gerät noch in der Gewährleistung, weist die App darauf hin, dass eine Eigenreparatur
+  die Gewährleistung gefährden kann, und rät zur Reklamation bei Hersteller/Händler.
+  *Nur* relevant bei echtem technischen Defekt — bei Anwenderfehlern, normaler Wartung
+  oder Kleinigkeiten, die der Nutzer ohne Garantieverlust selbst beheben kann, läuft
+  DIY normal weiter (D21).
+* *Rückruf / bekannter Sicherheitsmangel.* Ist zum Modell ein Rückruf oder bekannter
+  Sicherheitsmangel hinterlegt (z. B. Akku-Brandgefahr), zeigt die App diesen prominent
+  und verweist auf den Hersteller-Rückruf — *statt* einer DIY-Anleitung (D22).
+* *Datenlöschung vor Fremdabgabe.* Bei datentragenden Geräten (Laptop, Smartphone,
+  Tablet) ergänzt das Übergabe-/Werkstatt-Protokoll einen Schutzschritt: _vorher Backup
+  anlegen, Daten löschen, Konten abmelden_, bevor das Gerät aus der Hand gegeben wird (D23).
 
 [[protokoll-beispiele]]
 == Beispiel-Protokolle (illustrativ)
@@ -520,6 +547,98 @@ flowchart TD
 Mensch prüft sie und *bestätigt die Sicherheits-Einstufung* (Sicherheit bleibt
 menschlich kontrolliert). Import aus Quellen und Community-Beiträge kommen später dazu.
 
+[[rollen-architektur]]
+== Rollen-/Agenten-Architektur
+
+Das Konzept spricht durchgehend von „der KI", die aufnimmt, diagnostiziert, bewertet
+und empfiehlt. Diese KI ist *kein Monolith*, sondern ein *orchestrierter Verbund
+spezialisierter Rollen* — jede mit einer eng umrissenen Verantwortung. So bleibt jede
+Fähigkeit prüfbar, einzeln verbesserbar und später als eigener Orchestrierungs-Baustein
+(LLM-Prompt/Agent) im Backend umsetzbar. Die ausgeschriebenen Rollenspezifikationen
+liegen in `docs/runtime-roles/` (siehe dortiges `README`).
+
+NOTE: Diese *App-Laufzeit-Rollen* (wie das Produkt den Endnutzer führt) sind strikt
+getrennt von den *Entwickler-Workflow-Skills* (`requirements`, `architecture`, …), die
+nur das _Bauen_ der App steuern.
+
+=== Fünf Rollen-Klassen
+
+[cols="1,4"]
+|===
+| Klasse | Bedeutung
+
+| Orchestrierung | Steuert den Vorgang zielgerichtet, ruft die Fach-Rollen, bietet
+jederzeit vorzeitige Empfehlung/Abbruch an (`lotse`).
+| Journey-Schritt | Sequenzielle Schritte der Customer Journey
+(`aufnahme` → `diagnose` → `bewertung` → `abwaegung` → `begleitung` → `wirkung`).
+| Alternativpfad | Verzweigungen aus der Abwägung (`produktsuche`, `entsorgung`).
+| Querschnittsdienst | Von mehreren Schritten genutzt, nicht sequenziell (`recherche`,
+`vermittlung`, `beschaffung`, `protokoll`).
+| Back-Office | Kuration abseits des Einzelfalls (`wissensbasis`).
+|===
+
+=== Das Protokoll als gemeinsamer Vorgangs-Zustand
+
+Das <<protokoll,Problemaufnahme-Protokoll>> ist nicht nur ein Ergebnis-Artefakt, sondern
+der *gemeinsame Zustands-Bus*: Jede Rolle liest aus dem laufenden Vorgang und schreibt
+ihre Erkenntnisse zurück. `protokoll` verwaltet diesen Zustand (inkl.
+KI-Entscheidungsprotokoll, Konfidenz/Quelle, Eigentums-/Kostenträger-Vermerk).
+
+=== Querschnitts-Prinzip: Vertrauens-Indikator
+
+Der <<ki,Vertrauens-Indikator>> (D3) ist *keine eigene Rolle*, sondern ein Prinzip, das
+*jede* KI-Aussage trägt — `diagnose`, `bewertung` und `abwaegung` kennzeichnen Konfidenz
+und Begründung, eskalierend mit der Kritikalität; `protokoll` hält sie fest.
+
+[mermaid]
+....
+flowchart TD
+  L{{lotse · Orchestrierung}}
+  L --> AUF[aufnahme] --> DIA[diagnose] --> BEW[bewertung] --> ABW{abwaegung}
+  ABW -->|reparieren| BEG[begleitung] --> WIR[wirkung]
+  ABW -->|austausch| PRO[produktsuche] --> WIR
+  ABW -->|entsorgen| ENT[entsorgung] --> WIR
+  subgraph QS["Querschnittsdienste"]
+    direction TB
+    REC[recherche]
+    VER[vermittlung]
+    BES[beschaffung]
+    PRK[(protokoll · Vorgangs-Zustand)]
+  end
+  DIA -.-> REC
+  BEW -.-> REC
+  BEW -.->|Profi/Café| VER
+  BEG -.-> BES
+  AUF -.-> PRK
+  WIS[[wissensbasis · Back-Office]] -.->|kuratierte Daten| REC
+  classDef orch fill:#dbeafe,stroke:#2563eb
+  classDef bus fill:#fef9c3,stroke:#ca8a04
+  class L orch
+  class PRK,WIS bus
+....
+
+=== Rollen im Überblick
+
+[cols="1,1,3,1"]
+|===
+| Rolle | Klasse | Verantwortung | Anker
+
+| `lotse` | Orchestrierung | Zielführung, Reihenfolge, vorzeitige Empfehlung/Abbruch, Consent-Gate | D10·D11·D12
+| `aufnahme` | Journey | Triage (Schicht A), multimodale Erfassung, Eigentum klären | D6·D9·D14
+| `diagnose` | Journey | Symptom → Ursache über kuratierte Fehlerzustände | <<ki,D4>>
+| `bewertung` | Journey | Warn-Ampel (Sicherheit·Komplexität·Kosten·Machbarkeit) als Gate | <<warn-ampel,D1>>·D16
+| `abwaegung` | Journey | Pfadvergleich Kosten/Zeit/Ökologie/Förderung, begründete Empfehlung | <<kostenbetrachtung,D12>>·D18
+| `begleitung` | Journey | DIY-Anleitung (Schicht B), Garantie-Gate, Misserfolgs-Pfad | D11·D15·D16
+| `wirkung` | Journey | Reflexion, ökologischer/sozialer Mehrwert, Selbstwirksamkeit | Drei Werthebel
+| `produktsuche` | Alternativpfad | Alternativgeräte/Neukauf vergleichbar machen | D12
+| `entsorgung` | Alternativpfad | Fachgerechte Entsorgung & Recyclingwege | „ehrliches Abraten"
+| `recherche` | Querschnitt | Kuratierte Quellen + KI-Fallback + Online, mit Beleg/Konfidenz | D2·D3
+| `vermittlung` | Querschnitt | Anbieter & Standorte (OSM, Repair Cafés, Werkstätten) | Datenquellen
+| `beschaffung` | Querschnitt | Ersatzteile + integrierte Bestellung (Affiliate-Leitplanke) | D8
+| `protokoll` | Querschnitt | Gemeinsamer Vorgangs-Zustand, alle D7-Funktionen | <<protokoll,D7>>·D14
+| `wissensbasis` | Back-Office | Kuration Fehlerzustände/Schwungrad, Förder-/Quellenpflege | D5·D13
+|===
+
 == Sicherheit & Haftung
 
 * *Ampel statt Hard-Stop:* Die App *warnt* abgestuft (Sicherheits-Achse), lässt den
@@ -725,6 +844,24 @@ Schrift, Kontraste, ARIA) ist als _eigenes Thema_ ausgelagert.
 Soziales können sich widersprechen (auch: Austausch ist mal wirtschaftlicher). Die App
 stellt die Unterschiede transparent dar, die KI empfiehlt _mit Begründung_ — die
 Abwägung, was wichtiger ist, trifft der Nutzer.
+| D19 | *Rollen-Architektur:* Die KI-Funktionalität wird in spezialisierte
+*App-Laufzeit-Rollen* zerlegt (fünf Klassen: Orchestrierung, Journey-Schritt,
+Alternativpfad, Querschnittsdienst, Back-Office). `lotse` orchestriert; das
+<<protokoll,Problemaufnahme-Protokoll>> ist der *gemeinsame Vorgangs-Zustand*, über den
+alle Rollen lesen/schreiben. D3 (Vertrauens-Indikator) und D7 (Protokoll-Funktionen)
+wirken als *Querschnitts-Prinzipien* über mehrere Rollen, nicht als eigene Rolle. Specs:
+`docs/runtime-roles/`. Siehe <<rollen-architektur>>.
+| D20 | *Diagnose-Sackgasse (unklar-Pfad):* Kann die KI nicht sicher eingrenzen, täuscht
+die App keine Sicherheit vor — ehrlicher „unklar“-Ausgang, Protokoll bleibt nutzbar und
+geht an Profi / Café / Community. Siehe <<edge-cases>>.
+| D21 | *Aktive Gewährleistung:* Bei _technischem Defekt_ in der Gewährleistung Hinweis
+auf möglichen Garantieverlust + Reklamation empfehlen. Nicht bei Anwenderfehler, Wartung
+oder garantieneutralen Kleinigkeiten — dort läuft DIY normal weiter. Siehe <<edge-cases>>.
+| D22 | *Rückruf / Sicherheitsmangel:* Bei hinterlegtem Rückruf zum Modell prominenter
+Hinweis + Verweis auf Hersteller-Rückruf statt DIY-Anleitung. Siehe <<edge-cases>>.
+| D23 | *Datenlöschung vor Fremdabgabe:* Bei datentragenden Geräten ergänzt das
+Übergabe-/Werkstatt-Protokoll den Schritt „Backup + Daten löschen + Konten abmelden“.
+Siehe <<edge-cases>>.
 |===
 
 [[ausgelagerte-themen]]
@@ -757,5 +894,17 @@ Barrierefreiheit sind diesem Ziel nachgelagert und bewusst ausgelagert (siehe ob
 
 == Offene Fragen / zu klärende Edge Cases
 
-Aktuell sind alle Kernfragen entschieden (siehe Decision-Log D1–D18) oder als eigenes
-Projekt ausgelagert. Neue offene Punkte hier ergänzen, sobald sie auftauchen.
+Die fachlichen Kernfragen sind entschieden (siehe Decision-Log D1–D19) oder als eigenes
+Projekt ausgelagert. Mit der <<rollen-architektur,Rollen-Architektur>> (D19) sind
+folgende *Datenquellen-Fragen* aufgetaucht, die noch zu klären sind:
+
+* *Datenquelle Entsorgung/Recycling* (Rolle `entsorgung`): Woher kommen Wertstoffhof-/
+  Rücknahme-Adressen? (Kommunale Verzeichnisse, Rücknahmesysteme — Quelle noch offen.)
+* *Datenquelle/Ansatz Produktsuche* (Rolle `produktsuche`): Wie werden Alternativgeräte
+  ermittelt und vergleichbar gemacht? (Quelle/Verfahren noch offen.)
+* *OSM-Konkretisierung* (Rolle `vermittlung`): Wird OpenStreetMap tatsächlich als Quelle
+  für Reparatur-Standorte angebunden, und wie ergänzend zu `reparatur-initiativen.de`?
+* *Lizenz-/Partner-Lage Ersatzteil-Bestellung* (Rolle `beschaffung`): Bedingungen der
+  integrierten Bestellfunktion und Partneranbindung (vgl. D8-Leitplanke).
+
+Neue offene Punkte hier ergänzen, sobald sie auftauchen.
