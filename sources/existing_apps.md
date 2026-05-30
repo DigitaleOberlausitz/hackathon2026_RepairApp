@@ -10,6 +10,7 @@
 
 ## Existing software
 * [OpenScan](https://github.com/OpenScanEu) - vollautomatisiertes Kopiergerät für 3D-Objekte, [OpenScan Mini](https://openscan.eu/pages/openscan-mini), [OpenScanCloud](https://openscan.eu/pages/openscancloud)
+* [Repair Café Carbon Calculator](https://www.repaircafe.org/en/new-tool-repair-cafe-carbon-calculator/)
 
 ## Existing initiatives
 * [Open Repair Alliance](https://openrepair.org/)
@@ -27,6 +28,7 @@
   * e.g. maker space
 * where can I get manuals / construction plan?
   * Open Access manuals
+  * [Repair Wiki](https://repair.wiki/w/Main_Page#gsc.tab=0)
 
 ## Existing funding programs
 * Sachsen [Reparaturbonus](https://www.sab.sachsen.de/reparaturbonus)
