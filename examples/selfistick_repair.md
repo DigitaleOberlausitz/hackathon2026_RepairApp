@@ -708,3 +708,5 @@ Wenn das sauber gemacht wird, ist die Reparatur oft stärker als die ursprüngli
 Falls die Reparatur dann doch nicht hält, wäre der nächste Schritt tatsächlich eine **maßgeschneiderte Klemmhülse aus dem 3D-Drucker**. Dafür würde man aber einmal die Durchmesser von Rohr und Kopf messen müssen. Ich vermute, dass ein lokales Repair-Café oder Makerspace so etwas für wenige Euro drucken könnte.
 
 ---
+
+Alternativ Frage-Antwort mit [Fixit Bot](https://fixbot.ifixit.com/chat/c5e55e25-b493-4719-9ddd-0ef898b0d904). 
