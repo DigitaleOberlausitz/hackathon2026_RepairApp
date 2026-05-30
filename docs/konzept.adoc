@@ -283,6 +283,14 @@ Situationen, die die Customer Journey über den Standardablauf hinaus abdecken m
 * *Datenlöschung vor Fremdabgabe.* Bei datentragenden Geräten (Laptop, Smartphone,
   Tablet) ergänzt das Übergabe-/Werkstatt-Protokoll einen Schutzschritt: _vorher Backup
   anlegen, Daten löschen, Konten abmelden_, bevor das Gerät aus der Hand gegeben wird (D23).
+* *Mehrfachdefekte.* Hat ein Gerät mehrere gleichzeitige Defekte, bekommt _jeder_ erkannte
+  Defekt seine eigene <<warn-ampel,Warn-Ampel>> im Protokoll. Zusätzlich bildet die App ein
+  *Gesamt-Fazit nach dem schwächsten Glied*: das höchste Risiko bzw. die höchsten Kosten
+  dominieren die Empfehlung. So bleibt transparent, welcher Einzeldefekt der Knackpunkt ist (D24).
+* *Minderjährige / vulnerable Nutzer.* Kein hartes Altersgate (konsistent mit D15), aber vor
+  sicherheitskritischen Schicht-B-Anleitungen eine bewusste *Selbsteinschätzung/Bestätigung*
+  („Bist du volljährig? Traust du dir das zu?“) und besonders deutliche Warnung. Vulnerable
+  Nutzer werden ernst genommen, ohne ausgesperrt zu werden (D25).
 
 [[protokoll-beispiele]]
 == Beispiel-Protokolle (illustrativ)
@@ -862,6 +870,11 @@ Hinweis + Verweis auf Hersteller-Rückruf statt DIY-Anleitung. Siehe <<edge-case
 | D23 | *Datenlöschung vor Fremdabgabe:* Bei datentragenden Geräten ergänzt das
 Übergabe-/Werkstatt-Protokoll den Schritt „Backup + Daten löschen + Konten abmelden“.
 Siehe <<edge-cases>>.
+| D24 | *Mehrfachdefekte:* eine Warn-Ampel _pro Defekt_ plus Gesamt-Fazit nach dem
+schwächsten Glied (höchstes Risiko/Kosten dominiert). Siehe <<edge-cases>>.
+| D25 | *Minderjährige / vulnerable Nutzer:* kein hartes Altersgate (konsistent mit D15),
+aber vor sicherheitskritischer Schicht B bewusste Selbsteinschätzung/Bestätigung +
+verstärkte Warnung. Siehe <<edge-cases>>.
 |===
 
 [[ausgelagerte-themen]]
