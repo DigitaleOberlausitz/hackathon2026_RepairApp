@@ -107,17 +107,99 @@ das Alleinstellungsmerkmal — kein bekannter Wettbewerber bietet diese Achsen
 integriert an. Grundhaltung: *warnen statt sperren* — der mündige Nutzer entscheidet,
 je kritischer desto deutlicher die Warnung.
 
+== Zwei Schichten: Triage und Reparatur
+
+Die App trennt *Breite* und *Tiefe*. Das löst den Widerspruch zwischen „möglichst
+umfangreich (alles, was sich reparieren lässt — auch Auto)" und „Sicherheit/Haftung":
+
+[cols="1,4"]
+|===
+| Schicht A — Triage | *Universelle Problemaufnahme* für _jedes_ Gerät, auch
+sicherheitskritisches. Strukturierte Fragen verletzen niemanden → immer verfügbar,
+immer sicher. Ergebnis ist das <<protokoll,Problemaufnahme-Protokoll>>.
+
+| Schicht B — Reparatur | *Konkrete DIY-Anleitung* nur dort, wo die Warn-Ampel es
+erlaubt _und_ Wissen vorhanden ist. Beispiel: beim Auto-Bremsproblem keine
+Wechsel-Anleitung, aber ein präzises Protokoll für die Werkstatt.
+|===
+
+So bekommt *jeder* sofort Mehrwert, ohne dass für jedes Gerät der Welt eine
+vollständige Reparaturdatenbank existieren muss.
+
+[[protokoll]]
+== Problemaufnahme-Protokoll
+
+Eine tragende Säule. Die App führt strukturiert durch die Problemaufnahme und
+erzeugt daraus ein teilbares Protokoll. Geführte Fragen (KI-gestützt, geräteabhängig):
+
+* Was genau passiert (Symptom)?
+* Unter welchen Bedingungen tritt es auf?
+* Seit wann? Was wurde zuletzt verändert/gemacht?
+* Was wurde bereits getestet — mit welchem Ergebnis?
+* Was ist (vermutlich) das Problem?
+
+=== Was das Protokoll darüber hinaus leistet
+
+. *Portables Artefakt / Brücke DIY ↔ Profi.* Exportier- und teilbar — zur Werkstatt,
+  ins Repair Café, ins Forum, an die Hersteller-Hotline. Spart Diagnosezeit →
+  günstiger für den Nutzer; niemand „fährt umsonst".
+. *Daten-Schwungrad (löst das Kaltstart-Problem).* Anonymisierte Protokolle füttern
+  mit Einwilligung die kuratierte Fehlerzustand-Sammlung („Symptom X bei Gerät Y war
+  in N Fällen Ursache Z"). Die App wird durch Nutzung schlauer.
+. *Übergabe-Dokument zwischen Rollen.* Ein geteiltes Protokoll für Eigentümer /
+  Nutzer / Diagnostiker / Reparateur — adressiert „Nutzer ≠ Eigentümer".
+. *Reparatur-Tagebuch / Gerätegedächtnis.* Das Protokoll bleibt pro Gerät erhalten:
+  „Dieser Fehler war schon mal da — damals half X."
+. *Selbstwirksamkeit auch ohne Erfolg.* Selbst wenn die Reparatur scheitert oder
+  abgegeben wird: Der Nutzer hat das Problem _systematisch_ eingegrenzt — erlerntes
+  Können, genau das soziale Ziel der App.
+. *KI-Entscheidungsprotokoll (Nachvollziehbarkeit).* Das Protokoll hält auch den
+  _Denkweg der KI_ fest: Ausgangssituation, gestellte Fragen, dazu ermittelte
+  Informationen, getroffene Entscheidungen — _und auf welcher Basis_ (Quelle/Konfidenz).
+  Stärkt den <<ki,Vertrauens-Indikator>>, macht Empfehlungen überprüfbar und sichert
+  gegen Haftung ab (man kann zeigen, _warum_ etwas empfohlen wurde).
+
 == Customer Journey (Ende zu Ende)
 
 Der durchgängige Ablauf, der die App vom Themen-Sammelsurium zum Produkt macht:
 
 . *Problem erfassen* — freie Beschreibung, optional Foto („Mein Toaster geht nicht").
+. *Problemaufnahme-Protokoll* — geführte Triage (Schicht A), siehe <<protokoll>>.
 . *Diagnose* — KI führt durch kuratierte Rückfragen (siehe <<ki>>).
 . *Einschätzung* — die Warn-Ampel mit Konfidenz-/Begründungshinweis.
 . *Entscheidung* — selbst / Café / Profi / entsorgen.
 . *Begleitung* — Schritt-für-Schritt-Anleitung, Adressen, Ersatzteile, Förderung.
 . *Ergebnis* — Erfolg **oder** Misserfolg (beide Pfade müssen gedacht sein).
 . *Reflexion / Wirkung* — gerettete Geräte, gespartes Geld/CO₂, Bestärkung.
+
+== Eingabe & Datenschutz
+
+=== Eingabe-Wege zur Problemschilderung
+
+* *Text / geführte Fragen* — Basis-Modalität, datensparsam.
+* *Foto / Video* — Gerät, Defekt, Typenschild; stark für Diagnose, datenschutz-sensibel.
+* *Sprache / Voice* — Diktieren und Vorlesen; ideal während der Reparatur (schmutzige
+  Hände) und für Barrierefreiheit.
+* *Barcode / Modell-Scan* — Typenschild/QR/Barcode für eindeutige Geräte-/Modellerfassung.
+
+=== Datenschutz-Grundhaltung: Cloud-first (für KI-Qualität & schnelles Lernen)
+
+Bewusste Abwägung zugunsten von KI-Qualität: Daten werden standardmäßig in der Cloud
+verarbeitet/gespeichert, damit Diagnose und Daten-Schwungrad maximal profitieren.
+
+[WARNING]
+====
+Damit steigt der Aufklärungs- und Compliance-Bedarf. Auch bei Cloud-first bleiben
+DSGVO-Pflichten bestehen:
+
+* *Rechtsgrundlage* für Verarbeitung/Speicherung nötig (Einwilligung oder berechtigtes
+  Interesse) — besonders fürs Weiterverwenden der Protokolle (Schwungrad).
+* *Transparenz:* klar kommunizieren, was gespeichert wird und wozu.
+* *Anonymisierung/Pseudonymisierung* der Protokolle vor der Wiederverwendung.
+* *Hinweis* auf Hintergrund/Personen/Seriennummern bei Fotos; Lösch-/Auskunftsrechte.
+
+→ Konkrete Ausgestaltung in <<offene-fragen>> vermerkt.
+====
 
 [[ki]]
 == KI & Wissensbasis
@@ -174,6 +256,36 @@ menschlich kontrolliert). Import aus Quellen und Community-Beiträge kommen spä
 * *Misserfolgs-Pfad:* Was, wenn die Reparatur scheitert oder das Gerät schlimmer
   dran ist? Sicherer Rückweg zur Fachkraft + ermutigende Rahmung („Versuchen war
   richtig").
+
+== Niederschwelliger Einstieg & ehrlicher Ton
+
+* *Adaptive Anleitungstiefe:* dieselbe Reparatur in Stufen „Anfänger / geübt" —
+  mehr Erklärung und Sicherheitshinweise für Unerfahrene, knapper für Geübte.
+* *Einfache Sprache + Mehrsprachigkeit* (Vorlesefunktion, siehe Voice-Eingabe).
+* *Ehrlicher Ton (Leitprinzip):* ermutigen, aber *nichts beschönigen*. Klar sagen,
+  wenn es schwierig, unsicher oder aufwändig wird. Den Nutzer vom *zu frühen Aufgeben*
+  abhalten — ihn aber *nicht überfordern*.
+* *Fähigkeits-Rückfrage bei Unsicherheit:* Ist die KI unsicher über das Können des
+  Nutzers, fragt sie lieber einmal mehr nach („Traust du dir das zu?") — u. a. über
+  eine *Bewertung der letzten Antwort/Anfrage* durch den Nutzer.
+
+== Steuerung & Alternativen
+
+Der Nutzer steuert den Prozess *jederzeit* selbst:
+
+* *Reparatur bevorzugen* — weitermachen, ggf. mit mehr Anleitungstiefe.
+* *Auf professionelle Reparatur wechseln* — wenn es zu komplex oder zu unsicher wird
+  (mit dem bereits erstellten <<protokoll,Protokoll>> für die Werkstatt).
+* *Austausch / Alternativgeräte ansehen* — wenn Reparatur nicht sinnvoll ist.
+
+Jeder Pfad wird vergleichbar gemacht über:
+
+* *Kosten-Nutzen-Faktor* (siehe <<_kostenbetrachtung,Kostenbetrachtung>>),
+* *Zeitfaktor* (Reparaturdauer/Ausfallzeit vs. Beschaffung & Einrichtung),
+* *ökologische Kosten* (Ressourcen/CO₂ von Reparatur vs. Neugerät).
+
+Damit ist auch der *Misserfolgs-Pfad* abgedeckt: Abbruch ist jederzeit möglich,
+führt sicher zur Fachkraft und bleibt durch die ermutigende Rahmung selbstwirksam.
 
 [[oekosystem]]
 == Stakeholder & Ökosystem
@@ -258,24 +370,45 @@ mit Kritikalität; Fehler-Hinweis immer.
 starrem Entscheidungsbaum).
 | D5 | *Fehlerzustände befüllen:* KI-gestützter Entwurf + Experten-Review;
 Sicherheits-Einstufung menschlich kontrolliert.
+| D6 | *Zwei Schichten:* Schicht A (universelle Triage) für jedes Gerät — auch Auto/
+sicherheitskritisch; Schicht B (DIY-Anleitung) nur Ampel-/wissensgegated. Breite Triage,
+gegated Tiefe.
+| D7 | *Problemaufnahme-Protokoll* als tragende Säule, inkl. portables Artefakt,
+Daten-Schwungrad (mit Einwilligung), Übergabe-Dokument zwischen Rollen,
+Reparatur-Tagebuch, Selbstwirksamkeit auch ohne Erfolg und *KI-Entscheidungsprotokoll*
+(nachvollziehbarer Denkweg: Ausgangslage, Fragen, Infos, Entscheidungen + Basis).
+| D8 | *Finanzierung:* Förderung/Stiftung/gemeinnützig + Freemium. *Kein* Affiliate /
+keine Lead-Gebühren — bewusst, um Provisions-Bias und Mission-Konflikt zu vermeiden.
+| D9 | *Eingabe-Wege:* Text/geführte Fragen, Foto/Video, Sprache/Voice, Barcode/Modell-Scan.
+| D10 | *Datenschutz:* Cloud-first für KI-Qualität & schnelles Lernen — DSGVO-Pflichten
+(Rechtsgrundlage, Transparenz, Anonymisierung der Protokolle) bleiben zwingend.
+| D11 | *Niederschwelliger Einstieg:* adaptive Anleitungstiefe (Anfänger/geübt), einfache
+Sprache + Mehrsprachigkeit. *Ehrlicher Ton:* ermutigen, aber nichts beschönigen — klar
+sagen, wenn es schwierig/unsicher/aufwändig wird; den Nutzer vom zu frühen Aufgeben
+abhalten, ihn aber nicht überfordern. Bei Unsicherheit über die Fähigkeiten lieber einmal
+mehr rückfragen ('Traust du dir das zu?'), u. a. über eine Bewertung der letzten Antwort.
+| D12 | *Steuerung & Misserfolgs-Pfad:* Nutzer kann den Prozess jederzeit lenken —
+Reparatur bevorzugen, bei zu hoher Komplexität/Unsicherheit auf professionelle Reparatur
+wechseln, oder Austausch/Alternativgeräte ansehen. Vergleich stets über Kosten-Nutzen,
+Zeitfaktor und ökologische Kosten.
 |===
 
 == Offene Fragen / zu klärende Edge Cases
 
-* *Geschäftsmodell:* Wer ist der zahlende Kunde? (Affiliate Ersatzteile, Lead-Gebühr
-  Werkstätten, Förderung/Stiftung, Freemium) — und wie wird der Konflikt zwischen
-  Provisionsanreiz und Nachhaltigkeitsmission gelöst?
-* *MVP-Zuschnitt:* Welche Gerätekategorie(n) und Region zuerst? (Idee: risikoarme
-  Haushaltskleingeräte + ein Bundesland mit aktivem Reparatur-Bonus; Auto /
-  230-V-Festinstallation / Gas zunächst nur vermitteln, nicht anleiten.)
-* *Foto-Datenschutz:* Dürfen Gerätefotos in die Cloud / an ein KI-Modell? On-Device-
-  Option? Hinweis auf Hintergrund/Personen/Seriennummern. DSGVO-Einwilligung.
-* *Nutzer ≠ Eigentümer:* Mietgerät, Arbeitgeber-Laptop, geliehen — nur Hinweis,
-  Bestätigung oder Funktionseinschränkung?
-* *Misserfolgs-Pfad:* Konkrete Ausgestaltung von Abbruch und sicherem Rückweg.
-* *Hard-Stop-Schwelle:* Gibt es Geräteklassen, bei denen die App trotz „Warnen"-Prinzip
-  doch komplett abriegelt?
+* *Finanzierung — Details:* Richtung steht (D8: Förderung/Stiftung + Freemium). Offen:
+  konkrete Fördertöpfe/Träger, und wo genau die Grenze Free ↔ Premium verläuft
+  (was bleibt immer kostenlos — Triage/Protokoll?).
+* *MVP-Umfang/Region:* Geräte-_Breite_ ist via Schicht A entschieden (alles, auch
+  Auto). Offen bleibt: Für welche Geräte gibt es zum Start schon Schicht-B-Anleitungen,
+  und welche Region zuerst (Förder-/Café-Daten sind regional)?
+* *Nutzer ≠ Eigentümer:* Durch Übergabe-Dokument konzeptionell adressiert. Offen:
+  Braucht es trotzdem Hinweise/Bestätigungen bei Mietgerät, Arbeitgeber-Laptop?
+* *Hard-Stop-Schwelle:* Gibt es trotz „Warnen statt sperren" (D1) Geräteklassen, bei
+  denen Schicht B komplett abgeriegelt wird?
 * *Rechtliches:* Haftung bei Fehldiagnose, Disclaimer, iFixit-Lizenzlage, Einschränkungen.
-* *KI-Kosten:* Kosten pro Anfrage (besonders Bild-Diagnose) — Kostenmodell.
-* *Niederschwelliger Einstieg:* Barrierefreiheit, einfache Sprache, Mehrsprachigkeit,
-  Voice-/Freihand-Modus während der Reparatur.
+* *KI-Kosten:* Kosten pro Anfrage (besonders Bild-Diagnose) — Kostenmodell (relevant für
+  die Free-/Premium-Grenze).
+* *Barrierefreiheit — Details:* über D11 hinaus (Screenreader, große Schrift,
+  Kontraste); welche Sprachen zum Start?
+* *Datenschutz-Umsetzung:* konkrete Rechtsgrundlage & Anonymisierung für das
+  Cloud-first-Schwungrad (D10).
