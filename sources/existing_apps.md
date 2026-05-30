@@ -1,5 +1,6 @@
 ## Existing apps
 * [FabChatty](https://github.com/mehrabmn/FabChatty)
+* [Baumbart](https://github.com/busaltmarius/LeipzigTreeChat) -> only as reference for an AI chat bot, that uses geo data: answers questions with geo references (e.g. how many trees have been in a certain city district)
 
 ## Existing data sources
 * Open Repair Allicance
