@@ -105,6 +105,7 @@ Beispielhafte Ausprägungen aus dem Brainstorming:
 NOTE: „Ehrenamtlich vs. wirtschaftlich orientiert" ist eine Eigenschaft von
 *Anbietern*, keine Nutzer-Persona — siehe <<oekosystem>>.
 
+[[warn-ampel]]
 == Kernfunktion: die Warn-Ampel
 
 Das Herzstück der App. Pro Gerät + Defekt bündelt eine *Warn-Ampel über
@@ -166,7 +167,7 @@ flowchart LR
 ....
 
 So bekommt *jeder* sofort Mehrwert, ohne dass für jedes Gerät der Welt eine
-vollständige Reparaturdatenbank existieren muss. (→ Decision-Log <<_decision_log_getroffene_entscheidungen,D6>>)
+vollständige Reparaturdatenbank existieren muss. (→ Decision-Log <<decision-log,D6>>)
 
 [[protokoll]]
 == Problemaufnahme-Protokoll
@@ -274,7 +275,7 @@ Auch bei Cloud-first bleiben DSGVO-Pflichten bestehen:
 * *Hinweis* auf Hintergrund/Personen/Seriennummern bei Fotos; Lösch-/Auskunftsrechte.
 
 → Detaillierte Umsetzung ist ein eigenes Projekt (vgl. D10 und
-<<_ausgelagerte_themen_eigene_projekte,Ausgelagerte Themen>>).
+<<ausgelagerte-themen,Ausgelagerte Themen>>).
 ====
 
 [[ki]]
@@ -366,7 +367,7 @@ Der Nutzer steuert den Prozess *jederzeit* selbst:
 
 Jeder Pfad wird vergleichbar gemacht über:
 
-* *Kosten-Nutzen-Faktor* (siehe <<_kostenbetrachtung,Kostenbetrachtung>>),
+* *Kosten-Nutzen-Faktor* (siehe <<kostenbetrachtung,Kostenbetrachtung>>),
 * *Zeitfaktor* (Reparaturdauer/Ausfallzeit vs. Beschaffung & Einrichtung),
 * *ökologische Kosten* (Ressourcen/CO₂ von Reparatur vs. Neugerät).
 
@@ -440,6 +441,7 @@ Nach Typ:
 
 Nach Preis: weniger als 200 €, 200–1000 €, über 1000 €.
 
+[[kostenbetrachtung]]
 == Kostenbetrachtung
 
 Die App stellt den *Gesamtaufwand* gegenüber:
@@ -461,13 +463,14 @@ Gemeinnützige Ausrichtung. Tragende Säulen:
 ====
 Bestell-/Partner-Erlöse berühren den anfangs bewusst ausgeschlossenen Provisions-/
 Affiliate-Pfad. Leitplanke gegen Verzerrung: Die Empfehlung folgt _immer_ der
-<<_kernfunktion_die_warn_ampel,Warn-Ampel>> (günstigste/sinnvollste Lösung zuerst);
+<<warn-ampel,Warn-Ampel>> (günstigste/sinnvollste Lösung zuerst);
 die Bestelloption ist *nachgelagert und transparent gekennzeichnet*.
 ====
 
 NOTE: Ein ausgefeiltes Kostenmodell ist dieser Phase nachgelagert — erste Priorität
-ist Machbarkeit und Akzeptanz (siehe <<priorität>>).
+ist Machbarkeit und Akzeptanz (siehe <<ziel-phase>>).
 
+[[decision-log]]
 == Decision-Log (getroffene Entscheidungen)
 
 [cols="1,4"]
@@ -528,6 +531,7 @@ stellt die Unterschiede transparent dar, die KI empfiehlt _mit Begründung_ — 
 Abwägung, was wichtiger ist, trifft der Nutzer.
 |===
 
+[[ausgelagerte-themen]]
 == Ausgelagerte Themen (eigene Projekte)
 
 Bewusst aus dem Konzept ausgeklammert und später als eigenständige Vorhaben zu behandeln:
