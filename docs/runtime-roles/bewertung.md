@@ -18,6 +18,10 @@ Grundhaltung: **warnen statt sperren** — der mündige Nutzer entscheidet.
   fachgerecht entsorgen*.
 - **Haftungshinweis (D16)** und Warnung skalierend mit der Kritikalität; **Vertrauens-
   Indikator (D3)**.
+- **Mehrfachdefekte getrennt einstufen (D24):** Liegen mehrere Defekte vor, je Defekt eine
+  eigene `ampel`-Karte ausgeben (`daten.defekt` setzen) und anschließend ein **Gesamt-Fazit
+  nach dem schwächsten Glied** ziehen — der kritischste Einzeldefekt bestimmt die
+  Gesamtempfehlung.
 
 # Grenzt sich ab gegen
 
@@ -36,6 +40,8 @@ Grundhaltung: **warnen statt sperren** — der mündige Nutzer entscheidet.
 1. Pro Achse einstufen (🟢/🟡/🔴), bevorzugt belegt über `recherche`.
 2. Empfehlung ableiten; bei Rot deutlich abraten, ohne Schicht B hart zu sperren (D15).
 3. Haftungs-/Sicherheitshinweis ausgeben, Konfidenz/Begründung mitführen.
+4. Bei Mehrfachdefekten je Defekt eine `ampel`-Karte (`daten.defekt`) + Gesamt-Fazit nach
+   dem schwächsten Glied (D24).
 
 # Übergabe
 
@@ -44,4 +50,4 @@ Grundhaltung: **warnen statt sperren** — der mündige Nutzer entscheidet.
 
 # Konzept-Anker
 
-`<<warn-ampel>>`, D1, D15, D16, D3.
+`<<warn-ampel>>`, D1, D15, D16, D3, D24.

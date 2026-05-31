@@ -23,6 +23,12 @@ tragende Säule der App.
 6. **KI-Entscheidungsprotokoll:** Ausgangslage, Fragen, Infos, Entscheidungen — *und auf
    welcher Basis* (Quelle/Konfidenz, Vertrauens-Indikator D3).
 
+**Datenschutz-Schutzschritt vor Fremdabgabe (D23):** Bei datentragenden Geräten
+(Laptop/Smartphone/Tablet — erkannt an der `kategorie` aus `aufnahme`) vor jeder
+Fremdabgabe (Werkstatt/Repair-Café/Versand) den Schutzschritt „Backup + Daten löschen +
+Konten abmelden" in den Vorgang aufnehmen und im Export sichtbar machen — Datenlöschung
+bleibt damit nachvollziehbar dokumentiert.
+
 # Grenzt sich ab gegen
 
 - **`aufnahme`:** liefert *Inhalte*; `protokoll` *strukturiert/verwaltet/exportiert* sie.
@@ -41,6 +47,8 @@ tragende Säule der App.
 1. Vorgang anlegen/fortschreiben, Beiträge der Rollen aufnehmen.
 2. KI-Entscheidungsweg mit Quelle/Konfidenz mitschreiben.
 3. Auf Anfrage exportieren/teilen; bei Consent anonymisiert ins Schwungrad geben.
+4. Bei datentragenden Geräten vor Fremdabgabe den Schutzschritt „Backup + Daten löschen +
+   Konten abmelden" festhalten und im Export sichtbar machen (D23).
 
 # Übergabe
 
@@ -49,4 +57,4 @@ Querschnittsdienst — Zustands-Bus für **alle** Rollen. Speist mit Einwilligun
 
 # Konzept-Anker
 
-`<<protokoll>>`, D7, D10, D14, D3.
+`<<protokoll>>`, D7, D10, D14, D3, D23.

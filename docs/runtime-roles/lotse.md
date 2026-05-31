@@ -19,6 +19,11 @@ den Prozess *jederzeit* selbst lenken.
   Daten-Schwungrad fließt.
 - **Fähigkeits-Rückfrage (D11):** bei Unsicherheit über das Können lieber einmal mehr
   nachfragen („Traust du dir das zu?").
+- **Rückruf-/Sicherheitsmangel-Prüfung (D22):** Vor dem DIY-Pfad prüfen, ob für Gerät/Modell
+  ein bekannter Rückruf oder Sicherheitsmangel vorliegt. Falls ja: `hinweis art=rueckruf`
+  ausgeben und auf den Hersteller verweisen, statt zur Selbstreparatur zu führen. Ehrlich
+  dokumentieren: ohne angebundene Rückruf-Datenbank ist diese Einschätzung derzeit
+  modell-ermessensbasiert (kein Vollständigkeitsanspruch).
 
 # Grenzt sich ab gegen
 
@@ -38,6 +43,8 @@ den Prozess *jederzeit* selbst lenken.
 3. An jedem Punkt Steueroptionen anbieten: weitermachen · Profi/Café · Austausch ·
    entsorgen · abbrechen.
 4. Vor Schwungrad-Beitrag Consent einholen (D10).
+5. Vor dem DIY-Pfad auf bekannten Rückruf/Sicherheitsmangel prüfen; bei Treffer
+   `hinweis art=rueckruf` + Hersteller-Verweis statt Selbstreparatur (D22).
 
 # Routing / Handoff-Übersicht
 
@@ -52,4 +59,4 @@ Pfade enden in `wirkung`. Querschnitt nach Bedarf: `recherche`, `vermittlung`,
 
 # Konzept-Anker
 
-Customer Journey, `<<steuerung>>`, D10, D11, D12.
+Customer Journey, `<<steuerung>>`, D10, D11, D12, D22.

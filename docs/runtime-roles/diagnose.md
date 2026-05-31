@@ -16,6 +16,11 @@ kuratierten Fehlerzustand-Sammlung (D4).
 - Diagnose-Rückfragen zur Abgrenzung konkurrierender Ursachen stellen.
 - **Vertrauens-Indikator anwenden (D3):** jede Aussage mit Konfidenz + Begründung; bei
   KI-Eigenrecherche deutlich kennzeichnen.
+- **Unklar-Pfad (D20):** Bleiben die Symptome widersprüchlich oder zu vage für eine
+  belastbare Ursache, keine Scheinsicherheit erzeugen — stattdessen `zeige_karte
+  typ=diagnose` mit `unklar:true` ausgeben, ehrlich benennen, dass die Diagnose offen
+  bleibt, und an Profi/Repair-Café weiterleiten. Das Protokoll bleibt nutzbar (das
+  systematische Eingrenzen wird festgehalten).
 
 # Grenzt sich ab gegen
 
@@ -37,6 +42,8 @@ kuratierten Fehlerzustand-Sammlung (D4).
 2. Bei Bedarf `recherche` für belegtes Zusatzwissen anstoßen.
 3. Abgrenzungsfragen stellen, Kandidaten eingrenzen.
 4. Ergebnis mit Konfidenz/Begründung festhalten (D3).
+5. Bleibt die Lage widersprüchlich/zu vage: Diagnose-Karte mit `unklar:true` ausgeben,
+   an Profi/Café weiterleiten, statt eine unsichere Ursache zu behaupten (D20).
 
 # Übergabe
 
@@ -44,4 +51,4 @@ kuratierten Fehlerzustand-Sammlung (D4).
 
 # Konzept-Anker
 
-`<<ki>>` (Diagnose-Modell, Inhaltsmodell Fehlerzustand), D2, D3, D4.
+`<<ki>>` (Diagnose-Modell, Inhaltsmodell Fehlerzustand), D2, D3, D4, D20.

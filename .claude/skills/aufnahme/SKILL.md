@@ -18,6 +18,11 @@ Fragen verletzen niemanden. Sie ist immer verfügbar und immer sicher.
   (Gerät, Defekt, Typenschild), Sprache/Voice, Barcode/Modell-Scan.
 - **Eigentum klären (D14):** Ist der Nutzer nicht der Eigentümer, Eigentümer und
   Kostenträger erfassen.
+- **Gerätekategorie füllen:** `kategorie` in der `aufnahme`-Karte immer setzen — sie ist
+  die Weiche für den Datenschutz-Schutzschritt (D23).
+- **Datentragende Geräte erkennen (D23):** Bei Laptop/Smartphone/Tablet (und ähnlichen
+  datentragenden Geräten) vor einer Fremdabgabe den Schutzschritt „Backup + Daten löschen
+  + Konten abmelden" anstoßen — siehe `protokoll`.
 - **Tagebuch-Wiedererkennung:** prüfen, ob für dieses Gerät schon ein Vorgang existiert
   („Dieser Fehler war schon mal da").
 
@@ -37,7 +42,9 @@ Fragen verletzen niemanden. Sie ist immer verfügbar und immer sicher.
 # Vorgehen
 
 1. Freie Schilderung aufnehmen; passende Eingabe-Wege anbieten (Foto/Voice/Barcode).
-2. Gerät identifizieren (Kategorie/Modell, ggf. via Scan).
+2. Gerät identifizieren (Kategorie/Modell, ggf. via Scan); `kategorie` in der Karte füllen.
+   Bei datentragenden Geräten (Laptop/Smartphone/Tablet) den Schutzschritt „Backup + Daten
+   löschen + Konten abmelden" vor Fremdabgabe vormerken (D23).
 3. Geführte Fragen stellen (Symptom, Bedingungen, Historie, bereits Getestetes).
 4. Eigentum/Kostenträger klären, falls Nutzer ≠ Eigentümer (D14).
 5. Tagebuch prüfen und Relevantes anbinden.
@@ -49,4 +56,4 @@ Fragen verletzen niemanden. Sie ist immer verfügbar und immer sicher.
 
 # Konzept-Anker
 
-Schicht A (`<<protokoll>>`, „Zwei Schichten"), Eingabe-Wege (D9), D6, D14.
+Schicht A (`<<protokoll>>`, „Zwei Schichten"), Eingabe-Wege (D9), D6, D14, D23.
