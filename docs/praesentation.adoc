@@ -1,4 +1,4 @@
-= Repair App — Präsentation
+= RepairApp
 Reparatur-App Team
 :revdate: {docdate}
 // --- Folien-Format (Querformat, eine Folie pro Seite) ---
@@ -7,6 +7,7 @@ Reparatur-App Team
 :pdf-theme: praesentation
 :pdf-themesdir: {docdir}
 :pagennums:
+
 // --- Darstellung ---
 :icons: font
 :sectids!:
@@ -34,7 +35,6 @@ Reparatur-App Team
 
 // =====================  FOLIE 1 — Titel  =====================================
 [.text-center]
-== Repair App
 
 ****
 [.lead]
@@ -44,9 +44,8 @@ Vom Defekt zur Entscheidung in einem klaren Schritt.
 *Diagnose* · *Vergleich* · *Begleitung*
 
 [.text-center]
-_Reparatur-App Team · {revdate}_
+_Markus, Jörg, Pawel, Max, Robert und Marc · {revdate}_
 ****
-
 
 // =====================  FOLIE 2 — Herausforderung  ===================================
 <<<
@@ -61,7 +60,7 @@ Reparatur scheitert selten am Willen, meist an Unsicherheit.
 a|[.text-center]
 *Was ist kaputt?*
 
-Die Ursache ist oft unklar.
+Die Ursache ist oft unklar. Klarheit besteht darüber was *nicht* geht.
 
 a|[.text-center]
 *Lohnt es sich?*
@@ -71,7 +70,7 @@ Kosten und Aufwand sind schwer einschätzbar.
 a|[.text-center]
 *Wer hilft?*
 
-Teile, Werkstätten und Förderungen sind verteilt.
+Die Informationen über Werkstätten, Ersatzteile und Förderungen sind über verschiedene Quellen verstreut.
 |===
 ****
 
@@ -188,8 +187,11 @@ Beta mit häufigen Haushaltsgeräten, klarer Ampel und direkter Vermittlung.
 Fragen und Diskussion
 
 [.text-center]
-_Kontakt / Repo: RepairApp_
+_Kontakt / Repo: github.com/supermarche/RepairApp_
 ****
+
+// ===================== Backup Slides =========================================
+include::folien/runtime-roles.adoc[]
 
 
 // =============================================================================
