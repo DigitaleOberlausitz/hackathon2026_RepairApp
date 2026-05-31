@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 
 from . import roles, tools, config, protokoll_log
-from .ai import _resolve_backend, DEFAULT_OPENAI_MODEL  # Backend-Auflösung wiederverwenden
+from .ai import _resolve_backend  # Backend-Auflösung wiederverwenden
 
 # Kompakte, STABILE Ableitung aus runtime-roles/lotse.md (nicht der Volltext —
 # sonst Cache-Drift bei jeder Spec-Änderung). Volltext via lade_rolle("lotse").
@@ -105,7 +105,7 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
         resp = client.chat.completions.create(
             model=model, messages=messages, tools=tools.specs(),
             temperature=0.4, timeout=config.llm_timeout())  # FIX S1: zentraler Getter, kein Duplikat
-        _merke_usage(resp, model)  # R4: Token-Usage best-effort festhalten
+        _merke_usage(resp, model, state)  # R4: Token-Usage best-effort festhalten
         msg = resp.choices[0].message
         tool_calls = list(getattr(msg, "tool_calls", []) or [])
 
@@ -147,17 +147,37 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
             "karten": neue_karten, "abgebrochen": True}
 
 
-def _merke_usage(resp, model) -> None:
+def _merke_usage(resp, model, state) -> None:
     """Reicht die OpenAI-``usage`` best-effort an protokoll_log weiter (R4).
 
     Darf nie hart scheitern — das Protokoll ist rein beobachtend (PROJ-28).
+
+    ``protokoll_log.merke_usage`` überschreibt nur den letzten Wert (ein
+    contextvars-Slot); bei mehreren Tool-Iterationen ginge alles vor der letzten
+    create()-Runde verloren. Daher legen wir die Usage je Iteration zusätzlich
+    als Eintrag in ``state['entscheidungsprotokoll']`` ab (vollständige Spur).
     """
     try:
         usage = getattr(resp, "usage", None)
-        if usage is not None:
-            protokoll_log.merke_usage(model, usage)
+        if usage is None:
+            return
+        protokoll_log.merke_usage(model, usage)
+        state.setdefault("entscheidungsprotokoll", []).append({
+            "usage": {
+                "model": model or "—",
+                "prompt_tokens": int(_usage_attr(usage, "prompt_tokens") or 0),
+                "completion_tokens": int(_usage_attr(usage, "completion_tokens") or 0),
+                "total_tokens": int(_usage_attr(usage, "total_tokens") or 0),
+            }
+        })
     except Exception:  # noqa: BLE001 — Protokoll darf die Fachlogik nie stören
         pass
+
+
+def _usage_attr(obj, name):
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
 
 
 # Karten-Kategorien, die als datentragend gelten (D23) — Layout-Konstante.
@@ -179,12 +199,20 @@ def _sicherheits_backstop(neue_karten: list[dict], state: dict) -> None:
         Eigentums-Hinweis            → Eigentums-Hinweis anhängen (D14).
       - datentragendes Gerät genannt  → Datenlöschungs-Hinweis anhängen (D23).
     Hinweise werden an neue_karten UND state['karten'] angehängt.
+
+    Dedup läuft über den GESAMTEN Vorgang (state['karten'], turn-übergreifend
+    persistiert via store.py), nicht nur über den aktuellen Turn (neue_karten) —
+    sonst entstünde bei erneuter roter Ampel in einem Folge-Turn ein zweiter,
+    identischer Hinweis. Das Auslösen (gefahr/aufnahme) prüft hingegen nur die
+    Karten DIESES Turns, damit ein Hinweis nur reagierend zum neuen Trigger kommt.
     """
     def _push(art: str, text: str, schwere: str) -> None:
         from . import cards
         karte = cards.validate("hinweis", {"art": art, "text": text, "schwere": schwere})
         neue_karten.append(karte)
         state.setdefault("karten", []).append(karte)
+
+    bestehende = state.get("karten", [])
 
     gefahr = any(
         k["typ"] == "ampel" and k["daten"].get("achsen", {}).get("sicherheit") == "rot"
@@ -194,7 +222,7 @@ def _sicherheits_backstop(neue_karten: list[dict], state: dict) -> None:
         and any(s.get("danger") for s in k["daten"].get("schritte", []))
         for k in neue_karten
     )
-    if gefahr and not _hat_hinweis(neue_karten, {"sicherheit", "rueckruf"}):
+    if gefahr and not _hat_hinweis(bestehende, {"sicherheit", "rueckruf"}):
         _push("sicherheit",
               "Diese Reparatur kann gefährlich sein. Im Zweifel lieber zur Fachkraft — "
               "du entscheidest selbst. (Die KI kann Fehler machen.)", "kritisch")
@@ -203,13 +231,13 @@ def _sicherheits_backstop(neue_karten: list[dict], state: dict) -> None:
     for k in reversed(neue_karten):
         if k["typ"] == "aufnahme":
             eig = k["daten"].get("eigentum") or {}
-            if eig.get("ist_eigentuemer") is False and not _hat_hinweis(neue_karten, {"eigentum"}):
+            if eig.get("ist_eigentuemer") is False and not _hat_hinweis(bestehende, {"eigentum"}):
                 _push("eigentum",
                       "Du bist nicht der Eigentümer dieses Geräts. Vor einem Eingriff "
                       "Rücksprache halten; Kostenträger klären.", "warnung")
             kat = (k["daten"].get("symptom", "") + " " +
                    str(k["daten"].get("kategorie", ""))).lower()
-            if any(w in kat for w in _DATENTRAGEND) and not _hat_hinweis(neue_karten, {"datenloeschung"}):
+            if any(w in kat for w in _DATENTRAGEND) and not _hat_hinweis(bestehende, {"datenloeschung"}):
                 _push("datenloeschung",
                       "Bevor du das Gerät aus der Hand gibst: Backup anlegen, Daten "
                       "löschen, Konten abmelden.", "warnung")

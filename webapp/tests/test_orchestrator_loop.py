@@ -97,3 +97,28 @@ def test_backstop_kein_doppelhinweis_wenn_modell_schon_warnt():
     sicherheits_hinweise = [k for k in result["karten"]
                             if k["typ"] == "hinweis" and k["daten"]["art"] == "sicherheit"]
     assert len(sicherheits_hinweise) == 1  # kein vom Server doppelt angehängter
+
+
+def test_backstop_dedup_ueber_turns():
+    # Issue 1: state persistiert über Turns. Bei erneuter roter Ampel in Turn 2
+    # darf KEIN zweiter Sicherheits-Hinweis entstehen (Dedup gegen state["karten"]).
+    class RoteAmpelClient(FakeClient):
+        def create(self, **kw):
+            self.calls += 1
+            if self.calls % 2 == 1:  # erste create()-Runde je Turn: rote Ampel
+                tc = _ToolCall("t1", "zeige_karte",
+                    '{"typ":"ampel","daten":{"achsen":{"sicherheit":"rot",'
+                    '"komplexitaet":"rot","kosten":"gelb","machbarkeit":"gelb"},'
+                    '"gesamt":"rot","begruendung":"Personengefahr.",'
+                    '"trust":{"level":"hoch","quelle":"k","konfidenz":"hoch","hinweis":"h"}}}')
+                return _Resp(_Msg(tool_calls=[tc]))
+            return _Resp(_Msg(content="ok"))
+
+    state = {"messages": [], "karten": [], "geladene_rollen": [], "entscheidungsprotokoll": []}
+    client = RoteAmpelClient()
+    orchestrator.run_turn(state, "Auto bremst schlecht", client=client, model="x")
+    orchestrator.run_turn(state, "Und jetzt?", client=client, model="x")
+
+    sicherheits_hinweise = [k for k in state["karten"]
+                            if k["typ"] == "hinweis" and k["daten"]["art"] == "sicherheit"]
+    assert len(sicherheits_hinweise) == 1  # turn-übergreifend nur EINER
