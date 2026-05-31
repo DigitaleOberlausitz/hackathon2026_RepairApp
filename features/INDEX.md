@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-28
+**Next Available ID:** PROJ-30
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -49,6 +49,13 @@
 | PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Planned | PROJ-9, PROJ-22 |
 | PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Planned | — |
 | PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Planned | — |
+
+## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Planned | PROJ-9 |
+| PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Planned | — |
 
 ## Empfohlene Build-Reihenfolge
 

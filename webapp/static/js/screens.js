@@ -14,8 +14,8 @@
   var normTrustLevel = window.normTrustLevel;
 
   /* ---- i18n helper (PROJ-24) — delegates to app.js catalog via window.RKt ---- */
-  function t(key) {
-    return (window.RKt && window.RKt(key)) || key;
+  function t(key, params) {
+    return (window.RKt && window.RKt(key, params)) || key;
   }
 
   /* ---- Vertrauen aus state.trust ODER device.confidence ableiten (PROJ-25) ---- */
@@ -50,7 +50,7 @@
   }
 
   function docBtn(onClick) {
-    return IconBtn({ onClick: onClick, label: 'Protokoll', children: DocIcon() });
+    return IconBtn({ onClick: onClick, label: t('common.protokoll'), children: DocIcon() });
   }
 
   function deviceRow(d, onClick, sheet) {
@@ -86,9 +86,7 @@
       input = h('div', { class: 'rk-input' },
         h('input', {
           class: 'rk-input-ph', type: 'text',
-          placeholder: lang === 'en'
-            ? '”My toaster doesn\'t pop the bread up anymore …”'
-            : '„Mein Toaster wirft das Brot nicht mehr aus …”',
+          placeholder: t('start.placeholder'),
           value: props.draft || '',
           style: { flex: '1', minWidth: '0', border: '0', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit' },
           onInput: function (e) { props.setDraft(e.target.value); },
@@ -118,29 +116,33 @@
       onAblehnen: props.onConsentAblehnen,
     });
 
+    // Hero "Was ist / kaputt?" — am Leerzeichen umbrechen für den <br>
+    var heroFull = t('start.hero');
+    var heroParts = heroFull.split(' ');
+    var heroLine2 = heroParts.length > 1 ? heroParts.pop() : '';
+    var heroLine1 = heroParts.join(' ');
+
     var children = [
       consentGate,
       h('div', { class: 'rk-brand' },
         h('span', { class: 'rk-brand-mark' }, '🔧'),
-        h('span', { class: 'rk-brand-name' }, lang === 'en' ? 'Repair Helper' : 'Reparatur-Helfer')
+        h('span', { class: 'rk-brand-name' }, t('start.brand'))
       ),
-      h('h1', { class: 'rk-hero' }, lang === 'en' ? 'What is' : 'Was ist', h('br', {}), lang === 'en' ? 'broken?' : 'kaputt?'),
-      h('p', { class: 'rk-hero-sub' }, lang === 'en'
-        ? 'Just describe what\'s happening — as if you were telling a friend.'
-        : 'Erzähl einfach, was los ist — als würdest du es einem Bekannten beschreiben.'),
+      heroLine2
+        ? h('h1', { class: 'rk-hero' }, heroLine1, h('br', {}), heroLine2)
+        : h('h1', { class: 'rk-hero' }, heroFull),
+      h('p', { class: 'rk-hero-sub' }, t('start.heroSub')),
       input,
       mediaPanel,
       h('div', { class: 'rk-mine' },
-        h('div', { class: 'rk-mine-head' }, lang === 'en' ? 'My devices' : 'Meine Geräte'),
+        h('div', { class: 'rk-mine-head' }, t('start.meineGeraete')),
         deviceList.map(function (d) { return deviceRow(d, function () { props.onPick(d.id); }, false); })
       ),
       Sheet({
         open: props.chooser, onClose: function () { props.setChooser(false); },
-        title: lang === 'en' ? 'Example to try' : 'Beispiel zum Ausprobieren',
+        title: t('start.chooser.title'),
         children: [
-          h('p', { class: 'rk-sheet-note' }, lang === 'en'
-            ? 'This demo has two devices — one works out well, the other clearly needs a pro.'
-            : 'In dieser Demo sind zwei Geräte hinterlegt — eines geht gut aus, eines ist ein klarer Fall fürs Abraten.'),
+          h('p', { class: 'rk-sheet-note' }, t('start.chooser.hinweis')),
           deviceList.map(function (d) {
             return deviceRow(d, function () { props.setChooser(false); props.onPick(d.id); }, true);
           })
@@ -156,9 +158,9 @@
     var device = props.device;
     var own = props.ownership || {};
     var opts = [
-      { key: 'yes', label: 'Ja, gehört mir' },
-      { key: 'no', label: 'Nein' },
-      { key: 'unknown', label: 'Weiß nicht' },
+      { key: 'yes', label: t('owner.yes') },
+      { key: 'no', label: t('owner.no') },
+      { key: 'unknown', label: t('owner.unknown') },
     ];
     var consentGate = ConsentGateOverlay({
       show: !!props.showConsentGate,
@@ -169,16 +171,16 @@
 
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: 'Weiter' }),
+      footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: t('common.weiter') }),
       children: [
         consentGate,
-        h('div', { class: 'rk-eyebrow' }, 'Aufnahme'),
-        h('h2', { class: 'rk-q rk-q-tight rk-owner-q' }, 'Ist das dein Gerät?'),
-        h('p', { class: 'rk-q-hint' }, 'Nur wichtig, falls Garantie oder Kosten eine Rolle spielen. Du musst nichts angeben.'),
+        h('div', { class: 'rk-eyebrow' }, t('common.aufnahme')),
+        h('h2', { class: 'rk-q rk-q-tight rk-owner-q' }, t('owner.q')),
+        h('p', { class: 'rk-q-hint' }, t('owner.hint')),
         h('div', { class: 'rk-owner' },
           h('div', { class: 'rk-answers' }, opts.map(function (o) {
             return AnswerChip({
@@ -188,16 +190,16 @@
             });
           })),
           own.isOwner === 'no' ? h('div', { class: 'rk-owner-followup' },
-            h('p', { class: 'rk-q-hint' }, 'Optionale Angaben — beide kannst du überspringen.'),
+            h('p', { class: 'rk-q-hint' }, t('owner.followupHint')),
             h('input', {
               class: 'rk-owner-input', type: 'text',
-              placeholder: 'Wem gehört es? (z. B. Vermieter, Firma)',
+              placeholder: t('owner.ownerPlaceholder'),
               value: props.draftOwner || '',
               onInput: function (e) { props.setDraftOwner(e.target.value); }
             }),
             h('input', {
               class: 'rk-owner-input', type: 'text',
-              placeholder: 'Wer trägt die Kosten?',
+              placeholder: t('owner.costPlaceholder'),
               value: props.draftCostBearer || '',
               onInput: function (e) { props.setDraftCostBearer(e.target.value); }
             })
@@ -222,14 +224,14 @@
 
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: h('div', { class: 'rk-triage-foot' }, 'Frage ' + (index + 1) + ' von ' + n + ' · ich frage nur so viel, wie ich brauche'),
+      footer: h('div', { class: 'rk-triage-foot' }, t('triage.foot', { i: index + 1, n: n })),
       children: [
         ProgressDots({ n: n, i: index }),
-        h('div', { class: 'rk-eyebrow' }, 'Nachfragen'),
+        h('div', { class: 'rk-eyebrow' }, t('triage.eyebrow')),
         h('h2', { class: 'rk-q' }, q.q),
         h('p', { class: 'rk-q-hint' }, q.hint),
         h('div', { class: 'rk-answers' }, q.options.map(function (o) {
@@ -238,7 +240,7 @@
         h('div', { class: 'rk-triage-text-wrap' },
           h('textarea', {
             class: 'rk-triage-text', maxlength: '500', rows: '2',
-            placeholder: 'Optional: in eigenen Worten beschreiben …',
+            placeholder: t('triage.textPlaceholder'),
             onInput: function (e) {
               var v = e.target.value;
               props.setFreitext(index, v);
@@ -248,8 +250,8 @@
           }, ftVal),
           charcount(ftVal)
         ),
-        h('button', { class: 'rk-freeanswer', onClick: function () { props.onAnswer(q.q, 'frei beschrieben', 'frei beschrieben'); } },
-          h('span', {}, 'Nur frei antworten …'),
+        h('button', { class: 'rk-freeanswer', onClick: function () { props.onAnswer(q.q, t('triage.freiTag'), t('triage.freiTag')); } },
+          h('span', {}, t('triage.frei')),
           h('span', { class: 'rk-input-mic' }, '🎙️')
         )
       ]
@@ -266,8 +268,8 @@
     var hasMultiDefekte = defekte.length >= 2;
 
     var children = [
-      h('div', { class: 'rk-eyebrow' }, 'Einschätzung'),
-      h('h2', { class: 'rk-q rk-q-tight' }, 'Worauf du dich einlässt'),
+      h('div', { class: 'rk-eyebrow' }, t('ampel.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('ampel.title')),
     ];
 
     // Mehrfachdefekte: je-Defekt-Ampeln (PROJ-21) — bleibt permanent sichtbar
@@ -292,7 +294,7 @@
         return TrustBadge(tr.level, tr.source, tr.reason, { onClick: function () { props.setConf(true); }, strong: stop });
       })(),
       h('div', { class: 'rk-aiwarn ' + (stop ? 'rk-aiwarn-strong' : '') },
-        (stop ? '⚠️ Besonders hier gilt: ' : '') + 'Die KI kann sich irren — sieh das als Orientierung, nicht als Urteil.'
+        (stop ? t('common.aiWarnStrong') : '') + t('common.aiWarn')
       )
     );
 
@@ -309,31 +311,38 @@
           h('p', { class: 'rk-sheet-note', style: { color: levelMeta(activeLight.level).ink } }, activeLight.note),
           h('div', { class: 'rk-sheet-level' },
             h('span', { class: 'rk-light-face', style: { background: levelMeta(activeLight.level).dot } }),
-            levelMeta(activeLight.level).face + ' Bewertung: ' + levelMeta(activeLight.level).label
+            levelMeta(activeLight.level).face + ' ' + t('ampel.sheetBewertung') + levelLabel(activeLight.level)
           )
         ] : null
       }),
       Sheet({
-        open: props.conf, onClose: function () { props.setConf(false); }, title: 'Woher kommt diese Einschätzung?',
+        open: props.conf, onClose: function () { props.setConf(false); }, title: t('ampel.confTitle'),
         children: [
-          h('p', { class: 'rk-sheet-note' }, 'Quelle: ', h('b', {}, device.confidence.source)),
-          h('p', { class: 'rk-sheet-note' }, 'Wie sicher: ', h('b', {}, device.confidence.level)),
+          h('p', { class: 'rk-sheet-note' }, t('ampel.confSource'), h('b', {}, device.confidence.source)),
+          h('p', { class: 'rk-sheet-note' }, t('ampel.confLevel'), h('b', {}, device.confidence.level)),
           h('p', { class: 'rk-sheet-note' }, device.confidence.note),
           h('div', { class: 'rk-sheet-hr' }),
-          h('p', { class: 'rk-sheet-fine' }, 'Die App verbietet dir nichts — je riskanter die Sache, desto deutlicher die Warnung. Die Verantwortung für dein Handeln bleibt bei dir.')
+          h('p', { class: 'rk-sheet-fine' }, t('ampel.confFine'))
         ]
       })
     );
 
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: 'Was möchtest du tun?' }),
+      footer: BigButton({ variant: 'primary', onClick: props.onContinue, children: t('ampel.footer') }),
       children: children
     });
+  }
+
+  /* ---- lokalisiertes Ampel-Stufen-Label (levelMeta liefert nur DE) ---- */
+  function levelLabel(level) {
+    if (level === 'gut') return t('level.gut');
+    if (level === 'mittel') return t('level.mittel');
+    return t('level.stop');
   }
 
   /* ===================== UNKLAR-PFAD (PROJ-4) ===================== */
@@ -341,27 +350,23 @@
     var device = props.device;
     var dangerous = device && device.accentPath === 'stop';
     var paths = [
-      { key: 'pro', e: '🏪', t: 'Profi beauftragen', s: 'Fachbetrieb schaut sich das Gerät an' },
-      { key: 'local', e: '🤝', t: 'Repair Café finden', s: 'gemeinsam vor Ort eingrenzen' },
-      { key: 'community', e: '💬', t: 'Community fragen', s: 'Forum / Gruppe mit deinem Protokoll' },
+      { key: 'pro', e: '🏪', t: t('unclear.proT'), s: t('unclear.proS') },
+      { key: 'local', e: '🤝', t: t('unclear.localT'), s: t('unclear.localS') },
+      { key: 'community', e: '💬', t: t('unclear.communityT'), s: t('unclear.communityS') },
     ];
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
-        title: device ? deviceTitle(device) : h('span', {}, 'Unklar'),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
+        title: device ? deviceTitle(device) : h('span', {}, t('unclear.titleShort')),
         right: docBtn(props.onProtocol)
       }),
-      footer: GhostButton({ full: true, onClick: props.onAmpel, children: 'Trotzdem zur Einschätzung →' }),
+      footer: GhostButton({ full: true, onClick: props.onAmpel, children: t('unclear.footer') }),
       children: [
         h('div', { class: 'rk-unclear' },
           h('div', { class: 'rk-unclear-emoji' }, '🤔'),
-          h('h2', { class: 'rk-unclear-title' }, 'Ehrlich: keine verlässliche Eingrenzung möglich'),
-          h('p', { class: 'rk-unclear-body' },
-            'Mit den bisherigen Angaben kann ich die Ursache nicht seriös bestimmen. ' +
-            'Ich täusche dir hier lieber keine Sicherheit vor. Dein Protokoll ist gespeichert — ' +
-            'du kannst es behalten und weitergeben.'),
-          dangerous ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' },
-            '⚠️ Dieses Gerät kann gefährlich sein. Auch wenn die Ursache unklar ist: bitte nicht selbst öffnen — der Profi-Weg hat Vorrang.') : null,
+          h('h2', { class: 'rk-unclear-title' }, t('unclear.title')),
+          h('p', { class: 'rk-unclear-body' }, t('unclear.body')),
+          dangerous ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, t('unclear.dangerWarn')) : null,
           h('div', { class: 'rk-unclear-paths' }, paths.map(function (p) {
             return BigButton({
               variant: (dangerous && p.key === 'pro') ? 'primary' : 'soft',
@@ -371,7 +376,7 @@
               children: p.t
             });
           })),
-          h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), ' Protokoll ansehen, exportieren & teilen')
+          h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), t('unclear.share'))
         )
       ]
     });
@@ -381,13 +386,13 @@
   function CompareBlock(compare, trust, device) {
     if (!compare) return null;
     var estTag = compare.geschaetzt
-      ? h('span', { class: 'rk-est-tag' }, 'geschätzt')
+      ? h('span', { class: 'rk-est-tag' }, t('compare.geschaetzt'))
       : null;
     var defs = [
-      { key: 'repair', e: '🛠️', t: 'Selbst reparieren', reco: 'repair' },
-      { key: 'pro', e: '🏪', t: 'Profi-Reparatur', reco: 'pro' },
-      { key: 'neu', e: '🆕', t: 'Neu kaufen', reco: 'neu' },
-      { key: 'entsorgung', e: '♻️', t: 'Entsorgen', reco: 'entsorgung' },
+      { key: 'repair', e: '🛠️', t: t('compare.repair'), reco: 'repair' },
+      { key: 'pro', e: '🏪', t: t('compare.pro'), reco: 'pro' },
+      { key: 'neu', e: '🆕', t: t('compare.neu'), reco: 'neu' },
+      { key: 'entsorgung', e: '♻️', t: t('compare.entsorgung'), reco: 'entsorgung' },
     ];
     function cell(label, value) {
       var v = value == null || value === '' ? '—' : value;
@@ -400,15 +405,15 @@
       var p = compare[d.key] || {};
       var isReco = compare.empfehlung === d.reco;
       var children = [
-        h('div', { class: 'rk-compare-head' }, h('span', {}, d.e + ' ' + d.t), isReco ? h('span', { class: 'rk-compare-reco' }, '★ Empfehlung') : null),
-        cell('💶 Geld', p.geld),
-        cell('⏱️ Zeit', p.zeit),
-        cell('🌍 Ökologie', p.umwelt),
+        h('div', { class: 'rk-compare-head' }, h('span', {}, d.e + ' ' + d.t), isReco ? h('span', { class: 'rk-compare-reco' }, t('compare.reco')) : null),
+        cell(t('compare.geld'), p.geld),
+        cell(t('compare.zeit'), p.zeit),
+        cell(t('compare.umwelt'), p.umwelt),
       ];
       if (d.key === 'neu' && p.versteckt && p.versteckt.length) {
         children.push(
           h('div', { class: 'rk-compare-hidden' },
-            h('div', { class: 'rk-compare-k' }, 'Versteckte Posten:'),
+            h('div', { class: 'rk-compare-k' }, t('compare.versteckt')),
             p.versteckt.map(function (x) { return h('div', { class: 'rk-compare-hidden-item' }, '• ' + x); })
           )
         );
@@ -420,11 +425,11 @@
     var estTrust = compare.geschaetzt
       ? (function () {
         var tr = deriveTrust(trust, device);
-        return TrustBadge('mittel', tr.source || 'KI-Einschätzung', tr.reason || 'Geschätzte Vergleichswerte — keine belegten Preise.');
+        return TrustBadge('mittel', tr.source || t('compare.trustSource'), tr.reason || t('compare.trustReason'));
       })()
       : null;
     return h('div', {},
-      h('div', { class: 'rk-eyebrow' }, 'Vergleich aller Wege ', estTag),
+      h('div', { class: 'rk-eyebrow' }, t('compare.eyebrow'), estTag),
       h('div', { class: 'rk-compare-4' }, cols),
       estTrust,
       compare.begruendung ? h('div', { class: 'rk-compare-begruendung' }, '💡 ' + compare.begruendung) : null
@@ -433,13 +438,13 @@
 
   /* ===================== FÖRDERUNG (PROJ-6) ===================== */
   function FoerderBlock(foerder) {
-    var head = h('div', { class: 'rk-foerder-head' }, '🎁 Mögliche Förderung & Reparatur-Bonus');
+    var head = h('div', { class: 'rk-foerder-head' }, t('foerder.head'));
     if (foerder == null) {
-      return h('div', { class: 'rk-foerder' }, head, h('div', { class: 'rk-foerder-empty' }, 'Förderprogramme werden geladen …'));
+      return h('div', { class: 'rk-foerder' }, head, h('div', { class: 'rk-foerder-empty' }, t('foerder.loading')));
     }
     if (!foerder.length) {
       return h('div', { class: 'rk-foerder' }, head,
-        h('div', { class: 'rk-foerder-empty' }, 'Aktuell sind hier keine passenden Förderprogramme hinterlegt. Frag im Zweifel bei deiner Kommune oder deinem Bundesland nach.'));
+        h('div', { class: 'rk-foerder-empty' }, t('foerder.empty')));
     }
     var items = foerder.map(function (f) {
       var status = f.status || 'aktuell';
@@ -448,14 +453,14 @@
       var itemCls = 'rk-foerder-item';
       if (status === 'veraltet') { badgeCls += ' rk-foerder-stale'; itemCls += ' rk-foerder-stale'; }
       else if (status === 'ausgelaufen') { badgeCls += ' rk-foerder-expired'; itemCls += ' rk-foerder-expired'; }
-      var statusLabel = status === 'ausgelaufen' ? 'ausgelaufen' : status === 'veraltet' ? 'evtl. veraltet' : 'aktuell';
+      var statusLabel = status === 'ausgelaufen' ? t('foerder.statusAusgelaufen') : status === 'veraltet' ? t('foerder.statusVeraltet') : t('foerder.statusAktuell');
       return h('div', { class: itemCls },
         h('div', { class: 'rk-foerder-name' }, f.bezeichnung, h('span', { class: badgeCls }, statusLabel)),
         h('div', { class: 'rk-foerder-meta' }, (f.region ? f.region + ' · ' : '') + (f.traeger || '')),
         f.beschreibung ? h('p', { class: 'rk-foerder-meta' }, f.beschreibung) : null,
-        h('div', { class: 'rk-foerder-meta' }, 'Stand: ' + (f.stand || 'unbekannt') + ' · gültig bis: ' + (f.gueltigBis || 'unbefristet')),
-        f.quelle ? h('a', { class: 'rk-foerder-src', href: f.quelle, target: '_blank', rel: 'noopener noreferrer' }, 'Quelle ↗') : null,
-        h('div', { class: 'rk-foerder-disclaimer' }, 'Unverbindlicher Hinweis — keine Zusage. Bedingungen beim Träger prüfen.')
+        h('div', { class: 'rk-foerder-meta' }, t('foerder.stand') + (f.stand || t('foerder.unbekannt')) + t('foerder.gueltigBis') + (f.gueltigBis || t('foerder.unbefristet'))),
+        f.quelle ? h('a', { class: 'rk-foerder-src', href: f.quelle, target: '_blank', rel: 'noopener noreferrer' }, t('foerder.quelle')) : null,
+        h('div', { class: 'rk-foerder-disclaimer' }, t('foerder.disclaimer'))
       );
     });
     return h('div', { class: 'rk-foerder' }, head, items);
@@ -479,35 +484,37 @@
     var reco = recoKey(device);
     // 4 Pfade konsistent zur compare-Optik (repair/pro/neu/entsorgung)
     var paths = [
-      { key: 'self', reco: 'repair', e: '🛠️', t: "Ich mach's selbst", s: 'Schritt für Schritt begleitet' },
-      { key: 'pro', reco: 'pro', e: '🏪', t: 'Hilfe / Profi finden', s: 'Repair Café, Werkstatt & Fachbetrieb in der Nähe' },
-      { key: 'neu', reco: 'neu', e: '🆕', t: 'Neues Gerät vergleichen', s: 'Alternativen, ehrlich gegen die Reparatur gerechnet' },
-      { key: 'entsorgung', reco: 'entsorgung', e: '♻️', t: 'Entsorgen / Recycling', s: 'fachgerechter Weg + Rohstoffe zurück' },
+      { key: 'self', reco: 'repair', e: '🛠️', t: t('decision.selfT'), s: t('decision.selfS') },
+      { key: 'pro', reco: 'pro', e: '🏪', t: t('decision.proT'), s: t('decision.proS') },
+      { key: 'neu', reco: 'neu', e: '🆕', t: t('decision.neuT'), s: t('decision.neuS') },
+      { key: 'entsorgung', reco: 'entsorgung', e: '♻️', t: t('decision.entsorgungT'), s: t('decision.entsorgungS') },
     ];
+    var decisionChildren = [
+      h('div', { class: 'rk-eyebrow' }, t('decision.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('decision.title')),
+      h('p', { class: 'rk-q-hint' }, stop ? t('decision.hintStop') : t('decision.hintGo')),
+      CompareBlock(device.compare, props.trust, device),
+      FoerderBlock(props.foerder),
+      h('div', { class: 'rk-paths' }, paths.map(function (p) {
+        return BigButton({
+          variant: p.reco === reco ? 'primary' : 'soft',
+          recommend: p.reco === reco,
+          emoji: p.e, sub: p.s,
+          onClick: function () { props.onChoose(p.key); },
+          children: p.t
+        });
+      }))
+    ];
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      decisionChildren.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      children: [
-        h('div', { class: 'rk-eyebrow' }, 'Entscheidung'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Du entscheidest.'),
-        h('p', { class: 'rk-q-hint' }, stop
-          ? 'Ehrlich: Selbst öffnen wäre gefährlich. Ich empfehle Hilfe vor Ort — du wägst ab.'
-          : 'Ich empfehle, es selbst zu probieren. Aber du hast die Wahl.'),
-        CompareBlock(device.compare, props.trust, device),
-        FoerderBlock(props.foerder),
-        h('div', { class: 'rk-paths' }, paths.map(function (p) {
-          return BigButton({
-            variant: p.reco === reco ? 'primary' : 'soft',
-            recommend: p.reco === reco,
-            emoji: p.e, sub: p.s,
-            onClick: function () { props.onChoose(p.key); },
-            children: p.t
-          });
-        }))
-      ]
+      children: decisionChildren
     });
   }
 
@@ -515,20 +522,21 @@
   function SkillAskScreen(props) {
     var device = props.device;
     var skill = props.skill;
+    // key bleibt DE (State-Wert); t/s lokalisiert
     var levels = [
-      { key: 'Anfänger', e: '🌱', t: 'Eher Anfänger', s: 'Ich erkläre jeden Schritt ausführlich.' },
-      { key: 'Geübt', e: '🔧', t: 'Schon geübt', s: 'Knappe Anweisungen, kein Ballast.' },
+      { key: 'Anfänger', e: '🌱', t: t('skill.anfaengerT'), s: t('skill.anfaengerS') },
+      { key: 'Geübt', e: '🔧', t: t('skill.geuebtT'), s: t('skill.geuebtS') },
     ];
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
       children: [
-        h('div', { class: 'rk-eyebrow' }, 'Bevor es losgeht'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Wie sehr traust du dir das zu?'),
-        h('p', { class: 'rk-q-hint' }, 'Das steuert nur, wie ausführlich ich erkläre — keine Wertung. Du kannst es jederzeit umstellen.'),
+        h('div', { class: 'rk-eyebrow' }, t('skill.eyebrow')),
+        h('h2', { class: 'rk-q rk-q-tight' }, t('skill.title')),
+        h('p', { class: 'rk-q-hint' }, t('skill.hint')),
         h('div', { class: 'rk-skillask' }, levels.map(function (l) {
           return BigButton({
             variant: skill === l.key ? 'primary' : 'soft',
@@ -538,10 +546,10 @@
           });
         })),
         h('div', { class: 'rk-skill-out' },
-          h('p', { class: 'rk-q-hint' }, 'Lieber doch nicht selbst? Völlig in Ordnung:'),
-          GhostButton({ full: true, onClick: function () { props.onOut('pro'); }, children: '🏪 Profi beauftragen' }),
-          GhostButton({ full: true, onClick: function () { props.onOut('local'); }, children: '🤝 Repair Café / Hilfe vor Ort' }),
-          GhostButton({ full: true, onClick: function () { props.onOut('replace'); }, children: '♻️ Ersetzen / entsorgen' })
+          h('p', { class: 'rk-q-hint' }, t('skill.outHint')),
+          GhostButton({ full: true, onClick: function () { props.onOut('pro'); }, children: t('skill.outPro') }),
+          GhostButton({ full: true, onClick: function () { props.onOut('local'); }, children: t('skill.outLocal') }),
+          GhostButton({ full: true, onClick: function () { props.onOut('replace'); }, children: t('skill.outReplace') })
         )
       ]
     });
@@ -555,15 +563,15 @@
     var answered = !!w.asked || age !== '';
     var inWarranty = answered && age !== '>2J'; // unbekannt/jung => vorsorglich warnen
     var ages = [
-      { key: '<6M', label: 'Vor unter 6 Monaten' },
-      { key: '6-24M', label: 'Vor 6 Mon. – 2 Jahren' },
-      { key: '>2J', label: 'Vor über 2 Jahren' },
-      { key: 'unbekannt', label: 'Weiß nicht' },
+      { key: '<6M', label: t('gate.age6m') },
+      { key: '6-24M', label: t('gate.age624') },
+      { key: '>2J', label: t('gate.age2j') },
+      { key: 'unbekannt', label: t('gate.ageUnknown') },
     ];
     var children = [
-      h('div', { class: 'rk-eyebrow' }, 'Kurz vorher'),
-      h('h2', { class: 'rk-q rk-q-tight rk-gate-q' }, 'Wann hast du das Gerät gekauft?'),
-      h('p', { class: 'rk-q-hint' }, 'Nur eine grobe Zeitspanne — damit du keinen Garantie-Anspruch verschenkst. Überspringen ist okay.'),
+      h('div', { class: 'rk-eyebrow' }, t('gate.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight rk-gate-q' }, t('gate.q')),
+      h('p', { class: 'rk-q-hint' }, t('gate.hint')),
       h('div', { class: 'rk-gate' },
         h('div', { class: 'rk-answers' }, ages.map(function (a) {
           return AnswerChip({ active: age === a.key, onClick: function () { props.onAnswer(a.key); }, children: a.label });
@@ -572,29 +580,28 @@
     ];
 
     if (answered && age === '>2J') {
-      children.push(h('div', { class: 'rk-gate-alt' }, '✅ Älter als 2 Jahre — Gewährleistung greift in der Regel nicht mehr. Du kannst direkt loslegen.'));
+      children.push(h('div', { class: 'rk-gate-alt' }, t('gate.alt')));
     } else if (inWarranty) {
       children.push(
         h('div', { class: 'rk-gate-warn' },
-          h('b', {}, '⚠️ Achtung Gewährleistung: '),
-          'Wenn du das Gerät selbst öffnest, kann dein Gewährleistungs-/Garantieanspruch verfallen. ' +
-          'Bei einem echten Defekt ist eine Reklamation oft kostenlos.'),
+          h('b', {}, t('gate.warnLead')),
+          t('gate.warnBody')),
         h('div', { class: 'rk-gate-actions' },
-          BigButton({ variant: 'primary', emoji: '📮', sub: 'kostenlos bei Hersteller/Händler', onClick: props.onReklamation, children: 'Reklamation prüfen' }),
-          h('button', { class: 'rk-ghost rk-full rk-gate-proceed', onClick: props.onProceed }, 'Trotzdem selbst reparieren →')
+          BigButton({ variant: 'primary', emoji: '📮', sub: t('gate.reklamationSub'), onClick: props.onReklamation, children: t('gate.reklamation') }),
+          h('button', { class: 'rk-ghost rk-full rk-gate-proceed', onClick: props.onProceed }, t('gate.proceed'))
         )
       );
     }
 
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: answered ? null : h('div', { class: 'rk-triage-foot' }, 'Du kannst diese Frage überspringen.'),
+      footer: answered ? null : h('div', { class: 'rk-triage-foot' }, t('gate.skipFoot')),
       children: children.concat(answered ? [] : [
-        GhostButton({ full: true, onClick: function () { props.onAnswer('unbekannt'); }, children: 'Überspringen' })
+        GhostButton({ full: true, onClick: function () { props.onAnswer('unbekannt'); }, children: t('common.ueberspringen') })
       ])
     });
   }
@@ -608,8 +615,8 @@
     var body = depth === 'Geübt' ? step.pro : step.beginner;
 
     var bar = AppBar({
-      left: IconBtn({ onClick: props.onPrev, label: 'Zurück', children: BackIcon() }),
-      title: h('span', { class: 'rk-bar-step' }, 'Schritt ' + (index + 1) + '/' + n),
+      left: IconBtn({ onClick: props.onPrev, label: t('common.zurueck'), children: BackIcon() }),
+      title: h('span', { class: 'rk-bar-step' }, t('repair.step', { i: index + 1, n: n })),
       right: docBtn(props.onProtocol)
     });
 
@@ -620,23 +627,23 @@
         children: [
           h('div', { class: 'rk-confirm' },
             h('div', { class: 'rk-confirm-warn' },
-              h('b', {}, '☠️ Dieser Schritt kann gefährlich sein. '),
-              'Bitte lies erst weiter, wenn du sicher bist. Es gibt jederzeit den Profi-Weg.'),
+              h('b', {}, t('repair.dangerLead')),
+              t('repair.dangerBody')),
             h('h2', { class: 'rk-step-title' }, step.title),
-            h('div', { class: 'rk-confirm-q' }, 'Zwei kurze Fragen — ehrlich an dich selbst:'),
+            h('div', { class: 'rk-confirm-q' }, t('repair.confirmQ')),
             h('button', {
               class: 'rk-confirm-row' + (props.confirmAdult ? ' rk-answer-on' : ''),
               onClick: function () { props.setConfirmAdult(!props.confirmAdult); }
-            }, (props.confirmAdult ? '☑' : '☐') + ' Ich bin volljährig.'),
+            }, (props.confirmAdult ? '☑' : '☐') + ' ' + t('repair.confirmAdult')),
             h('button', {
               class: 'rk-confirm-row' + (props.confirmConfident ? ' rk-answer-on' : ''),
               onClick: function () { props.setConfirmConfident(!props.confirmConfident); }
-            }, (props.confirmConfident ? '☑' : '☐') + ' Ich traue mir diesen Schritt zu.'),
-            h('p', { class: 'rk-sheet-fine' }, 'Ein „Nein" sperrt dich nicht — es ist nur ein ehrlicher Hinweis. Du entscheidest.'),
+            }, (props.confirmConfident ? '☑' : '☐') + ' ' + t('repair.confirmConfident')),
+            h('p', { class: 'rk-sheet-fine' }, t('repair.confirmFine')),
             h('div', { class: 'rk-confirm-actions' },
-              h('button', { class: 'rk-nav rk-nav-primary rk-confirm-proceed', onClick: function () { props.onConfirm(props.confirmAdult, props.confirmConfident); } }, 'Verstanden — Schritt anzeigen'),
+              h('button', { class: 'rk-nav rk-nav-primary rk-confirm-proceed', onClick: function () { props.onConfirm(props.confirmAdult, props.confirmConfident); } }, t('repair.confirmProceed')),
               // FIX C: Profi-Alternative trägt rk-confirm-alt (Contract §6)
-              h('button', { class: 'rk-ghost rk-full rk-confirm-alt', onClick: props.onExit }, 'Lieber Profi finden')
+              h('button', { class: 'rk-ghost rk-full rk-confirm-alt', onClick: props.onExit }, t('repair.confirmAlt'))
             )
           )
         ]
@@ -645,39 +652,39 @@
 
     var callout = null;
     if (step.danger) {
-      callout = h('div', { class: 'rk-callout rk-callout-danger' }, '☠️ Lebensgefahr möglich — bitte genau lesen.');
+      callout = h('div', { class: 'rk-callout rk-callout-danger' }, t('repair.calloutDanger'));
     } else if (step.safety) {
       callout = h('div', { class: 'rk-callout rk-callout-safety' },
-        '⚡ Sicherheit zuerst: ' + (step.title === 'Stecker ziehen' ? 'erst ausstecken!' : 'aufpassen.'));
+        (step.title === 'Stecker ziehen' ? t('repair.calloutSafetyPlug') : t('repair.calloutSafety')));
     }
 
     var navrow = h('div', { class: 'rk-navrow' },
-      index > 0 ? h('button', { class: 'rk-nav rk-nav-ghost', onClick: props.onPrev }, 'Zurück') : h('span', {}),
+      index > 0 ? h('button', { class: 'rk-nav rk-nav-ghost', onClick: props.onPrev }, t('repair.navZurueck')) : h('span', {}),
       h('button', { class: 'rk-nav rk-nav-primary', onClick: last ? props.onFinish : props.onNext },
-        last ? (step.handoff ? 'Zum Profi & Protokoll →' : 'Fertig — hat’s geklappt?') : 'Weiter →')
+        last ? (step.handoff ? t('repair.navHandoff') : t('repair.navFinish')) : t('repair.navWeiter'))
     );
 
     return Screen({
       bar: bar,
       footer: h('div', { class: 'rk-repair-foot' },
-        GhostButton({ onClick: props.onExit, children: 'Das wird mir zu heikel — Profi finden' }),
+        GhostButton({ onClick: props.onExit, children: t('repair.exit') }),
         navrow
       ),
       children: [
         h('div', { class: 'rk-repair-tools' },
           h('div', { class: 'rk-depth' },
-            h('button', { class: depth === 'Anfänger' ? 'on' : '', onClick: function () { props.onDepth('Anfänger'); } }, 'Anfänger'),
-            h('button', { class: depth === 'Geübt' ? 'on' : '', onClick: function () { props.onDepth('Geübt'); } }, 'Geübt')
+            h('button', { class: depth === 'Anfänger' ? 'on' : '', onClick: function () { props.onDepth('Anfänger'); } }, t('repair.depthAnfaenger')),
+            h('button', { class: depth === 'Geübt' ? 'on' : '', onClick: function () { props.onDepth('Geübt'); } }, t('repair.depthGeuebt'))
           ),
-          h('button', { class: 'rk-speak' }, SpeakIcon(), ' Vorlesen')
+          h('button', { class: 'rk-speak' }, SpeakIcon(), t('repair.vorlesen'))
         ),
         Slot({ label: step.slot, h: 158 }),
         callout,
         h('h2', { class: 'rk-step-title' }, step.title),
         h('p', { class: 'rk-step-body' }, body),
-        step.handoff ? h('div', { class: 'rk-handoff' }, '📎 Dein Protokoll wird automatisch mitgegeben — die Werkstatt muss nicht bei null anfangen.') : null,
+        step.handoff ? h('div', { class: 'rk-handoff' }, t('repair.handoff')) : null,
         // PROJ-14: Beschaffungs-Einstieg innerhalb des Repair-Flows (Schicht B)
-        props.onParts ? h('button', { class: 'rk-share-line', onClick: props.onParts }, '🧩 Ersatzteile für diese Reparatur finden') : null
+        props.onParts ? h('button', { class: 'rk-share-line', onClick: props.onParts }, t('repair.parts')) : null
       ]
     });
   }
@@ -692,11 +699,11 @@
         children: [
           h('div', { class: 'rk-result-center' },
             h('div', { class: 'rk-result-emoji' }, '🤞'),
-            h('h2', { class: 'rk-result-q' }, 'Hat’s geklappt?'),
-            h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, 'Ganz ehrlich — beides ist völlig in Ordnung.'),
+            h('h2', { class: 'rk-result-q' }, t('result.askQ')),
+            h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, t('result.askHint')),
             h('div', { class: 'rk-result-btns' },
-              h('button', { class: 'rk-nav rk-nav-primary rk-big-yes', onClick: function () { props.setPhase('yes'); } }, 'Ja! 🎉'),
-              h('button', { class: 'rk-nav rk-nav-ghost rk-big-no', onClick: function () { props.setPhase('no'); } }, 'Noch nicht')
+              h('button', { class: 'rk-nav rk-nav-primary rk-big-yes', onClick: function () { props.setPhase('yes'); } }, t('result.yes')),
+              h('button', { class: 'rk-nav rk-nav-ghost rk-big-no', onClick: function () { props.setPhase('no'); } }, t('result.no'))
             )
           )
         ]
@@ -705,19 +712,19 @@
     if (phase === 'yes') {
       return Screen({
         bar: AppBar({ left: h('span', {}), title: deviceTitle(device), right: docBtn(props.onProtocol) }),
-        footer: GhostButton({ full: true, onClick: props.onRestart, children: 'Zur Startseite' }),
+        footer: GhostButton({ full: true, onClick: props.onRestart, children: t('common.startseite') }),
         children: [
           h('div', { class: 'rk-win' },
             h('div', { class: 'rk-result-emoji' }, '🎉'),
-            h('h2', { class: 'rk-result-q' }, 'Geschafft!'),
+            h('h2', { class: 'rk-result-q' }, t('result.winQ')),
             h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, device.success.line),
             h('div', { class: 'rk-impact' },
-              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, device.success.saved), h('span', { class: 'rk-impact-lab' }, 'gespart')),
-              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, device.success.co2), h('span', { class: 'rk-impact-lab' }, 'vermieden')),
-              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, '1'), h('span', { class: 'rk-impact-lab' }, 'Gerät gerettet'))
+              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, device.success.saved), h('span', { class: 'rk-impact-lab' }, t('result.savedLab'))),
+              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, device.success.co2), h('span', { class: 'rk-impact-lab' }, t('result.co2Lab'))),
+              h('div', { class: 'rk-impact-cell' }, h('span', { class: 'rk-impact-num' }, '1'), h('span', { class: 'rk-impact-lab' }, t('result.deviceLab')))
             ),
-            h('p', { class: 'rk-win-foot' }, 'Und ein Stück Selbstvertrauen fürs nächste Mal. Im Reparatur-Tagebuch festgehalten.'),
-            h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), ' Protokoll ansehen & teilen')
+            h('p', { class: 'rk-win-foot' }, t('result.winFoot')),
+            h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), t('result.winShare'))
           )
         ]
       });
@@ -725,12 +732,12 @@
     // phase === 'no'
     return Screen({
       bar: AppBar({ left: h('span', {}), title: deviceTitle(device), right: docBtn(props.onProtocol) }),
-      footer: BigButton({ variant: 'primary', emoji: '🏪', sub: 'dein Protokoll geht automatisch mit', onClick: props.onPro, children: 'Profi finden' }),
+      footer: BigButton({ variant: 'primary', emoji: '🏪', sub: t('result.proSub'), onClick: props.onPro, children: t('result.proFinish') }),
       children: [
         h('div', { class: 'rk-win' },
           h('div', { class: 'rk-result-emoji' }, '🧭'),
-          h('h2', { class: 'rk-result-q' }, 'Kein Vorwurf.'),
-          h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, 'Du hast das Problem systematisch eingegrenzt — das war goldrichtig. Jetzt hilft dir ein Profi schneller, weil die halbe Arbeit schon getan ist.')
+          h('h2', { class: 'rk-result-q' }, t('result.noQ')),
+          h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, t('result.noHint'))
         )
       ]
     });
@@ -740,23 +747,27 @@
   function PathScreen(props) {
     var device = props.device;
     var map = {
-      local: { e: '🤝', t: 'Hilfe vor Ort', body: 'In deiner Nähe gibt es Repair Cafés und Werkstätten. Nimm dein Protokoll mit — so versteht jede helfende Person dein Problem sofort.', slot: 'Karte mit Repair Cafés' },
-      pro: { e: '🏪', t: 'Profi beauftragen', body: 'Dein Reparatur-Steckbrief geht direkt an die Werkstatt. Der Mechaniker fängt nicht bei null an — das spart Zeit und Geld.', slot: 'Werkstatt-Anfrage gesendet' },
-      replace: { e: '♻️', t: 'Fachgerecht ersetzen', body: 'Wenn ein Neukauf wirklich klüger ist, ist das auch in Ordnung. So entsorgst du das alte Gerät richtig — und nimmst Rohstoffe in den Kreislauf zurück.', slot: 'Wertstoffhof in der Nähe' },
-      reklamation: { e: '📮', t: 'Reklamation einleiten', body: 'Wende dich mit deinem Protokoll an Händler oder Hersteller. Bei einem Defekt innerhalb der Gewährleistung ist die Reparatur oder der Austausch in der Regel kostenlos.', slot: 'Reklamations-Vorlage' },
-      community: { e: '💬', t: 'Community fragen', body: 'Teile dein Protokoll in einem Reparatur-Forum oder einer Gruppe. Mit den gesammelten Angaben können andere dir gezielter helfen.', slot: 'Community-Beitrag vorbereitet' },
+      local: { e: '🤝', t: t('path.localT'), body: t('path.localBody'), slot: t('path.localSlot') },
+      pro: { e: '🏪', t: t('path.proT'), body: t('path.proBody'), slot: t('path.proSlot') },
+      replace: { e: '♻️', t: t('path.replaceT'), body: t('path.replaceBody'), slot: t('path.replaceSlot') },
+      reklamation: { e: '📮', t: t('path.reklamationT'), body: t('path.reklamationBody'), slot: t('path.reklamationSlot') },
+      community: { e: '💬', t: t('path.communityT'), body: t('path.communityBody'), slot: t('path.communitySlot') },
     };
     var info = map[props.path] || map.pro;
+    var pathChildren = [
+      h('div', { class: 'rk-result-emoji', style: { marginTop: '6px' } }, info.e),
+      h('h2', { class: 'rk-result-q', style: { textAlign: 'left' } }, info.t),
+      h('p', { class: 'rk-q-hint' }, info.body),
+      Slot({ label: info.slot, h: 150 }),
+      h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), t('result.winShare'))
+    ];
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      pathChildren.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
     return Screen({
       bar: AppBar({ left: h('span', {}), title: device ? deviceTitle(device) : h('span', {}), right: docBtn(props.onProtocol) }),
-      footer: GhostButton({ full: true, onClick: props.onRestart, children: 'Zur Startseite' }),
-      children: [
-        h('div', { class: 'rk-result-emoji', style: { marginTop: '6px' } }, info.e),
-        h('h2', { class: 'rk-result-q', style: { textAlign: 'left' } }, info.t),
-        h('p', { class: 'rk-q-hint' }, info.body),
-        Slot({ label: info.slot, h: 150 }),
-        h('button', { class: 'rk-share-line', onClick: props.onProtocol }, DocIcon(), ' Protokoll ansehen & teilen')
-      ]
+      footer: GhostButton({ full: true, onClick: props.onRestart, children: t('common.startseite') }),
+      children: pathChildren
     });
   }
 
@@ -770,14 +781,14 @@
     if (!n) {
       return Screen({
         bar: AppBar({
-          left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
-          title: device ? deviceTitle(device) : h('span', {}, 'Aufnahme'),
+          left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
+          title: device ? deviceTitle(device) : h('span', {}, t('common.aufnahme')),
           right: docBtn(props.onProtocol)
         }),
-        footer: GhostButton({ full: true, onClick: props.onSkip, children: 'Überspringen →' }),
+        footer: GhostButton({ full: true, onClick: props.onSkip, children: t('common.ueberspringenArrow') }),
         children: [
-          h('div', { class: 'rk-eyebrow' }, 'Aufnahme'),
-          h('p', { class: 'rk-q-hint' }, 'Die Fragen werden geladen …')
+          h('div', { class: 'rk-eyebrow' }, t('common.aufnahme')),
+          h('p', { class: 'rk-q-hint' }, t('univ.loading'))
         ]
       });
     }
@@ -789,14 +800,14 @@
     }
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
-        title: device ? deviceTitle(device) : h('span', {}, 'Aufnahme'),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
+        title: device ? deviceTitle(device) : h('span', {}, t('common.aufnahme')),
         right: docBtn(props.onProtocol)
       }),
-      footer: h('div', { class: 'rk-triage-foot' }, 'Frage ' + (index + 1) + ' von ' + n + ' · systematische Aufnahme, gerätunabhängig'),
+      footer: h('div', { class: 'rk-triage-foot' }, t('univ.foot', { i: index + 1, n: n })),
       children: [
         ProgressDots({ n: n, i: index }),
-        h('div', { class: 'rk-eyebrow' }, 'Systematische Aufnahme'),
+        h('div', { class: 'rk-eyebrow' }, t('univ.eyebrow')),
         h('div', { class: 'rk-univ' },
           h('h2', { class: 'rk-q rk-univ-q' }, q.q),
           q.hint ? h('p', { class: 'rk-q-hint' }, q.hint) : null,
@@ -806,7 +817,7 @@
           h('div', { class: 'rk-triage-text-wrap' },
             h('textarea', {
               class: 'rk-triage-text', maxlength: '500', rows: '2',
-              placeholder: 'Optional: in eigenen Worten beschreiben …',
+              placeholder: t('triage.textPlaceholder'),
               onInput: function (e) {
                 var v = e.target.value;
                 props.setFreitext(index, v);
@@ -816,8 +827,8 @@
             }, ftVal),
             charcount(ftVal)
           ),
-          h('button', { class: 'rk-freeanswer', onClick: function () { props.onAnswer(q.q, 'frei beschrieben', 'frei beschrieben'); } },
-            h('span', {}, 'Nur frei antworten …'),
+          h('button', { class: 'rk-freeanswer', onClick: function () { props.onAnswer(q.q, t('triage.freiTag'), t('triage.freiTag')); } },
+            h('span', {}, t('triage.frei')),
             h('span', { class: 'rk-input-mic' }, '🎙️')
           )
         )
@@ -827,25 +838,24 @@
 
   /* ---- gemeinsamer Quellen-/Demo-Hinweis für kuratierte Service-Daten ---- */
   function curatedTrust(item) {
-    var quelle = (item && item.quelle) || 'kuratierte Demodaten';
-    return TrustBadge('mittel', quelle, 'Kuratierte Demodaten (' + quelle + ') — kein echter Anbieter-Nachweis.');
+    var quelle = (item && item.quelle) || t('svc.curatedDefault');
+    return TrustBadge('mittel', quelle, t('svc.curatedReason', { quelle: quelle }));
   }
   function svcEmpty(hinweis) {
-    return h('div', { class: 'rk-svc-empty' },
-      hinweis || 'In deiner Region sind hier keine Einträge hinterlegt. Frag im Zweifel bei deiner Kommune nach — oder probier es ohne Ortsangabe.');
+    return h('div', { class: 'rk-svc-empty' }, hinweis || t('svc.empty'));
   }
   function locField(props) {
     return h('div', {},
-      h('label', { class: 'rk-loc-label', for: 'rk-loc-input' }, '📍 Ort / PLZ (optional)'),
+      h('label', { class: 'rk-loc-label', for: 'rk-loc-input' }, t('svc.locLabel')),
       h('div', { class: 'rk-loc-row', style: { display: 'flex', gap: 'var(--gap)' } },
         h('input', {
           class: 'rk-loc-input', id: 'rk-loc-input', type: 'text',
-          placeholder: 'z. B. 50667 oder Köln',
+          placeholder: t('svc.locPlaceholder'),
           value: props.ort || '',
           onInput: function (e) { props.setOrt(e.target.value); },
           onKeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); props.onSearch(); } }
         }),
-        h('button', { class: 'rk-svc-select', onClick: props.onSearch }, 'Suchen')
+        h('button', { class: 'rk-svc-select', onClick: props.onSearch }, t('svc.suchen'))
       )
     );
   }
@@ -855,12 +865,12 @@
     var device = props.device;
     var data = props.anbieter;
     var selected = (props.vermittlung && props.vermittlung.selected) || '';
-    var typLabel = { repaircafe: '🤝 Repair Café', werkstatt: '🔧 Werkstatt', profi: '🏪 Fachbetrieb' };
+    var typLabel = { repaircafe: t('verm.typRepaircafe'), werkstatt: t('verm.typWerkstatt'), profi: t('verm.typProfi') };
     var typOrder = ['repaircafe', 'werkstatt', 'profi'];
 
     var body;
     if (data == null) {
-      body = h('p', { class: 'rk-q-hint' }, 'Anbieter werden geladen …');
+      body = h('p', { class: 'rk-q-hint' }, t('verm.loading'));
     } else {
       var items = data.items || [];
       if (!items.length) {
@@ -877,21 +887,21 @@
               return h('div', { class: 'rk-svc-card rk-typ-' + typ + (sel ? ' rk-svc-card-sel' : '') },
                 h('div', { class: 'rk-svc-name' }, it.name,
                   h('span', { class: 'rk-svc-typ rk-typ-' + typ }, typLabel[it.typ] || it.typ),
-                  it.kuratiert ? h('span', { class: 'rk-svc-badge' }, 'Demo') : null),
+                  it.kuratiert ? h('span', { class: 'rk-svc-badge' }, t('verm.demo')) : null),
                 h('div', { class: 'rk-svc-meta' },
                   (it.adresse ? it.adresse + ', ' : '') + (it.plz ? it.plz + ' ' : '') + (it.ort || '') +
                   (it.entfernung ? ' · ' + it.entfernung : '')),
-                it.spezialisierung ? h('div', { class: 'rk-svc-meta' }, 'Schwerpunkt: ' + it.spezialisierung) : null,
+                it.spezialisierung ? h('div', { class: 'rk-svc-meta' }, t('verm.schwerpunkt') + it.spezialisierung) : null,
                 it.oeffnungszeiten ? h('div', { class: 'rk-svc-meta' }, '🕑 ' + it.oeffnungszeiten) : null,
                 it.kontakt ? h('div', { class: 'rk-svc-meta' }, '☎ ' + it.kontakt) : null,
                 isFree
-                  ? h('div', { class: 'rk-svc-cost rk-svc-free' }, '🆓 ' + (it.kostenhinweis || 'kostenlos / ehrenamtlich'))
-                  : h('div', { class: 'rk-svc-cost' }, '💶 ' + (it.kostenhinweis || 'kostenpflichtig')),
+                  ? h('div', { class: 'rk-svc-cost rk-svc-free' }, t('verm.free') + (it.kostenhinweis || t('verm.freeDefault')))
+                  : h('div', { class: 'rk-svc-cost' }, '💶 ' + (it.kostenhinweis || t('verm.costDefault'))),
                 h('div', { class: 'rk-svc-src' }, curatedTrust(it)),
                 h('button', {
                   class: 'rk-svc-select' + (sel ? ' rk-answer-on' : ''),
                   onClick: function () { props.onSelect(it.id); }
-                }, sel ? '✓ Ausgewählt' : 'Diesen Anbieter merken')
+                }, sel ? t('verm.selected') : t('verm.select'))
               );
             }))
           );
@@ -900,21 +910,26 @@
       }
     }
 
+    var vermChildren = [
+      h('div', { class: 'rk-eyebrow' }, t('verm.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('verm.title')),
+      h('p', { class: 'rk-svc-intro' }, t('verm.intro')),
+      locField(props),
+      body,
+      GhostButton({ full: true, onClick: props.onRestart, children: t('common.startseite') })
+    ];
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      vermChildren.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
+
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: GhostButton({ full: true, onClick: props.onProtocol, children: '📄 Protokoll ansehen & teilen' }),
-      children: [
-        h('div', { class: 'rk-eyebrow' }, 'Hilfe vor Ort'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Anbieter in deiner Nähe'),
-        h('p', { class: 'rk-svc-intro' }, 'Repair Cafés helfen kostenlos & ehrenamtlich. Werkstätten und Fachbetriebe arbeiten gegen Bezahlung. Du wählst frei.'),
-        locField(props),
-        body,
-        GhostButton({ full: true, onClick: props.onRestart, children: 'Zur Startseite' })
-      ]
+      footer: GhostButton({ full: true, onClick: props.onProtocol, children: t('common.protokollTeilen') }),
+      children: vermChildren
     });
   }
 
@@ -923,15 +938,15 @@
     var device = props.device;
     var data = props.entsorgung;
     var selected = (props.entsorgungSel && props.entsorgungSel.selected) || '';
-    var artLabel = { wertstoffhof: '♻️ Wertstoffhof', ruecknahme: '🏬 Händler-Rücknahme', sammelstelle: '📦 Sammelstelle' };
+    var artLabel = { wertstoffhof: t('ents.artWertstoffhof'), ruecknahme: t('ents.artRuecknahme'), sammelstelle: t('ents.artSammelstelle') };
 
     var body;
     if (data == null) {
-      body = h('p', { class: 'rk-q-hint' }, 'Entsorgungswege werden geladen …');
+      body = h('p', { class: 'rk-q-hint' }, t('ents.loading'));
     } else {
       var items = data.items || [];
       if (!items.length) {
-        body = svcEmpty(data.hinweis || 'Kein lokaler Eintrag. Nach ElektroG nehmen Wertstoffhöfe und größere Händler Elektrogeräte kostenlos zurück.');
+        body = svcEmpty(data.hinweis || t('ents.emptyDefault'));
       } else {
         body = h('div', { class: 'rk-svc-list' }, items.map(function (it) {
           var sel = selected === it.id;
@@ -940,34 +955,39 @@
               h('span', { class: 'rk-disp-art' }, artLabel[it.art] || it.art)),
             it.adresse ? h('div', { class: 'rk-svc-meta' }, '📍 ' + it.adresse + (it.ort ? ', ' + it.ort : '')) : null,
             it.annahmezeiten ? h('div', { class: 'rk-disp-zeiten' }, '🕑 ' + it.annahmezeiten) : null,
-            it.rohstoff ? h('div', { class: 'rk-disp-rohstoff' }, '🔁 Rohstoffe: ' + it.rohstoff) : null,
+            it.rohstoff ? h('div', { class: 'rk-disp-rohstoff' }, t('ents.rohstoffe') + it.rohstoff) : null,
             it.hinweise ? h('div', { class: 'rk-svc-meta' }, it.hinweise) : null,
-            h('div', { class: 'rk-disp-kosten' }, '💶 ' + (it.kosten || 'meist kostenlos')),
+            h('div', { class: 'rk-disp-kosten' }, '💶 ' + (it.kosten || t('ents.kostenDefault'))),
             h('div', { class: 'rk-svc-src' }, curatedTrust(it)),
             h('button', {
               class: 'rk-svc-select' + (sel ? ' rk-answer-on' : ''),
               onClick: function () { props.onSelect(it.id); }
-            }, sel ? '✓ Ausgewählt' : 'Diesen Weg merken')
+            }, sel ? t('ents.selected') : t('ents.select'))
           );
         }));
       }
     }
 
+    var entsChildren = [
+      h('div', { class: 'rk-eyebrow' }, t('ents.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('ents.title')),
+      h('p', { class: 'rk-svc-intro' }, t('ents.intro')),
+      locField(props),
+      body,
+      GhostButton({ full: true, onClick: props.onRestart, children: t('common.startseite') })
+    ];
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      entsChildren.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
+
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: GhostButton({ full: true, onClick: props.onProtocol, children: '📄 Protokoll ansehen & teilen' }),
-      children: [
-        h('div', { class: 'rk-eyebrow' }, 'Entsorgung & Recycling'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Fachgerecht entsorgen'),
-        h('p', { class: 'rk-svc-intro' }, 'Elektrogeräte gehören nicht in den Hausmüll. So bringst du die Rohstoffe zurück in den Kreislauf.'),
-        locField(props),
-        body,
-        GhostButton({ full: true, onClick: props.onRestart, children: 'Zur Startseite' })
-      ]
+      footer: GhostButton({ full: true, onClick: props.onProtocol, children: t('common.protokollTeilen') }),
+      children: entsChildren
     });
   }
 
@@ -986,11 +1006,11 @@
 
     var body;
     if (data == null) {
-      body = h('p', { class: 'rk-q-hint' }, 'Alternativen werden geladen …');
+      body = h('p', { class: 'rk-q-hint' }, t('prod.loading'));
     } else {
       var items = data.items || [];
       if (!items.length) {
-        body = svcEmpty(data.hinweis || 'Für diese Kategorie sind keine Alternativen hinterlegt.');
+        body = svcEmpty(data.hinweis || t('prod.emptyDefault'));
       } else {
         body = h('div', { class: 'rk-alt' }, items.map(function (it) {
           var sel = selected === it.id;
@@ -1000,19 +1020,19 @@
               it.preis ? h('span', { class: 'rk-svc-cost' }, '💶 ' + it.preis) : null),
             h('div', { class: 'rk-alt-spec' },
               (it.ausstattung ? it.ausstattung : '') +
-              (it.energieklasse ? ' · Energieklasse ' + it.energieklasse : '') +
+              (it.energieklasse ? t('prod.energieklasse') + it.energieklasse : '') +
               (it.lieferzeit ? ' · ' + it.lieferzeit : '')),
             h('div', { class: 'rk-alt-vergleich' },
-              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, '💶 Geld'), h('span', {}, v.geld || '—')),
-              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, '⏱️ Zeit'), h('span', {}, v.zeit || '—')),
-              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, '🌍 Ökologie'), h('span', {}, v.umwelt || '—'))
+              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, t('compare.geld')), h('span', {}, v.geld || '—')),
+              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, t('compare.zeit')), h('span', {}, v.zeit || '—')),
+              h('div', { class: 'rk-compare-row' }, h('span', { class: 'rk-compare-k' }, t('compare.umwelt')), h('span', {}, v.umwelt || '—'))
             ),
-            h('div', { class: 'rk-alt-setup' }, '🔧 Einrichtungsaufwand: ' + setupDots(it.einrichtung)),
+            h('div', { class: 'rk-alt-setup' }, t('prod.setup') + setupDots(it.einrichtung)),
             h('div', { class: 'rk-svc-src' }, curatedTrust(it)),
             h('button', {
               class: 'rk-svc-select' + (sel ? ' rk-answer-on' : ''),
               onClick: function () { props.onSelect(it.id); }
-            }, sel ? '✓ Gemerkt' : 'Diese Alternative merken')
+            }, sel ? t('prod.selected') : t('prod.select'))
           );
         }));
         if (data.breakEven) {
@@ -1021,20 +1041,25 @@
       }
     }
 
+    var prodChildren = [
+      h('div', { class: 'rk-eyebrow' }, t('prod.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('prod.title')),
+      h('p', { class: 'rk-svc-intro' }, t('prod.intro')),
+      body,
+      GhostButton({ full: true, onClick: props.onRestart, children: t('common.startseite') })
+    ];
+    if (props.lotseOptionen && props.lotseOptionen.length) {
+      prodChildren.push(SteerBar({ lotseOptionen: props.lotseOptionen, onLotseAktion: props.onLotseAktion }));
+    }
+
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: GhostButton({ full: true, onClick: props.onProtocol, children: '📄 Protokoll ansehen & teilen' }),
-      children: [
-        h('div', { class: 'rk-eyebrow' }, 'Neu vs. Reparatur'),
-        h('h2', { class: 'rk-q rk-q-tight' }, 'Alternativen im Vergleich'),
-        h('p', { class: 'rk-svc-intro' }, 'Gleiche Optik wie die Wege-Tabelle: Geld, Zeit & Ökologie je Gerät — ehrlich gegen die Reparatur gerechnet.'),
-        body,
-        GhostButton({ full: true, onClick: props.onRestart, children: 'Zur Startseite' })
-      ]
+      footer: GhostButton({ full: true, onClick: props.onProtocol, children: t('common.protokollTeilen') }),
+      children: prodChildren
     });
   }
 
@@ -1046,11 +1071,11 @@
 
     var body;
     if (data == null) {
-      body = h('p', { class: 'rk-q-hint' }, 'Ersatzteile werden geladen …');
+      body = h('p', { class: 'rk-q-hint' }, t('besch.loading'));
     } else {
       var items = data.items || [];
       if (!items.length) {
-        body = svcEmpty(data.hinweis || 'Für dieses Gerät sind keine Ersatzteile hinterlegt.');
+        body = svcEmpty(data.hinweis || t('besch.emptyDefault'));
       } else {
         body = h('div', {}, items.map(function (it) {
           var isKept = kept.indexOf(it.id) >= 0;
@@ -1059,23 +1084,23 @@
           return h('div', { class: 'rk-parts-item' + (isKept ? ' rk-svc-card-sel' : '') },
             h('div', { class: 'rk-svc-name' }, it.teil,
               h('span', { class: 'rk-parts-price' }, '💶 ' + (it.preis || '—'))),
-            it.passendFuer ? h('div', { class: 'rk-svc-meta' }, 'Passend für: ' + it.passendFuer) : null,
+            it.passendFuer ? h('div', { class: 'rk-svc-meta' }, t('besch.passendFuer') + it.passendFuer) : null,
             oos
-              ? h('div', { class: 'rk-parts-oos' }, '⚠️ ' + (it.verfuegbarkeit || 'Nicht lieferbar') +
-                (it.alternativHinweis ? ' — ' + it.alternativHinweis : (it.hersteller ? ' — beim Hersteller anfragen: ' + it.hersteller : '')))
+              ? h('div', { class: 'rk-parts-oos' }, '⚠️ ' + (it.verfuegbarkeit || t('besch.oosDefault')) +
+                (it.alternativHinweis ? ' — ' + it.alternativHinweis : (it.hersteller ? t('besch.herstellerAnfrage') + it.hersteller : '')))
               : h('div', { class: 'rk-parts-stock' }, '✅ ' + it.verfuegbarkeit + (it.versand ? ' · ' + it.versand : '')),
             h('div', { class: 'rk-svc-src' }, curatedTrust(it)),
             // Bestelloption NACHGELAGERT, klar als Affiliate gekennzeichnet, nie vorausgewählt (D8)
             (bo.verfuegbar)
               ? h('div', { class: 'rk-order-opt' },
-                h('span', { class: 'rk-affiliate' }, '🔗 Partner-Link (Provision)'),
-                h('span', { class: 'rk-svc-meta' }, (bo.partner ? bo.partner : 'Partner-Shop')),
-                h('div', { class: 'rk-order-disclaimer' }, bo.hinweis || 'Über diesen Link erhalten wir ggf. eine Provision. Die Empfehlung folgt trotzdem nur dem günstigsten/sinnvollsten Bezug.'))
+                h('span', { class: 'rk-affiliate' }, t('besch.affiliate')),
+                h('span', { class: 'rk-svc-meta' }, (bo.partner ? bo.partner : t('besch.partnerDefault'))),
+                h('div', { class: 'rk-order-disclaimer' }, bo.hinweis || t('besch.orderDisclaimer')))
               : null,
             h('button', {
               class: 'rk-parts-keep' + (isKept ? ' rk-answer-on' : ''),
               onClick: function () { props.onKeep(it.id); }
-            }, isKept ? '✓ Gemerkt' : 'Teil merken')
+            }, isKept ? t('besch.kept') : t('besch.keep'))
           );
         }));
       }
@@ -1083,17 +1108,17 @@
 
     return Screen({
       bar: AppBar({
-        left: IconBtn({ onClick: props.onBack, label: 'Zurück', children: BackIcon() }),
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
         title: deviceTitle(device),
         right: docBtn(props.onProtocol)
       }),
-      footer: GhostButton({ full: true, onClick: props.onBack, children: '← Zurück zur Reparatur' }),
+      footer: GhostButton({ full: true, onClick: props.onBack, children: t('besch.backToRepair') }),
       children: [
         h('div', { class: 'rk-parts' },
-          h('div', { class: 'rk-parts-head' }, '🧩 Ersatzteile beschaffen'),
-          h('p', { class: 'rk-svc-intro' }, 'Günstigste Quelle zuerst. Eine Bestellung ist optional und klar als Partner-Link gekennzeichnet — nie vorausgewählt.'),
+          h('div', { class: 'rk-parts-head' }, t('besch.head')),
+          h('p', { class: 'rk-svc-intro' }, t('besch.intro')),
           body,
-          GhostButton({ full: true, onClick: props.onProtocol, children: '📄 Protokoll ansehen & teilen' })
+          GhostButton({ full: true, onClick: props.onProtocol, children: t('common.protokollTeilen') })
         )
       ]
     });
@@ -1101,16 +1126,16 @@
 
   /* ===================== PROTOKOLL (Steckbrief + Export PROJ-1/2/3/4/7/8/10) ===================== */
   function ownerText(ownership) {
-    if (!ownership || ownership.isOwner == null) return 'nicht angegeben';
-    if (ownership.isOwner === 'yes') return 'gehört mir';
-    if (ownership.isOwner === 'unknown') return 'zu klären';
+    if (!ownership || ownership.isOwner == null) return t('common.nichtAngegeben');
+    if (ownership.isOwner === 'yes') return t('proto.ownGehoertMir');
+    if (ownership.isOwner === 'unknown') return t('proto.ownZuKlaeren');
     // no
-    var who = (ownership.owner && ownership.owner.trim()) ? ownership.owner.trim() : 'nicht angegeben';
-    return 'gehört nicht mir (' + who + ')';
+    var who = (ownership.owner && ownership.owner.trim()) ? ownership.owner.trim() : t('common.nichtAngegeben');
+    return t('proto.ownGehoertNicht', { who: who });
   }
   function costText(ownership) {
-    if (!ownership) return 'nicht angegeben';
-    return (ownership.costBearer && ownership.costBearer.trim()) ? ownership.costBearer.trim() : 'nicht angegeben';
+    if (!ownership) return t('common.nichtAngegeben');
+    return (ownership.costBearer && ownership.costBearer.trim()) ? ownership.costBearer.trim() : t('common.nichtAngegeben');
   }
 
   function ProtocolContent(props) {
@@ -1145,14 +1170,14 @@
       if (!item) return null;
       var label = item.name || item.modell || item.teil || fallbackLabel || item.id;
       return h('div', { class: 'rk-proto-val' }, label +
-        (item.quelle ? ' · Quelle: ' + item.quelle + (item.kuratiert ? ' (kuratierte Demodaten)' : '') : ''));
+        (item.quelle ? t('proto.quelleLabel') + item.quelle + (item.kuratiert ? t('proto.kuratierteDemo') : '') : ''));
     }
     var hasStufe2 = pickedAnbieter || pickedEntsorgung || pickedAlt || keptParts.length;
 
-    var warrantyLine = 'nicht erfasst';
+    var warrantyLine = t('proto.nichtErfasst');
     if (warranty.asked || warranty.purchaseAge) {
-      warrantyLine = 'Kauf: ' + (warranty.purchaseAge || 'unbekannt') +
-        (warranty.choice ? ' · Wahl: ' + (warranty.choice === 'reklamation' ? 'Reklamation' : 'selbst reparieren') : '');
+      warrantyLine = t('proto.kauf') + (warranty.purchaseAge || t('foerder.unbekannt')) +
+        (warranty.choice ? t('proto.wahl') + (warranty.choice === 'reklamation' ? t('proto.wahlReklamation') : t('proto.wahlSelbst')) : '');
     }
 
     return h('div', { class: 'rk-proto' },
@@ -1164,83 +1189,83 @@
         )
       ),
       diagnosis && diagnosis.status === 'unclear'
-        ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, '🤔 Diagnose unklar — keine verlässliche Eingrenzung. Bitte einem Profi/Repair Café vorlegen.')
+        ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, t('proto.unclearWarn'))
         : null,
-      h('div', { class: 'rk-proto-sec' }, 'Symptom'),
+      h('div', { class: 'rk-proto-sec' }, t('proto.symptom')),
       h('div', { class: 'rk-proto-val' }, device.blurb),
-      h('div', { class: 'rk-proto-sec' }, 'Was schon getestet wurde'),
+      h('div', { class: 'rk-proto-sec' }, t('proto.tested')),
       h('div', { class: 'rk-proto-tags' },
         answers.length
           ? answers.map(function (a) { return h('span', { class: 'rk-proto-tag' }, a.tag || a.a); })
-          : h('span', { class: 'rk-proto-tag rk-proto-tag-muted' }, 'noch nichts erfasst')
+          : h('span', { class: 'rk-proto-tag rk-proto-tag-muted' }, t('proto.nothingYet'))
       ),
       // PROJ-2: Freitexte je Frage
       answers.filter(function (a) { return a && a.freitext; }).length
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'In eigenen Worten'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.ownWords')),
           answers.map(function (a) {
             return a && a.freitext
               ? h('div', { class: 'rk-proto-val' }, h('b', {}, '„' + a.q + "“ "), '— ' + a.freitext)
               : null;
           })
         ) : null,
-      h('div', { class: 'rk-proto-sec' }, 'Wahrscheinliche Ursache & Ampel'),
+      h('div', { class: 'rk-proto-sec' }, t('proto.causeAmpel')),
       h('div', { class: 'rk-proto-val' }, device.verdictTitle),
       h('div', { class: 'rk-proto-ampel' }, summary),
       h('button', { class: 'rk-proto-why', onClick: function () { props.setWhy(!why); } },
-        (why ? '▾' : '▸') + ' Warum schätzt die App das so ein?'),
+        (why ? '▾' : '▸') + t('proto.why')),
       why ? h('div', { class: 'rk-proto-reason' },
         h('p', {}, device.verdictBody),
-        h('p', { class: 'rk-sheet-fine' }, 'Quelle: ' + device.confidence.source + ' · Sicherheit: ' + device.confidence.level + '. Die KI kann sich irren.')
+        h('p', { class: 'rk-sheet-fine' }, t('proto.whyQuelle') + device.confidence.source + t('proto.whySicherheit') + device.confidence.level + t('proto.whyKiIrrt'))
       ) : null,
       // PROJ-3 / PROJ-7
-      h('div', { class: 'rk-proto-sec' }, 'Können & Garantie'),
-      h('div', { class: 'rk-proto-val' }, 'Selbsteinschätzung: ' + (skill || 'nicht angegeben')),
-      h('div', { class: 'rk-proto-val' }, 'Gewährleistung: ' + warrantyLine),
+      h('div', { class: 'rk-proto-sec' }, t('proto.koennenGarantie')),
+      h('div', { class: 'rk-proto-val' }, t('proto.selbsteinschaetzung') + (skill || t('common.nichtAngegeben'))),
+      h('div', { class: 'rk-proto-val' }, t('proto.gewaehrleistung') + warrantyLine),
       // PROJ-1: Eigentum dynamisch
-      h('div', { class: 'rk-proto-owner' }, '👤 Gerät: ', h('b', {}, ownerText(ownership)), ' · Kosten: ', h('b', {}, costText(ownership))),
+      h('div', { class: 'rk-proto-owner' }, t('proto.geraetLabel'), h('b', {}, ownerText(ownership)), t('proto.kostenLabel'), h('b', {}, costText(ownership))),
       // FIX A — PROJ-1 AC8 (D14): Rücksprache-Hinweis bei fremdem Gerät
       ownership.isOwner === 'no'
-        ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, '⚠️ Fremdes Gerät: vor jedem Eingriff Rücksprache mit Eigentümer/Kostenträger halten (D14).')
+        ? h('div', { class: 'rk-aiwarn rk-aiwarn-strong' }, t('proto.fremdWarn'))
         : null,
       // FIX D — PROJ-8 AC8: gegebene Sicherheits-Bestätigungen sichtbar machen
       confirmKeys.length
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Sicherheits-Bestätigungen'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.sicherheitsBestaetigungen')),
           confirmKeys.map(function (k) {
             var c = safetyConfirms[k] || {};
             return h('div', { class: 'rk-proto-val' },
-              'Schritt ' + (parseInt(k, 10) + 1) + ' — volljährig: ' + (c.adult === 'yes' ? 'ja' : 'nein') +
-              ', zugetraut: ' + (c.confident === 'yes' ? 'ja' : 'nein'));
+              t('proto.schritt') + (parseInt(k, 10) + 1) + t('proto.volljaehrig') + (c.adult === 'yes' ? t('proto.ja') : t('proto.nein')) +
+              t('proto.zugetraut') + (c.confident === 'yes' ? t('proto.ja') : t('proto.nein')));
           })
         ) : null,
       // PROJ-25: durchgängige Vertrauens-/Quellenzeile des Vorgangs
       trust && (trust.level || trust.source)
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Vertrauen & Quelle'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.vertrauenQuelle')),
           TrustBadge(trust.level || 'mittel', trust.source || (device.confidence && device.confidence.source) || 'kuratiert', trust.reason || ''))
         : null,
       // PROJ-11/12/13/14: gewählte Service-Wege (nur falls gesetzt)
       hasStufe2
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Gewählte Wege & Beschaffung'),
-          pickedAnbieter ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, '🤝 Anbieter: ')), svcLine(pickedAnbieter)) : null,
-          pickedEntsorgung ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, '♻️ Entsorgungsweg: ')), svcLine(pickedEntsorgung)) : null,
-          pickedAlt ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, '🆕 Alternativgerät: ')), svcLine(pickedAlt)) : null,
+          h('div', { class: 'rk-proto-sec' }, t('proto.wegeBeschaffung')),
+          pickedAnbieter ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, t('proto.anbieterLabel'))), svcLine(pickedAnbieter)) : null,
+          pickedEntsorgung ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, t('proto.entsorgungLabel'))), svcLine(pickedEntsorgung)) : null,
+          pickedAlt ? h('div', {}, h('div', { class: 'rk-proto-val' }, h('b', {}, t('proto.altLabel'))), svcLine(pickedAlt)) : null,
           keptParts.length
             ? h('div', {},
-              h('div', { class: 'rk-proto-val' }, h('b', {}, '🧩 Gemerkte Ersatzteile: ')),
+              h('div', { class: 'rk-proto-val' }, h('b', {}, t('proto.ersatzteileLabel'))),
               keptParts.map(function (p) { return svcLine(p); }),
-              h('div', { class: 'rk-foerder-disclaimer' }, 'Bestelloptionen sind Partner-Links (Provision) — kennzeichnungspflichtig, nie vorausgewählt.'))
+              h('div', { class: 'rk-foerder-disclaimer' }, t('proto.affiliateDisclaimer')))
             : null
         ) : null,
       // PROJ-22: Consent-Status
       (props.consent && props.consent.status !== 'offen')
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Einwilligung'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.einwilligung')),
           h('div', { class: 'rk-proto-val' },
             (props.consent.status === 'erteilt' ? '✅ ' : props.consent.status === 'abgelehnt' ? '❌ ' : '↩️ ') +
-            (props.consent.status || '') +
+            (t('consent.status.' + props.consent.status) || props.consent.status || '') +
             (props.consent.zeitpunkt ? ' · ' + props.consent.zeitpunkt.substring(0, 19).replace('T', ' ') : '')
           ),
           (props.consent.status === 'erteilt' && props.onConsentRevoke)
@@ -1250,62 +1275,62 @@
       // PROJ-19: Rückruf
       (props.rueckruf && props.rueckruf.hit)
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, '⛔ Rückruf / Sicherheitsmangel'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.rueckruf')),
           h('div', { class: 'rk-proto-val' }, (props.rueckruf.art || 'rueckruf') + ': ' + (props.rueckruf.grund || '')),
-          props.rueckruf.quelle ? h('div', { class: 'rk-proto-val' }, 'Quelle: ' + props.rueckruf.quelle) : null,
-          props.rueckruf.stand ? h('div', { class: 'rk-proto-val' }, 'Stand: ' + props.rueckruf.stand) : null
+          props.rueckruf.quelle ? h('div', { class: 'rk-proto-val' }, t('proto.whyQuelle') + props.rueckruf.quelle) : null,
+          props.rueckruf.stand ? h('div', { class: 'rk-proto-val' }, t('foerder.stand') + props.rueckruf.stand) : null
         ) : null,
       // PROJ-20: Datenlöschung
       (props.abgabe === 'dritte')
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Datenlöschung vor Abgabe'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.datenloeschung')),
           h('div', { class: 'rk-proto-val' },
-            '💾 Backup: ' + ((props.datenloeschung && props.datenloeschung.backup) ? '✓' : '–') +
-            ' · 🗑️ Gelöscht: ' + ((props.datenloeschung && props.datenloeschung.loeschen) ? '✓' : '–') +
-            ' · 🔓 Abgemeldet: ' + ((props.datenloeschung && props.datenloeschung.abmelden) ? '✓' : '–') +
-            ((props.datenloeschung && props.datenloeschung.bewusstUebersprungen) ? ' · bewusst übersprungen' : '')
+            '💾 ' + t('wipe.backup') + ': ' + ((props.datenloeschung && props.datenloeschung.backup) ? '✓' : '–') +
+            ' · 🗑️ ' + t('wipe.loeschen') + ': ' + ((props.datenloeschung && props.datenloeschung.loeschen) ? '✓' : '–') +
+            ' · 🔓 ' + t('wipe.abmelden') + ': ' + ((props.datenloeschung && props.datenloeschung.abmelden) ? '✓' : '–') +
+            ((props.datenloeschung && props.datenloeschung.bewusstUebersprungen) ? t('proto.bewusstUebersprungen') : '')
           )
         ) : null,
       // PROJ-21: Mehrfachdefekte
       (props.defekte && props.defekte.length >= 2)
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Mehrfachdefekte (' + props.defekte.length + ')'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.mehrfachdefekte', { n: props.defekte.length })),
           props.defekte.map(function (d) {
             return h('div', { class: 'rk-proto-val' }, d.name || d.id);
           }),
           props.gesamtFazit
             ? h('div', { class: 'rk-proto-val' },
-              'Gesamt: ' + (props.gesamtFazit.recommend || '') +
-              (props.gesamtFazit.knackpunktId ? ' · Knackpunkt: ' + props.gesamtFazit.knackpunktId : ''))
+              t('proto.gesamt') + (props.gesamtFazit.recommend || '') +
+              (props.gesamtFazit.knackpunktId ? t('proto.knackpunkt') + props.gesamtFazit.knackpunktId : ''))
             : null
         ) : null,
       // PROJ-23: Schwungrad
       (props.schwungrad && props.schwungrad.beigetragen)
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Schwungrad-Beitrag'),
-          h('div', { class: 'rk-proto-val' }, 'Beitrag-ID: ' + (props.schwungrad.beitragId || '—')),
+          h('div', { class: 'rk-proto-sec' }, t('proto.schwungrad')),
+          h('div', { class: 'rk-proto-val' }, t('proto.beitragId') + (props.schwungrad.beitragId || '—')),
           props.schwungrad.ausgeschlossen && props.schwungrad.ausgeschlossen.length
-            ? h('div', { class: 'rk-proto-val' }, 'Ausgeschlossen: ' + props.schwungrad.ausgeschlossen.join(', '))
+            ? h('div', { class: 'rk-proto-val' }, t('proto.ausgeschlossen') + props.schwungrad.ausgeschlossen.join(', '))
             : null
         ) : null,
       // PROJ-27: Medien-Anhänge
       (props.medien && props.medien.length)
         ? h('div', {},
-          h('div', { class: 'rk-proto-sec' }, 'Medien (' + props.medien.length + ')'),
+          h('div', { class: 'rk-proto-sec' }, t('proto.medien', { n: props.medien.length })),
           props.medien.map(function (m) {
             return h('div', { class: 'rk-proto-val' }, (m.art || '?') + ' · ' + (m.ref || m.id || ''));
           })
         ) : null,
       // PROJ-10: echte Export-Buttons
       h('div', { class: 'rk-proto-share' },
-        h('button', { class: 'rk-share-btn', onClick: props.onExportText }, h('span', {}, '💬'), 'Text'),
-        h('button', { class: 'rk-share-btn', onClick: props.onExportPdf }, h('span', {}, '📄'), 'PDF'),
-        h('button', { class: 'rk-share-btn', onClick: props.onExportLink }, h('span', {}, '🔗'), 'Link')
+        h('button', { class: 'rk-share-btn', onClick: props.onExportText }, h('span', {}, '💬'), t('proto.exportText')),
+        h('button', { class: 'rk-share-btn', onClick: props.onExportPdf }, h('span', {}, '📄'), t('proto.exportPdf')),
+        h('button', { class: 'rk-share-btn', onClick: props.onExportLink }, h('span', {}, '🔗'), t('proto.exportLink'))
       ),
       props.linkUrl ? h('div', { class: 'rk-link-box' },
         h('div', { class: 'rk-link-url' }, props.linkUrl),
-        h('button', { class: 'rk-share-btn', onClick: props.onCopyLink }, h('span', {}, '📋'), 'Kopieren'),
-        h('div', { class: 'rk-link-note' }, 'Wer den Link hat, kann den Vorgang lesen. Der Link läuft 30 Tage nach Erstellung ab.')
+        h('button', { class: 'rk-share-btn', onClick: props.onCopyLink }, h('span', {}, '📋'), t('proto.exportKopieren')),
+        h('div', { class: 'rk-link-note' }, t('proto.linkNote'))
       ) : null
     );
   }
@@ -1459,7 +1484,7 @@
             ),
             TrustBadge(
               k.konfidenz === 'hoch' ? 'hoch' : k.konfidenz === 'niedrig' ? 'niedrig' : 'mittel',
-              k.herkunft === 'kuratiert' ? 'kuratiert' : 'KI',
+              k.herkunft === 'kuratiert' ? t('diag.herkunft.kuratiert') : t('diag.kiShort'),
               k.quelle || ''
             )
           );

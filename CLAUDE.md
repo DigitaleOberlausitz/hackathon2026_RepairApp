@@ -40,6 +40,24 @@ python -c "import app; from repair import data, ai; print(len(data.seed_devices(
 Default `gpt-4o-mini`). **Ohne Key läuft die App weiter** — `POST /api/diagnose` fällt sauber auf
 das passendste Seed-Gerät zurück (`"source": "fallback"`), scheitert nie hart.
 
+### Konfiguration — immer über `.env`
+
+**Verbindlich:** Jede zur Laufzeit/Deployment veränderliche Konfiguration wird ausschließlich
+über **Umgebungsvariablen** gesteuert, geladen aus `webapp/.env` (via `python-dotenv`,
+`load_dotenv()` in `app.py`). Keine separate Config-Datei, keine hartcodierten Endpunkte,
+Keys, Modelle oder Limits im Code.
+
+- Neue Konfigurationswerte: per `os.environ.get("NAME")` lesen **und** in `webapp/.env.example`
+  (inkl. Default-Hinweis) dokumentieren. `.env` selbst ist gitignored — nie einchecken.
+- Jeder gelesene Wert braucht einen sinnvollen Default, damit die App ohne `.env` startet.
+- `.env.example` und tatsächlich gelesene Variablen synchron halten (kein Drift: nur
+  dokumentieren, was der Code auch ausliest).
+- Aktuell ausgewertet: `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OLLAMA_MODEL`,
+  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `SEARXNG_URL`, `FLASK_DEBUG`.
+- Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
+  werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
+  Layout, keine Deployment-Konfiguration.
+
 ### Architektur & Dateieigentum
 
 Quelle/Design-of-truth: `docs/design-handoff/project/` (HTML/CSS/JSX-Prototyp, **pixelgenau**
