@@ -67,6 +67,7 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P2 | [PROJ-27 Multimodale Eingabe](../features/PROJ-27-multimodale-eingabe.md) | `aufnahme` · D9 | Planned |
 | P2 | [PROJ-28 Anfrage-Protokoll als Markdown (Betreiber-Debug)](../features/PROJ-28-anfrage-protokoll-md.md) | Betrieb/Querschnitt | Planned |
 | P2 | [PROJ-29 Zentrales Logging (Datei + Konsole, tägl. Rotation)](../features/PROJ-29-logging.md) | Betrieb/Querschnitt | Planned |
+| P2 | [PROJ-30 Konfiguration ausschließlich über `.env`](../features/PROJ-30-konfiguration-ueber-env.md) | Betrieb/Querschnitt | Planned |
 
 ## Erfolgsmetriken
 

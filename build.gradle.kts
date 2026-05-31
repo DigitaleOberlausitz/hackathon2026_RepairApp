@@ -15,15 +15,17 @@ asciidoctorj {
     }
 }
 
-// Erzeugt build/docs/asciidocPdf/konzept.pdf
+// Erzeugt build/docs/asciidocPdf/konzept.pdf und praesentation.pdf
 tasks.named<AsciidoctorPdfTask>("asciidoctorPdf") {
     group = "documentation"
-    description = "Erzeugt das Konzept-PDF aus docs/konzept.adoc (inkl. Mermaid-Diagramme)."
+    description = "Erzeugt Konzept- und Präsentations-PDF aus docs/ (inkl. Mermaid-Diagramme)."
 
     baseDirFollowsSourceFile()
     setSourceDir(file("docs"))
     sources {
         include("konzept.adoc")
+        // Folien-Vorlage; Querformat/Folien-Layout steht im Header der Datei.
+        include("praesentation.adoc")
     }
 
     // mmdc/Chromium braucht auf Linux i. d. R. --no-sandbox

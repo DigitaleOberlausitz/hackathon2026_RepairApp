@@ -1,0 +1,22 @@
+%% Problemanalyse — Prozess (abgeleitet aus Whiteboard IMG_7536.jpg)
+%% Layout: einspaltige vertikale Sequenz, optimiert für A4 hochkant.
+flowchart TD
+
+    Start(("Start")):::start
+
+    S1["<b>1. Typ d. Sache feststellen</b><br/><i>&laquo;Kategorisieren&raquo;</i><br/>• Möbel&nbsp;&nbsp;• elektr. Gerät"]:::step
+
+    S2["<b>2. Wirkung / Zustand feststellen</b><br/><i>&laquo;Beschreiben&raquo;</i><br/>• physisch kaputt<br/>• Funktion beeinträchtigt oder kaputt<br/>• verbraucht<br/>• höheres Risiko<br/>&nbsp;&nbsp;&nbsp;&#8627; security<br/>&nbsp;&nbsp;&nbsp;&#8627; elektr. / elektron. Sicherheit<br/>&nbsp;&nbsp;&nbsp;&#8627; körperl. Schaden (Verletzung)<br/>• Funktion i.O., aber im Fehlerzustand"]:::step
+
+    S3["<b>3. Handlungsspielraum / Optionen betrachten</b><br/><i>&laquo;Klassifizieren&raquo;</i><br/>• Garantie / Gewährleistung<br/>• Reset-Maßnahmen<br/>• reparieren&nbsp;&nbsp;• reparieren lassen<br/>• Workaround anwenden<br/>• Ersatz beschaffen<br/>• Entsorgen / Recycling<br/>• Wartung (kalibrieren, Reinigen, …)<br/>• Verbrauchsmaterial ersetzen / austauschen"]:::step
+
+    S4["<b>4. Option entscheiden / auswählen</b><br/><i>&laquo;Bewerten&raquo;</i><br/>Kriterien:<br/>• Kosten / Wirtschaftlichkeit<br/>• Mobilität&nbsp;&nbsp;• Aufwand / Zeit<br/>• Wissen / Fähigkeiten / Expertise<br/>• ideeller Wert"]:::step
+
+    S5["<b>5. Lösung: Option benutzen</b><br/><i>&laquo;Benutzen&raquo;</i><br/>• Wissen&nbsp;&nbsp;• Werkzeuge (Verleih)<br/>• Kenntnisse / Fähigkeiten vermitteln<br/>• Community-Angebot vermitteln<br/>• Dienstleister&nbsp;&nbsp;• Werkstatt<br/>• Produkte vermitteln"]:::step
+
+    S6["<b>6. Präventionsmaßnahme vermitteln</b><br/>• Wartung / Pflege empfehlen<br/>• alternative / 'bessere' / nachhaltigere Produkte<br/>• Benutzerhinweise z. korrekten Verwendung"]:::step
+
+    Start --> S1 --> S2 --> S3 --> S4 --> S5 --> S6
+
+    classDef start fill:#1e3a8a,stroke:#1e3a8a,color:#ffffff;
+    classDef step fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1e293b,text-align:left;
