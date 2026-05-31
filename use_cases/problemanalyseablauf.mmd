@@ -1,0 +1,127 @@
+%% Problemanalyse — Prozess (abgeleitet aus Whiteboard IMG_7536.jpg)
+%% Layout: zentrale vertikale Abfolge (oben -> unten); die Detail-/Entscheidungs-
+%% Knoten fächern je Schritt abwechselnd nach rechts und links auf (Fischgräte).
+flowchart TB
+
+    Start(("Start"))
+
+%% ── Schritt 1 — Details rechts ──
+    subgraph g1 [" "]
+        direction LR
+        S1["1. Typ d. Sache feststellen"]
+        S1 --- K1["Möbel"]
+        S1 --- K2["elektr. Gerät"]
+        S1 --- K3["Fahrrad / Mobilität"]
+        S1 --- K4["Kleidung / Textilien"]
+        S1 --- K5["Exakte Identifikation (Scanner/OCR/KI)"]
+    end
+
+%% ── Schritt 2 — Details links ──
+    subgraph g2 [" "]
+        direction RL
+        S2["2. Wirkung / Zustand feststellen"]
+        S2 --- Z1["physisch kaputt"]
+        S2 --- Z2["Funktion beeinträchtigt oder kaputt"]
+        S2 --- Z3["verbraucht (Ressourcen)"]
+        S2 --- Z4["höheres Risiko"]
+        S2 --- Z5["Funktion i.O., aber im Fehlerzustand"]
+        Z4 --- R1["Security (z.B. Software)"]
+        Z4 --- R2["elektr. / elektron. Sicherheit"]
+        Z4 --- R3["körperl. Schaden (Verletzung)"]
+    end
+
+%% ── Schritt 3 (NEU) — Details rechts ──
+    subgraph g3 [" "]
+        direction LR
+        S3["3. Diagnose / Symptom-Mapping"]
+        S3 --- D1["Symptom-Check (Was passiert genau?)"]
+        S3 --- D2["Entscheidungsbaum durchlaufen"]
+        S3 --- D3["Fehlerdatenbanken (z.B. iFixit API)"]
+    end
+
+%% ── Schritt 4 — Details links ──
+    subgraph g4 [" "]
+        direction RL
+        S4["4. Handlungsspielraum / Optionen betrachten"]
+        S4 --- H1["Garantie / Gewährleistung"]
+        S4 --- H2["Reset-Maßnahmen"]
+        S4 --- H3["reparieren (Selbstreparatur)"]
+        S4 --- H4["reparieren lassen"]
+        S4 --- H5["Workaround anwenden"]
+        S4 --- H6["Ersatz beschaffen"]
+        S4 --- H7["Entsorgen / Recycling"]
+        S4 --- H8["Wartung (kalibrieren, reinigen, …)"]
+        S4 --- H9["Verbrauchsmaterial ersetzen"]
+    end
+
+%% ── Schritt 5 — Details rechts ──
+    subgraph g5 [" "]
+        direction LR
+        S5["5. Option entscheiden / auswählen"]
+        S5 --- C1["Kosten / Wirtschaftlichkeit"]
+        S5 --- C2["Mobilität (Transportierbarkeit)"]
+        S5 --- C3["Aufwand / Zeit"]
+        S5 --- C4["Wissen / Fähigkeiten / Expertise"]
+        S5 --- C5["ideeller Wert"]
+        S5 --- C6["Verfügbarkeit v. Ersatzteilen/Werkzeug"]
+        S5 --- C7["Sicherheitsbewertung (230V etc.)"]
+    end
+
+%% ── Schritt 6 — Details links ──
+    subgraph g6 [" "]
+        direction RL
+        S6["6. Lösung umsetzen"]
+        S6 --- V1["Wissensvermittlung (Guides in UI)"]
+        S6 --- V2["Tag-Matching (OSM-Brücke)"]
+        S6 --- V3["Wissende Personen / Repair Cafés"]
+        S6 --- V4["Werkzeuge (Maker Spaces / Verleih)"]
+        S6 --- V5["Dienstleister / Werkstätten"]
+        S6 --- V6["Verkäufer (Ersatzteile)"]
+    end
+
+%% ── Schritt 7 (NEU) — Details rechts ──
+    subgraph g7 [" "]
+        direction LR
+        S7["7. Erfolgskontrolle (Feedback-Loop)"]
+        S7 --- F1["Hat die Lösung funktioniert?"]
+        S7 --- F2["Bei Nein: Neue Diagnose (Zurück zu 3)"]
+        S7 --- F3["Bei Nein: Andere Option (Zurück zu 5)"]
+    end
+
+%% ── Schritt 8 — Details links ──
+    subgraph g8 [" "]
+        direction RL
+        S8["8. Präventionsmaßnahme vermitteln"]
+        S8 --- P1["Wartung / Pflege empfehlen"]
+        S8 --- P2["alternative / nachhaltigere Produkte"]
+        S8 --- P3["Hinweise zur korrekten Verwendung"]
+    end
+
+%% ── Vertikale Abfolge mit Stereotyp-Übergängen ──
+    Start -->|"&laquo;Kategorisieren & Identifizieren&raquo;"| g1
+    g1 -->|"&laquo;Beschreiben&raquo;"| g2
+    g2 -->|"&laquo;Untersuchen&raquo;"| g3
+    g3 -->|"&laquo;Klassifizieren&raquo;"| g4
+    g4 -->|"&laquo;Bewerten&raquo;"| g5
+    g5 -->|"&laquo;Umsetzen&raquo;"| g6
+    g6 -->|"&laquo;Überprüfen&raquo;"| g7
+    g7 -->|"&laquo;Abschließen (bei Erfolg)&raquo;"| g8
+
+%% ── Styling ──
+    classDef step   fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a,font-weight:bold;
+    classDef detail fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef risk   fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    
+    class S1,S2,S3,S4,S5,S6,S7,S8 step;
+    class K1,K2,K3,K4,K5,Z1,Z2,Z3,Z4,Z5,D1,D2,D3,H1,H2,H3,H4,H5,H6,H7,H8,H9,C1,C2,C3,C4,C5,C6,C7,V1,V2,V3,V4,V5,V6,F1,F2,F3,P1,P2,P3 detail;
+    class R1,R2,R3 risk;
+    
+    style Start fill:#1e3a8a,stroke:#1e3a8a,color:#ffffff;
+    style g1 fill:none,stroke:none;
+    style g2 fill:none,stroke:none;
+    style g3 fill:none,stroke:none;
+    style g4 fill:none,stroke:none;
+    style g5 fill:none,stroke:none;
+    style g6 fill:none,stroke:none;
+    style g7 fill:none,stroke:none;
+    style g8 fill:none,stroke:none;
