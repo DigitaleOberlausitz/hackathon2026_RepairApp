@@ -27,6 +27,7 @@ import logging
 import os
 import re
 
+from . import config
 from .schema import DeviceValidationError, normalize_device
 
 log = logging.getLogger(__name__)
@@ -43,7 +44,8 @@ def _kurz(text: str) -> str:
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
-DEFAULT_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
+# Der LLM-Timeout (LLM_TIMEOUT) wird zentral in repair/config.py verwaltet
+# (config.DEFAULT_LLM_TIMEOUT) — kein zweiter Default hier (PROJ-30).
 
 # Reasoning-Modelle (z. B. Qwen3) liefern teils <think>…</think>-Blöcke vor
 # dem JSON. Die schneiden wir defensiv heraus, bevor wir parsen.
@@ -349,10 +351,8 @@ def diagnose(
         )
     log.debug("KI-Backend gewählt: %s, Modell=%s", "Ollama (lokal)" if is_local else "OpenAI-Cloud", model)
 
-    try:
-        timeout = float(os.environ.get("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
-    except (TypeError, ValueError):
-        timeout = DEFAULT_TIMEOUT
+    # PROJ-30: Timeout aus .env (LLM_TIMEOUT), zentral validiert; Default 180 s.
+    timeout = config.llm_timeout()
 
     # Qwen3 & Co. erzeugen sonst lange <think>-Ketten vor dem JSON — auf der CPU
     # zu teuer. "/no_think" schaltet das für lokale Modelle ab (harmlos für

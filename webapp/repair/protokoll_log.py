@@ -265,9 +265,10 @@ def _token_markdown(response_json) -> tuple[str, int, str]:
         return md, total, "ai"
 
     if whisper:
+        from . import config  # PROJ-30: konfiguriertes Whisper-Modell statt Literal
         md = "\n".join([
             "- **Klassifikation:** ai",
-            "- **Modell:** `whisper-1`",
+            f"- **Modell:** `{config.whisper_model()}`",
             "- **Token gesamt:** 0 _(KI-Call Whisper — keine Token-Statistik)_",
         ])
         return md, 0, "ai"

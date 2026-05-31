@@ -49,6 +49,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 
 from dotenv import load_dotenv
 from flask import Flask, Response, g, got_request_exception, jsonify, render_template, request
@@ -58,6 +59,7 @@ from repair import (
     anbieter,
     anonymisierung,
     bewertung,
+    config,
     consent,
     datenloeschung,
     entsorgung,
@@ -77,6 +79,15 @@ from repair import (
 )
 
 load_dotenv()
+
+# PROJ-30: Konfiguration ausschließlich aus der Umgebung/.env — beim Start
+# einmalig validieren (Fail-fast bei syntaktisch ungültigen Werten, z. B.
+# PORT=abc). Fehlende Variablen sind kein Fehler (Default-Pfad).
+try:
+    config.validate()
+except config.ConfigError as exc:
+    print(f"[Konfigurationsfehler] {exc}", file=sys.stderr)
+    raise SystemExit(2)
 
 # PROJ-29: zentrales Logging einmalig vor App-Start initialisieren (Datei +
 # Konsole, tägliche Rotation, 14 Tage). LOG_LEVEL via .env, Default DEBUG.
@@ -888,5 +899,6 @@ def vorgang_view(vid: str):
 
 
 if __name__ == "__main__":
-    debug = os.environ.get("FLASK_DEBUG", "1") not in ("0", "false", "False", "")
-    app.run(host="127.0.0.1", port=5000, debug=debug)
+    # PROJ-30: Bind-Adresse, Port und Debug-Flag kommen aus der Umgebung/.env
+    # (Defaults 127.0.0.1 / 5000 / an) — kein Hardcode mehr.
+    app.run(host=config.host(), port=config.port(), debug=config.flask_debug())
