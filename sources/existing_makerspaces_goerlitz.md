@@ -101,3 +101,13 @@ Für die Oberlausitz ist die RABRYKA aktuell mit Abstand der aktivste und bestau
 map
 
 ---
+
+Quellen:
+ * https://www.europa-fördert-sachsen.de/de/projekte/51019
+ * https://www.rabryka.eu/projekte/detail/65-Offener-Makerspace
+ * https://offene-werkstaetten.org/en/workshop-search
+ * https://logo-lausitz.de/
+ * https://offene-werkstaetten.org/en/workshop-search
+ * https://www.makers-united.de/makerspaces
+ * https://www.engagiertes-goerlitz.de/news/detail/69-Neuer-Raum-fuer-Selbstmachmotivierte
+ * https://www.goerlitz.de/projekte/detail/20-MakerSpace
