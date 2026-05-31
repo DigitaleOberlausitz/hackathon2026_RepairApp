@@ -831,13 +831,21 @@
     }
   };
 
-  function t(key) {
+  function interpolate(str, params) {
+    if (!params) return str;
+    return str.replace(/\{(\w+)\}/g, function (m, k) {
+      return (params[k] != null) ? params[k] : m;
+    });
+  }
+
+  // t(key) oder t(key, params) — params interpolieren {i},{n},{who},{quelle},…
+  function t(key, params) {
     var lang = (window.RepairAppState && window.RepairAppState.lang) || state.lang || 'de';
     var cat = I18N[lang] || I18N.de;
-    if (cat[key] !== undefined) return cat[key];
+    if (cat[key] !== undefined) return interpolate(cat[key], params);
     // Fallback: deutscher Text mit Kennzeichnung
     var de = I18N.de[key];
-    if (de !== undefined) return (lang !== 'de' ? '[DE] ' : '') + de;
+    if (de !== undefined) return (lang !== 'de' ? '[DE] ' : '') + interpolate(de, params);
     return key;
   }
   window.RKt = t; // für screens.js
@@ -920,18 +928,11 @@
   window.REPAIR_THEMES = THEMES;
   window.REPAIR_AMPEL = AMPEL;
 
-  /* ===================== LANG-DETECT (PROJ-24) ===================== */
+  /* ===================== LANG-DETECT (PROJ-24) =====================
+     Die App ist bewusst Deutsch-only („Nur auf Deutsch verfügbar"). Frühere
+     Browser-Sprach-Erkennung schaltete bei englischem Browser ungewollt auf
+     'en' und ließ Teile der Oberfläche englisch erscheinen — jetzt immer 'de'. */
   function detectLang() {
-    // 1. localStorage (sitzungsübergreifend)
-    try {
-      var stored = localStorage.getItem('rk-lang');
-      if (stored === 'de' || stored === 'en') return stored;
-    } catch (e) {}
-    // 2. Browser-Default → de
-    try {
-      var nav = (navigator.language || navigator.userLanguage || 'de').toLowerCase();
-      if (nav.indexOf('en') === 0) return 'en';
-    } catch (e) {}
     return 'de';
   }
 
@@ -1074,7 +1075,8 @@
     if (!Array.isArray(state.beschaffung.parts)) state.beschaffung.parts = [];
     if (!state.trust || typeof state.trust !== 'object') state.trust = { level: '', source: '', reason: '' };
     // Stufe-3-Defaults (tolerant)
-    if (state.lang !== 'de' && state.lang !== 'en') state.lang = detectLang();
+    // Deutsch-only: jeder geladene Sprachwert (auch 'en' aus Alt-Vorgängen) → 'de'.
+    state.lang = 'de';
     if (!state.fehlerzustand || typeof state.fehlerzustand !== 'object') {
       state.fehlerzustand = { kandidaten: [], gewaehlt: '', abgrenzung: { offen: [], beantwortet: {} }, unklar: false };
     }
@@ -1600,7 +1602,7 @@
           render();
         }
       })
-      .catch(function () { state.loading = false; toast('Diagnose nicht möglich — versuch es nochmal.'); render(); });
+      .catch(function () { state.loading = false; toast(t('toast.diagnoseFail')); render(); });
   }
 
   /* ---- Eigentum (PROJ-1) ---- */
@@ -1967,7 +1969,7 @@
   function withVorgang(cb) {
     ensureVorgang(function (id) {
       if (id) cb(id);
-      else toast('Konnte den Vorgang nicht speichern — bitte erneut versuchen.');
+      else toast(t('toast.vorgangFail'));
     });
   }
   function exportPdf() { withVorgang(function (id) { try { window.open('/v/' + id, '_blank'); } catch (e) {} }); }
@@ -1975,13 +1977,13 @@
     withVorgang(function (id) {
       fetch('/api/vorgang/' + id + '/export.txt')
         .then(function (r) { return r.text(); })
-        .then(function (t) {
+        .then(function (txt) {
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            return navigator.clipboard.writeText(t).then(function () { toast('Protokoll in die Zwischenablage kopiert.'); });
+            return navigator.clipboard.writeText(txt).then(function () { toast(t('toast.copyOk')); });
           }
-          toast('Kopieren wird hier nicht unterstützt — bitte den Link nutzen.');
+          toast(t('toast.copyUnsupported'));
         })
-        .catch(function () { toast('Konnte den Text nicht laden.'); });
+        .catch(function () { toast(t('toast.textFail')); });
     });
   }
   function exportLink() {
@@ -1993,15 +1995,16 @@
   function copyLink() {
     if (!state.linkUrl) return;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(state.linkUrl).then(function () { toast('Link kopiert.'); }).catch(function () {});
-    } else { toast('Bitte den Link manuell markieren und kopieren.'); }
+      navigator.clipboard.writeText(state.linkUrl).then(function () { toast(t('toast.linkCopied')); }).catch(function () {});
+    } else { toast(t('toast.linkManual')); }
   }
 
   /* ---- Sprach-Switcher (PROJ-24) ---- */
   function setLang(lang) {
-    if (lang !== 'de' && lang !== 'en') return;
-    state.lang = lang;
-    try { localStorage.setItem('rk-lang', lang); } catch (e) {}
+    // Deutsch-only: andere Sprachen werden ignoriert.
+    if (lang !== 'de') return;
+    state.lang = 'de';
+    try { localStorage.setItem('rk-lang', 'de'); } catch (e) {}
     if (state.id) persist();
     buildLangSwitch();
     render();
@@ -2028,9 +2031,12 @@
     return Screen({
       children: [
         h('div', { class: 'rk-result-center' },
-          h('div', { class: 'rk-result-emoji' }, '🔧'),
+          h('div', { class: 'rk-spinner', 'aria-hidden': 'true' }),
           h('h2', { class: 'rk-result-q' }, t('loading.moment')),
-          h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, t('loading.schaue'))
+          h('p', { class: 'rk-q-hint', style: { textAlign: 'center' } }, t('loading.schaue')),
+          h('div', { class: 'rk-thinking-dots', role: 'status', 'aria-label': t('loading.schaue') },
+            h('i', {}), h('i', {}), h('i', {})
+          )
         )
       ]
     });
@@ -2303,8 +2309,8 @@
         lang: state.lang,
         onConsentRevoke: consentWiderrufen,
       })
-      : h('p', { class: 'rk-sheet-note' }, 'Noch kein Gerät erfasst — wähl auf der Startseite ein Gerät, dann fülle ich den Steckbrief im Hintergrund.');
-    var protoSheet = Sheet({ open: state.proto, onClose: closeProto, title: 'Reparatur-Steckbrief', children: protoBody });
+      : h('p', { class: 'rk-sheet-note' }, t('proto.emptyDevice'));
+    var protoSheet = Sheet({ open: state.proto, onClose: closeProto, title: t('proto.title'), children: protoBody });
     // Medien-Consent-Sheet (PROJ-27) - modal over everything
     var mediaConsentSheet = null;
     if (state.ui.mediaConsentOpen) {
@@ -2358,21 +2364,15 @@
     paint();
   }
 
-  /* ===================== SPRACH-SWITCHER (PROJ-24) ===================== */
+  /* ===================== SPRACH-SWITCHER (PROJ-24) =====================
+     Die App ist Deutsch-only — kein Umschalter mehr nötig. Container wird
+     ausgeblendet, damit kein versehentliches Wechseln in eine andere Sprache
+     möglich ist. */
   function buildLangSwitch() {
     var wrap = document.getElementById('lang-switch');
     if (!wrap) return;
     wrap.innerHTML = '';
-    var langs = [{ id: 'de', label: 'DE' }, { id: 'en', label: 'EN' }];
-    langs.forEach(function (l) {
-      var on = state.lang === l.id;
-      var btn = h('button', {
-        class: 'rk-langswitch-btn' + (on ? ' rk-langswitch-on' : ''),
-        'aria-label': l.id === 'de' ? 'Deutsch' : 'English',
-        onClick: function () { setLang(l.id); },
-      }, l.label);
-      wrap.appendChild(btn);
-    });
+    wrap.style.display = 'none';
   }
 
   /* ===================== INIT (inkl. ?v= Hydrierung PROJ-9) ===================== */
@@ -2408,7 +2408,7 @@
         .catch(function () {
           state.loading = false;
           try { history.replaceState(null, '', location.pathname); } catch (e) {}
-          toast('Vorgang nicht gefunden — neuer Start.');
+          toast(t('toast.vorgangNotFound'));
           setStage('start');
           buildPhone();
           loadDevices();
