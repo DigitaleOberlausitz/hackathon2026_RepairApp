@@ -11,3 +11,10 @@ out geom;
 nwr["leisure"="hackerspace"]({{bbox}});
 // print results
 out geom;
+
+[out:json][timeout:25];
+// gather results
+nwr["shop"="doityourself"]({{bbox}});
+// print results
+out geom;
+
