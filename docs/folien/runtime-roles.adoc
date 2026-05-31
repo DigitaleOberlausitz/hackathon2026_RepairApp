@@ -22,7 +22,7 @@
 14 spezialisierte KI-Rollen führen den Nutzer durch seinen Reparaturfall —
 geordnet in fünf Klassen, verbunden über einen geschlossenen Handoff-Graphen.
 
-[mermaid]
+[mermaid,pdfwidth=100%]
 ....
 flowchart LR
   classDef orch fill:#ddd6fe,stroke:#7c3aed,color:#1e1b4b
@@ -74,7 +74,7 @@ Alternativpfad (orange) · Querschnittsdienst (blau) · Back-Office (grau).
 <<<
 == lotse
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -130,7 +130,7 @@ jederzeit selbst lenken.
 <<<
 == aufnahme
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -186,7 +186,7 @@ sicherheitskritisches.
 <<<
 == diagnose
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -241,7 +241,7 @@ Schließt von den aufgenommenen Symptomen auf die wahrscheinliche Ursache.
 <<<
 == bewertung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -297,7 +297,7 @@ sperren".
 <<<
 == abwägung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -353,7 +353,7 @@ Macht die Handlungspfade vergleichbar und gibt eine begründete Empfehlung.
 <<<
 == begleitung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -408,7 +408,7 @@ Konkrete Schritt-für-Schritt-DIY-Anleitung mit adaptiver Tiefe.
 <<<
 == wirkung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -464,7 +464,7 @@ Selbstwirksamkeit.
 <<<
 == produktsuche
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -518,7 +518,7 @@ Zeigt Alternativgeräte / Neukauf-Optionen, wenn ein Austausch empfohlen wurde.
 <<<
 == entsorgung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -573,7 +573,7 @@ reparierbar ist.
 <<<
 == recherche
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -629,7 +629,7 @@ oder zu bewerten.
 <<<
 == vermittlung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -685,7 +685,7 @@ Reparaturbetriebe.
 <<<
 == beschaffung
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -740,7 +740,7 @@ Findet Ersatzteile und macht sie über die integrierte Bestellung verfügbar.
 <<<
 == protokoll
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
@@ -796,7 +796,7 @@ und schreiben.
 <<<
 == wissensbasis
 
-[cols="2a,3a", frame=none, grid=none]
+[cols="11a,9a", frame=none, grid=none]
 |===
 |
 [mermaid]
