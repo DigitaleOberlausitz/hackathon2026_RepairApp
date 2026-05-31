@@ -1314,3 +1314,80 @@ body {
   0%, 80%, 100% { opacity: .25; transform: translateY(0); }
   40% { opacity: 1; transform: translateY(-4px); }
 }
+
+/* =====================================================================
+   CHAT-FLOW (PROJ-37) — Konversations-Verlauf + eingebettete Karten
+   ===================================================================== */
+.rk-chat-hello { padding: 4px 0 14px; }
+.rk-chat-feed { display: flex; flex-direction: column; gap: 14px; }
+
+/* Bubbles */
+.rk-bubble { max-width: 92%; border-radius: var(--radius); font-size: 14px; line-height: 1.5; }
+.rk-bubble-user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); padding: 11px 14px; border-bottom-right-radius: var(--radius-sm); }
+.rk-bubble-ai { align-self: stretch; max-width: 100%; background: transparent; color: var(--ink); display: flex; flex-direction: column; gap: 11px; }
+.rk-bubble-text { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); border-bottom-left-radius: var(--radius-sm); padding: 12px 14px; box-shadow: var(--shadow-sm); white-space: pre-wrap; }
+.rk-bubble-pending { padding: 4px 0; }
+.rk-bubble-error .rk-bubble-text { border-color: var(--stop); color: var(--stop-ink); background: var(--stop-bg); }
+.rk-chat-code { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); margin-top: 4px; }
+.rk-chat-ended { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); text-align: center; padding: 6px 0; }
+
+/* Karten je Turn */
+.rk-chat-cards { display: flex; flex-direction: column; gap: 12px; }
+
+/* Vertrauens-Footer (D3/A5) — unbedingt, dezent */
+.rk-chat-trust { font-family: var(--font-mono); font-size: 10.5px; line-height: 1.4; color: var(--ink-soft); padding: 2px 2px 0; opacity: .85; }
+.rk-chat-trust-strong { color: var(--stop-ink); font-weight: 600; opacity: 1; }
+
+/* Eingabe-Zeile */
+.rk-chat-inputrow { display: flex; align-items: center; gap: 8px; }
+.rk-chat-input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-pill); padding: 12px 16px; font: inherit; font-size: 14px; color: var(--ink); outline: none; transition: border-color var(--motion); }
+.rk-chat-input:focus { border-color: var(--accent); }
+.rk-chat-input:disabled { opacity: .55; }
+.rk-chat-send { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 16px; display: flex; align-items: center; justify-content: center; transition: transform var(--motion), filter var(--motion); box-shadow: var(--shadow-sm); }
+.rk-chat-send:active { transform: translateY(1px); }
+.rk-chat-send:disabled { opacity: .5; }
+
+/* ---------- Generische Karte ---------- */
+.rk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px var(--pad); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
+.rk-card > .rk-eyebrow { margin-bottom: 0; }
+.rk-card-title { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 17px; letter-spacing: var(--display-tracking); color: var(--ink); }
+.rk-card-row { display: flex; gap: 8px; font-size: 13px; line-height: 1.45; }
+.rk-card-k { flex: none; min-width: 92px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; padding-top: 1px; }
+.rk-card-b { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin: 4px 0 0; }
+.rk-card-empty { font-size: 13px; color: var(--ink-soft); }
+.rk-card-ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.rk-card-fragen { border-top: 1px solid var(--line); padding-top: 10px; }
+.rk-card-defekt { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--accent2); }
+
+/* Diagnose: Unklar-Pfad (D20) */
+.rk-card-unklar { display: flex; gap: 10px; background: var(--mittel-bg); border-radius: var(--radius-sm); padding: 12px 13px; }
+.rk-card-unklar-e { font-size: 20px; }
+.rk-card-unklar-t { font-weight: 600; font-size: 13.5px; color: var(--mittel-ink); }
+.rk-card-unklar-b { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin: 4px 0 0; }
+
+/* Hinweis-Karte: schwere eskaliert die Farbe (warnen statt sperren) */
+.rk-card-hinweis { display: flex; gap: 9px; align-items: flex-start; border-radius: var(--radius-sm); padding: 11px 13px; font-size: 13px; line-height: 1.45; border: 1px solid transparent; }
+.rk-card-hinweis-e { font-size: 16px; flex: none; }
+.rk-card-hinweis-info { background: var(--accent-soft); color: var(--ink); }
+.rk-card-hinweis-warnung { background: var(--mittel-bg); color: var(--mittel-ink); border-color: color-mix(in srgb, var(--mittel) 35%, transparent); }
+.rk-card-hinweis-kritisch { background: var(--stop-bg); color: var(--stop-ink); border-color: var(--stop); font-weight: 600; }
+
+/* Schritte */
+.rk-steps { list-style: none; counter-reset: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.rk-step { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 13px; }
+.rk-step .rk-step-title { font-size: 14.5px; margin: 0; }
+.rk-step .rk-step-body { margin: 6px 0 0; font-size: 13px; }
+.rk-step-pro { font-size: 12px; color: var(--ink-soft); margin: 6px 0 0; font-style: italic; }
+.rk-step-flag { display: inline-block; font-family: var(--font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: var(--radius-pill); background: var(--stop); color: #fff; margin-bottom: 6px; }
+.rk-step-flag-safety { background: var(--mittel); color: var(--mittel-ink); }
+.rk-step-danger { border-color: var(--stop); background: var(--stop-bg); }
+.rk-step-safety { border-color: color-mix(in srgb, var(--mittel) 45%, transparent); }
+.rk-step-handoff { border-style: dashed; }
+
+/* Erfolg */
+.rk-card-erfolg { align-items: center; text-align: center; }
+.rk-card-mutmach { font-size: 14px; color: var(--ink); line-height: 1.5; margin: 0; }
+
+/* Trust-Zeile verstärkt */
+.rk-trust-strong { background: var(--stop-bg); color: var(--stop-ink); }
+.rk-trust-strong .rk-trust-note { color: var(--stop-ink); font-weight: 600; }

@@ -1781,8 +1781,149 @@
     return h('div', {}, ampelListe, fazitBlock);
   }
 
+  /* =====================================================================
+     CHAT-FLOW (PROJ-37) — Konversations-Renderer mit eingebetteten Karten
+     ===================================================================== */
+
+  var UI = window.UI || {};
+
+  // Fester, unbedingter Vertrauens-Footer (D3/A5) — hängt an JEDER Assistenz-
+  // Bubble, unabhängig vom Modell-Output. `strong` verstärkt ihn optisch (bei
+  // einer hinweis-Karte mit schwere=kritisch).
+  function trustFooter(strong) {
+    return h('div', { class: 'rk-chat-trust' + (strong ? ' rk-chat-trust-strong' : '') },
+      'ℹ Hinweis: Die KI kann Fehler machen — im Zweifel Fachkraft fragen.');
+  }
+
+  // Eine Karte -> passende UI.*-Komponente (Task 8).
+  function renderKarte(k) {
+    if (!k || !k.typ) return null;
+    var d = k.daten || {};
+    switch (k.typ) {
+      case 'aufnahme':  return UI.Aufnahme ? UI.Aufnahme(d) : null;
+      case 'diagnose':  return UI.Diagnose ? UI.Diagnose(d) : null;
+      case 'ampel':     return UI.Ampel ? UI.Ampel(d) : null;
+      case 'vergleich': return UI.Vergleich ? UI.Vergleich(d) : null;
+      case 'schritte':  return UI.Schritte ? UI.Schritte(d) : null;
+      case 'hinweis':   return UI.Hinweis ? UI.Hinweis(d) : null;
+      case 'anbieter':  return UI.Anbieter ? UI.Anbieter(d) : null;
+      case 'ersatzteil':return UI.Ersatzteil ? UI.Ersatzteil(d) : null;
+      case 'erfolg':    return UI.Erfolg ? UI.Erfolg(d) : null;
+      default:          return document.createComment('unbekannte karte: ' + k.typ);
+    }
+  }
+
+  // true, wenn die Karten dieses Turns eine kritische hinweis-Karte enthalten
+  // → Vertrauens-Footer verstärken.
+  function hatKritischenHinweis(karten) {
+    return (karten || []).some(function (k) {
+      return k && k.typ === 'hinweis' && k.daten && k.daten.schwere === 'kritisch';
+    });
+  }
+
+  // Rendert den kompletten Verlauf (User- + Assistenz-Bubbles).
+  function renderVerlauf(verlauf) {
+    var feed = h('div', { class: 'rk-chat-feed' });
+    (verlauf || []).forEach(function (m) {
+      if (m.rolle === 'user') {
+        feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-user' }, m.text || ''));
+        return;
+      }
+      // Assistenz-Bubble
+      var inner = [];
+      if (m.text) inner.push(h('div', { class: 'rk-bubble-text' }, m.text));
+      var karten = m.karten || [];
+      if (karten.length) {
+        var kartenWrap = h('div', { class: 'rk-chat-cards' });
+        karten.forEach(function (k) {
+          var el = renderKarte(k);
+          if (el) kartenWrap.appendChild(el);
+        });
+        inner.push(kartenWrap);
+      }
+      // R3: unbedingter Vertrauens-Footer an JEDER Assistenz-Bubble
+      inner.push(trustFooter(hatKritischenHinweis(karten)));
+      if (m.abgebrochen) {
+        inner.push(h('div', { class: 'rk-chat-ended' }, 'Vorgang beendet.'));
+      }
+      feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-ai' }, inner));
+    });
+    return feed;
+  }
+
+  // Fehler-Bubble (data.code aus /api/chat) — eigene, klar erkennbare Darstellung.
+  function renderFehler(data) {
+    var code = (data && data.code) || 'error';
+    var msg = (data && data.error) || {
+      empty: 'Bitte beschreibe kurz, was los ist.',
+      no_vorgang: 'Der Vorgang wurde nicht gefunden — bitte neu starten.',
+      no_backend: 'Die KI-Diagnose ist gerade nicht erreichbar (kein Backend konfiguriert).',
+      ai_error: 'Bei der KI-Anfrage ist etwas schiefgelaufen — bitte erneut versuchen.',
+    }[code] || 'Es ist ein Fehler aufgetreten.';
+    return h('div', { class: 'rk-bubble rk-bubble-ai rk-bubble-error' },
+      h('div', { class: 'rk-bubble-text' }, '⚠️ ' + msg),
+      h('div', { class: 'rk-chat-code' }, code)
+    );
+  }
+
+  // Chat-Bildschirm: scrollbarer Verlauf (Body) + Eingabe-Zeile (Footer).
+  function ChatScreen(props) {
+    props = props || {};
+    var feed = renderVerlauf(props.verlauf || []);
+    if (props.error) feed.appendChild(renderFehler(props.error));
+    if (props.pending) {
+      feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-ai rk-bubble-pending' },
+        h('div', { class: 'rk-thinking-dots', role: 'status', 'aria-label': 'Antwort wird erstellt' },
+          h('i', {}), h('i', {}), h('i', {}))
+      ));
+    }
+
+    var input = h('input', {
+      class: 'rk-chat-input', type: 'text',
+      placeholder: t('start.placeholder'),
+      value: props.draft || '',
+      disabled: props.pending ? true : null,
+      onInput: function (e) { if (props.setDraft) props.setDraft(e.target.value); },
+      onKeydown: function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (props.onSend) props.onSend(); }
+      },
+    });
+    var sendBtn = h('button', {
+      class: 'rk-chat-send', 'aria-label': t('nav.weiter'),
+      disabled: props.pending ? true : null,
+      onClick: function () { if (props.onSend) props.onSend(); },
+    }, '➤');
+
+    var bar = AppBar({
+      left: h('span', { class: 'rk-brand', style: { marginBottom: '0' } },
+        h('span', { class: 'rk-brand-mark' }, '🔧')),
+      title: h('span', {}, t('start.brand')),
+      right: props.abgebrochen
+        ? IconBtn({ onClick: props.onRestart, label: t('nav.startseite'), children: h('span', {}, '↺') })
+        : h('span', {}),
+    });
+
+    return Screen({
+      bar: bar,
+      footer: props.abgebrochen
+        ? GhostButton({ full: true, onClick: props.onRestart, children: t('nav.startseite') })
+        : h('div', { class: 'rk-chat-inputrow' }, input, sendBtn),
+      children: [
+        // Begrüßung, solange noch kein Verlauf existiert
+        (!props.verlauf || !props.verlauf.length) && !props.pending
+          ? h('div', { class: 'rk-chat-hello' },
+            h('h1', { class: 'rk-hero' }, t('start.hero')),
+            h('p', { class: 'rk-hero-sub' }, t('start.heroSub')))
+          : null,
+        feed,
+      ],
+    });
+  }
+
   /* ===================== EXPORT — WINDOW-ASSIGNMENT (alle Screens) ===================== */
   Object.assign(window, {
+    renderVerlauf: renderVerlauf, renderKarte: renderKarte, renderFehler: renderFehler,
+    ChatScreen: ChatScreen,
     StartScreen: StartScreen, OwnershipScreen: OwnershipScreen, TriageScreen: TriageScreen,
     AmpelScreen: AmpelScreen, UnclearScreen: UnclearScreen, DecisionScreen: DecisionScreen,
     SkillAskScreen: SkillAskScreen, GateScreen: GateScreen, RepairScreen: RepairScreen,
