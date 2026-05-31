@@ -37,6 +37,7 @@ DEFAULT_PORT = 5000
 DEFAULT_WHISPER_MODEL = "whisper-1"
 DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 DEFAULT_LLM_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
+DEFAULT_MAX_TOOL_ITERATIONS = 12  # Tool-Call-Runden pro Chat-Turn (Orchestrator)
 
 
 def _raw(name: str) -> str | None:
@@ -119,6 +120,14 @@ def llm_timeout() -> float:
     return _float_pos("LLM_TIMEOUT", DEFAULT_LLM_TIMEOUT)
 
 
+def max_tool_iterations() -> int:
+    """Max. Tool-Call-Runden pro Chat-Turn (Endlosschleifen-/Kostenschutz).
+
+    Default 12; >= 1 (sonst Fail-fast).
+    """
+    return _int("MAX_TOOL_ITERATIONS", DEFAULT_MAX_TOOL_ITERATIONS, lo=1, hi=2**31 - 1)
+
+
 def flask_debug() -> bool:
     """Flask-Debug-Modus. Tolerant: ``0``/``false``/leer = aus, sonst an. Default an."""
     return os.environ.get("FLASK_DEBUG", "1") not in ("0", "false", "False", "")
@@ -133,7 +142,7 @@ def validate() -> None:
     ``app.py`` nach ``load_dotenv()`` aufgerufen.
     """
     fehler: list[str] = []
-    for getter in (port, llm_timeout, max_upload_bytes):
+    for getter in (port, llm_timeout, max_upload_bytes, max_tool_iterations):
         try:
             getter()
         except ConfigError as exc:
