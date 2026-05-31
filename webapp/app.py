@@ -4,9 +4,8 @@ Routen (SPEC.md + STUFE1.md + STUFE2.md + STUFE3.md §2):
     GET  /                           → rendert templates/index.html
     GET  /api/devices                → alle Seed-Geräte als {id: device}
     GET  /api/device/<id>            → einzelnes device (404 wenn unbekannt)
-    POST /api/diagnose               → {text, kategorie?, answers?, lang?} → {device, source, diagnosis}
-
-    POST /api/vorgang                → optional {state} → 201 {id, state, created, updated}
+    POST /api/vorgang                → optional {lang} → 200 {vorgang_id}  (PROJ-37)
+    POST /api/chat                   → {vorgang_id, text} → {antwort_text, karten, abgebrochen}  (PROJ-37)
     GET  /api/vorgang/<id>           → {id, state, created, updated} | 404
     PUT  /api/vorgang/<id>           → {state} → {id, state, created, updated} | 404
     GET  /api/foerderung             → {items: [...]}
@@ -55,7 +54,6 @@ from dotenv import load_dotenv
 from flask import Flask, Response, g, got_request_exception, jsonify, render_template, request
 
 from repair import (
-    ai,
     anbieter,
     anonymisierung,
     bewertung,
@@ -69,6 +67,7 @@ from repair import (
     logconf,
     lotse,
     multimodal,
+    orchestrator,
     produktsuche,
     protokoll_log,
     recherche,
@@ -100,14 +99,6 @@ app.config["JSON_AS_ASCII"] = False
 app.json.ensure_ascii = False
 # Request-Body-Limit (DoS-Schutz): Vorgangs-State ist klein — 1 MB genügt reichlich.
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
-
-# HTTP-Status je Fehler-Code aus repair.ai.diagnose()
-_DIAGNOSE_ERROR_STATUS = {
-    "empty": 400,        # keine Problembeschreibung
-    "no_backend": 503,   # kein LLM-Backend konfiguriert
-    "ai_error": 502,     # KI-/Upstream-Fehler
-}
-
 
 # ─── PROJ-28: Anfrage-Protokoll (Betreiber-/Debug-Log) ───────────────────────
 # Rein additive Beobachtung: vor dem View den Usage-Slot leeren und die
@@ -258,51 +249,77 @@ def index():
     return render_template("index.html")
 
 
-@app.post("/api/diagnose")
-def api_diagnose():
-    """Freitext → Live-Diagnose (KI). Ohne Backend/auf Fehler sauberes Fehler-JSON.
-
-    Body: {text, kategorie?, answers?, lang?}
-    Erfolg: {device, source:"ai", diagnosis}  (PROJ-4/17/24)
-      diagnosis enthält additiv: kandidaten, abgrenzung, unklar (PROJ-17)
-    Fehler: {error, code} mit HTTP-Status — 400 (empty), 503 (no_backend),
-      502 (ai_error). Es gibt keine hinterlegten Demo-/Seed-Geräte mehr.
-    """
-    payload = request.get_json(silent=True) or {}
-    text = payload.get("text", "")
-    kategorie = str(payload.get("kategorie") or "")
-    answers = payload.get("answers")
-    if not isinstance(answers, list):
-        answers = None
-    lang = str(payload.get("lang") or request.args.get("lang") or "de").strip().lower()
-    if lang not in ("de", "en"):
-        lang = "de"
-    result = ai.diagnose(
-        text=text if isinstance(text, str) else str(text),
-        kategorie=kategorie,
-        answers=answers,
-        lang=lang,
+def _json_error(msg: str, code: str, status: int):
+    """Einheitliches Fehler-JSON {error, code} mit HTTP-Status (ensure_ascii=False)."""
+    return app.response_class(
+        json.dumps({"error": msg, "code": code}, ensure_ascii=False),
+        status=status,
+        mimetype="application/json",
     )
-    if "error" in result:
-        status = _DIAGNOSE_ERROR_STATUS.get(result.get("code"), 500)
-        return jsonify(result), status
-    return jsonify(result)
 
 
-# ─── PROJ-9: Vorgang-Persistenz ───────────────────────────────────────────────
+# ─── PROJ-9 / PROJ-37: Vorgang-Persistenz + Chat-Flow ─────────────────────────
 
 
 @app.post("/api/vorgang")
 def api_vorgang_create():
-    """Neuen Vorgang anlegen.
+    """Neuen Vorgang für den Chat-Flow anlegen (PROJ-37, harter Schnitt).
 
-    Body optional: {"state": {...}}
-    Antwort 201: {"id": "...", "state": {...}, "created": "...", "updated": "..."}
+    Body optional: {"lang": "de"|"en"}  (Default "de", in state["lang"] abgelegt)
+    Antwort 200: {"vorgang_id": "..."}  (bewusst 200, Abweichung von 201).
     """
-    payload = request.get_json(silent=True) or {}
-    initial_state = payload.get("state") if isinstance(payload.get("state"), dict) else None
-    vorgang = store.create_vorgang(initial_state)
-    return jsonify(vorgang), 201
+    body = request.get_json(silent=True) or {}
+    lang = str(body.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+    v = store.create_vorgang(state={
+        "messages": [],
+        "karten": [],
+        "geladene_rollen": [],
+        "entscheidungsprotokoll": [],
+        "lang": lang,
+    })
+    # vorgang_id in den state spiegeln, damit Tools sie kennen
+    state = v["state"] if isinstance(v.get("state"), dict) else {}
+    state["vorgang_id"] = v["id"]
+    store.save_vorgang(v["id"], state)
+    return app.response_class(
+        json.dumps({"vorgang_id": v["id"]}, ensure_ascii=False),
+        mimetype="application/json")
+
+
+@app.post("/api/chat")
+def api_chat():
+    """Einen Chat-Turn über den Orchestrator ausführen (PROJ-37).
+
+    Body: {"vorgang_id": "...", "text": "..."}
+    Erfolg 200: {vorgang_id, antwort_text, karten, abgebrochen}
+    Fehler: {error, code} — 400 (empty), 404 (no_vorgang), 503 (no_backend),
+      502 (ai_error).
+    """
+    body = request.get_json(silent=True) or {}
+    vid = (body.get("vorgang_id") or "").strip()
+    text = (body.get("text") or "").strip()
+    if not text:
+        return _json_error("Bitte beschreibe zuerst, was kaputt ist.", "empty", 400)
+    v = store.get_vorgang(vid)
+    if v is None:
+        return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
+    state = v["state"] if isinstance(v.get("state"), dict) else {}
+    state.setdefault("vorgang_id", vid)
+    result = orchestrator.run_turn(state, text)
+    store.save_vorgang(vid, state)
+    if result.get("error"):
+        code = result.get("code", "ai_error")
+        status = {"no_backend": 503}.get(code, 502)
+        return _json_error(result["error"], code, status)
+    return app.response_class(
+        json.dumps({"vorgang_id": vid,
+                    "antwort_text": result["antwort_text"],
+                    "karten": result["karten"],
+                    "abgebrochen": result["abgebrochen"]},
+                   ensure_ascii=False),
+        mimetype="application/json")
 
 
 @app.get("/api/vorgang/<vid>")
