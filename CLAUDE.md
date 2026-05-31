@@ -84,6 +84,20 @@ webapp/
     ai.py              diagnose() — reine LLM-Diagnose; ohne Backend/Fehler → Fehler-Objekt
     logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)
+    store.py           Vorgang-Persistenz via stdlib sqlite3 (PROJ-9, → vorgaenge.db)
+    triage.py          universelle, gerätunabhängige Triage-Fragen (PROJ-26)
+    diagnose_kuratiert.py  kuratierte Diagnose-Schleife (PROJ-17)
+    bewertung.py       Gesamt-Fazit für Mehrfachdefekte (PROJ-21)
+    lotse.py           prozedurales Routing ohne Sicherheits-Entscheidung (PROJ-18)
+    recherche.py       kuratiert → KI-Fallback → Online (SearXNG optional) (PROJ-16)
+    wissensbasis.py    kuratierte Fehlerzustands-Wissensbasis (PROJ-15) + Rückruf-Daten (PROJ-19, → wissensbasis.db)
+    anbieter.py        kuratierte Reparatur-Anbieter (PROJ-11) · entsorgung.py Entsorgungswege (PROJ-12)
+    produktsuche.py    Alternativgeräte/Neukauf (PROJ-13) · ersatzteile.py Ersatzteile (PROJ-14)
+    foerderung.py      kuratierte dt. Reparatur-Förderungen
+    multimodal.py      multimodaler Medien-Store (PROJ-27, → media/)
+    consent.py         Einwilligungs-Management (PROJ-22) · anonymisierung.py (PROJ-23)
+    datenloeschung.py  Datenlöschung bei Fremdabgabe (PROJ-20) · schwungrad.py Wissens-Beitrag (PROJ-23)
+    i18n.py            Backend-i18n-Texte (PROJ-24) · export.py Protokoll-Export-Renderer (PROJ-10)
   templates/index.html SPA-Shell
   static/js/           ui.js · screens.js · app.js (Statemachine, Theme-Switcher)
   static/css/repair.css Komponenten-Styling + 3 Themes (Default: Werkstatt)
