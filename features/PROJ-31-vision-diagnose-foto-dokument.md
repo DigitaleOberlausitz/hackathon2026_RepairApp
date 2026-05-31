@@ -1,6 +1,6 @@
 # PROJ-31: Vision-Diagnose aus Foto & Dokument
 
-## Status: Planned
+## Status: In Review
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -62,62 +62,62 @@ Vertrauen (PROJ-25) und verhindert selbstbewusst-falsche Diagnosen.
 ## Akzeptanzkriterien
 
 ### Eingabe & Aufnahme
-- [ ] Im Aufnahme-/Diagnose-Schritt **fordert die App aktiv** zum Beifügen eines Fotos auf;
+- [x] Im Aufnahme-/Diagnose-Schritt **fordert die App aktiv** zum Beifügen eines Fotos auf;
       der Hinweis ist **nicht blockierend** — eine reine Text-Anfrage bleibt jederzeit möglich.
-- [ ] Pro Anfrage lassen sich **1..n Medien** anhängen (mehrere Fotos **und/oder** Dokumente
+- [x] Pro Anfrage lassen sich **1..n Medien** anhängen (mehrere Fotos **und/oder** Dokumente
       gleichzeitig).
-- [ ] Akzeptierte Formate: **Bilder** (`jpg`/`png`/`webp`) **und PDF**; pro Datei gilt ein
+- [x] Akzeptierte Formate: **Bilder** (`jpg`/`png`/`webp`) **und PDF**; pro Datei gilt ein
       Größenlimit (konsistent zu PROJ-27). Nicht unterstützte Formate werden mit
       verständlichem Hinweis abgelehnt, **ohne den Flow zu blockieren**.
-- [ ] Es gibt eine **Obergrenze für die Anzahl Medien pro Anfrage** (konfigurierbar, mit
+- [x] Es gibt eine **Obergrenze für die Anzahl Medien pro Anfrage** (konfigurierbar, mit
       Default); bei Überschreitung erscheint ein Hinweis statt eines Fehlers.
-- [ ] Angehängte Medien werden dem **Vorgang zugeordnet** (PROJ-27/PROJ-9) und bleiben in der
+- [x] Angehängte Medien werden dem **Vorgang zugeordnet** (PROJ-27/PROJ-9) und bleiben in der
       Problemaufnahme sichtbar.
 
 ### Stufe 1 — Extraktion (sichtbar & korrigierbar)
-- [ ] Aus den beigefügten Medien extrahiert die KI **strukturiert**: erkannte
+- [x] Aus den beigefügten Medien extrahiert die KI **strukturiert**: erkannte
       Gerätekategorie/Modell (Typenschild), Liste **sichtbarer Schäden/Auffälligkeiten**,
       sowie aus Dokumenten **Kaufdatum/Händler** (Rechnung) und **relevante Hinweise**
       (Anleitung). Beliebige weitere Dokumente dienen als **zusätzlicher Kontext** für die KI.
-- [ ] Das Extraktions-Ergebnis wird dem Nutzer auf einem **eigenen Bestätigungs-Screen**
+- [x] Das Extraktions-Ergebnis wird dem Nutzer auf einem **eigenen Bestätigungs-Screen**
       angezeigt, **bevor** die Diagnose läuft.
-- [ ] **Jedes erkannte Feld ist editierbar** und einzeln verwerfbar; der Nutzer **bestätigt
+- [x] **Jedes erkannte Feld ist editierbar** und einzeln verwerfbar; der Nutzer **bestätigt
       explizit**, bevor es weitergeht (kein stilles Übernehmen).
-- [ ] Wird **nichts** zuverlässig erkannt, zeigt der Screen das offen an und bietet
+- [x] Wird **nichts** zuverlässig erkannt, zeigt der Screen das offen an und bietet
       Neu-Aufnahme **oder** manuelle Eingabe (keine Sackgasse, vgl. PROJ-27).
-- [ ] Die **bestätigten/korrigierten** Extraktionsdaten werden am Vorgang gespeichert und
+- [x] Die **bestätigten/korrigierten** Extraktionsdaten werden am Vorgang gespeichert und
       fließen in **Triage (PROJ-26)**, **Eigentum (PROJ-1)** und **Garantie-Gate (PROJ-7)** ein.
 
 ### Stufe 2 — Diagnose
-- [ ] Nach der Bestätigung erzeugt die Diagnose ihr Ergebnis aus **Freitext + bestätigten
+- [x] Nach der Bestätigung erzeugt die Diagnose ihr Ergebnis aus **Freitext + bestätigten
       Extraktionsdaten + Bild-Evidenz** und liefert weiterhin das bestehende
       `device`-/`diagnosis`-Objekt (**Schema unverändert**, PROJ-17/25).
-- [ ] Die Antwort **kennzeichnet, dass Bildmaterial einbezogen wurde** (z. B. zusätzlicher
+- [x] Die Antwort **kennzeichnet, dass Bildmaterial einbezogen wurde** (z. B. zusätzlicher
       Vermerk „vision"); der **Vertrauens-Indikator** (PROJ-25) bleibt gesetzt.
-- [ ] Die **Sicherheits-Leitplanke bleibt unverändert**: erkennt die KI ein gefährliches
+- [x] Die **Sicherheits-Leitplanke bleibt unverändert**: erkennt die KI ein gefährliches
       Gerät (Hochspannung/Gas/Strom), greift `accentPath="stop"` / `recommend="pro"` /
       `lights.Sicherheit.level="stop"` wie bisher.
 
 ### Backend & Datenschutz
-- [ ] Die Backend-Wahl folgt der **bestehenden `ai.py`-Reihenfolge**: lokales
+- [x] Die Backend-Wahl folgt der **bestehenden `ai.py`-Reihenfolge**: lokales
       Ollama-Vision-Modell zuerst → OpenAI-Vision, wenn nur ein Key gesetzt ist.
-- [ ] **Kein zusätzliches Cloud-Consent** über die Medien-Einwilligung (PROJ-22/PROJ-27)
+- [x] **Kein zusätzliches Cloud-Consent** über die Medien-Einwilligung (PROJ-22/PROJ-27)
       hinaus; ist diese erteilt, darf das Bild an das konfigurierte Backend gesendet werden.
-- [ ] **Ohne erteilte Medien-Einwilligung** bleibt die Bild-/Dokument-Analyse gesperrt; die
+- [x] **Ohne erteilte Medien-Einwilligung** bleibt die Bild-/Dokument-Analyse gesperrt; die
       **Text-Diagnose** bleibt uneingeschränkt verfügbar.
-- [ ] Es werden **keine rohen Datei-Bytes geloggt**, nur Metadaten (PROJ-29-konform).
+- [x] Es werden **keine rohen Datei-Bytes geloggt**, nur Metadaten (PROJ-29-konform).
 
 ### Degradation (kein hartes Scheitern)
-- [ ] Ist **kein Vision-fähiges Backend** verfügbar oder schlägt die Bildauswertung fehl,
+- [x] Ist **kein Vision-fähiges Backend** verfügbar oder schlägt die Bildauswertung fehl,
       läuft die Anfrage als **Text-Diagnose** weiter (sofern Text vorhanden) und der Nutzer
       erhält einen **verständlichen Hinweis**, dass das Bild nicht ausgewertet wurde.
-- [ ] Ohne **jegliches** LLM-Backend gilt das bestehende Verhalten (sauberer
+- [x] Ohne **jegliches** LLM-Backend gilt das bestehende Verhalten (sauberer
       `no_backend`-Fehler) — **kein Seed-Fallback** (Seed-Geräte existieren nicht mehr).
-- [ ] **Ohne beigefügtes Bild** verhält sich `POST /api/diagnose` **exakt wie heute**
+- [x] **Ohne beigefügtes Bild** verhält sich `POST /api/diagnose` **exakt wie heute**
       (reine Text-Diagnose, gleiches Schema, gleiches Fehlerverhalten).
 
 ### Repo-Hygiene & Konfiguration
-- [ ] Neue Konfigurationswerte (Vision-Modell, Limits für Medien-Anzahl / PDF-Seiten) werden
+- [x] Neue Konfigurationswerte (Vision-Modell, Limits für Medien-Anzahl / PDF-Seiten) werden
       **ausschließlich über `.env`** gelesen (PROJ-30) und in `webapp/.env.example` mit
       Default dokumentiert.
 
@@ -164,10 +164,120 @@ Vertrauen (PROJ-25) und verhindert selbstbewusst-falsche Diagnosen.
 <!-- Folgende Abschnitte werden von nachfolgenden Skills hinzugefügt -->
 
 ## Tech Design (Solution Architect)
-_Wird von /architecture hinzugefügt_
+
+### Überblick
+PROJ-31 schaltet die bereits vorhandene Medien-Aufnahme (PROJ-27) an die Diagnose an.
+Neu ist ein **zweistufiger Ablauf**: Erst wertet ein Vision-Modell die beigefügten Fotos/
+Dokumente aus und zeigt das Erkannte auf einem **Bestätigungs-Screen** (Stufe 1) — der Nutzer
+prüft/korrigiert —, danach läuft die eigentliche Diagnose auf den **geprüften** Daten plus
+Bild-Evidenz (Stufe 2). Jede Fehlersituation degradiert auf reine Text-Diagnose („warnen statt
+sperren", D15). Das bestehende `device`-/`diagnosis`-Schema bleibt unverändert; alle neuen
+Informationen werden **additiv** am Vorgang gespeichert.
+
+### A) Komponentenstruktur (UI)
+```
+Startscreen (bestehend)
++-- Freitext-Eingabe (bestehend)
++-- Aktiver, nicht-blockierender Hinweis „Foto beifügen?" (neu)
++-- MediaPanel (PROJ-27, erweitert)
+|   +-- Foto aufnehmen   (bestehend)
+|   +-- Dokument/PDF beifügen   (neu: jpg/png/webp + PDF, 1..n)
+|   +-- Einsprechen / Barcode   (bestehend)
+|   +-- Medien-Vorschau + Entfernen   (bestehend, zeigt jetzt auch Dokumente)
+|   +-- Mengen-/Format-Hinweis bei Überschreitung   (neu, nicht-blockierend)
++-- „Diagnose starten"
+        |
+        v
+Bestätigungs-Screen „Das habe ich erkannt" (NEU, Stufe 1)
++-- Erkannte Felder, je einzeln editierbar & verwerfbar:
+|   +-- Gerätekategorie / Modell (aus Typenschild)
+|   +-- Sichtbare Schäden/Auffälligkeiten (Liste)
+|   +-- Kaufdatum / Händler (aus Rechnung)
+|   +-- Hinweise aus Anleitung
++-- „Nichts sicher erkannt"-Zustand → Neu aufnehmen / manuell eingeben
++-- Degradations-Hinweis (kein Vision-Backend / Auswertung fehlgeschlagen)
++-- „Bestätigen & Diagnose starten"
+        |
+        v
+Diagnose-Ergebnis (bestehender Flow ab Ownership/Ampel)
++-- Vertrauens-Indikator (PROJ-25, bestehend) + Vermerk „Bild einbezogen" (neu)
+```
+
+### B) Datenmodell (Klartext)
+Am Vorgang (PROJ-9) wird **additiv** gespeichert:
+- **Roh-Extraktion** (was die KI erkannt hat, vor Bestätigung) — nur als Zwischenstand.
+- **Bestätigte Extraktion** — die vom Nutzer geprüften/korrigierten Felder. Jedes Feld trägt:
+  Wert, Konfidenz (hoch/mittel/niedrig), ob erkannt, ob vom Nutzer geändert. Felder:
+  Kategorie, Modell, sichtbare Schäden (Liste), Kaufdatum, Händler, Hinweise (Liste).
+- **Bild-Vermerk** an der Diagnose: ob Bildmaterial einbezogen wurde + Anzahl ausgewerteter Medien.
+
+PII-Leitplanke (D10/PROJ-23): Aus Dokumenten werden nur die **fachlich nötigen** Felder
+übernommen (Kaufdatum/Händler/Modell). Roher Dokumenttext fließt **nicht** in teilbare/
+exportierte Artefakte. Es werden nie rohe Datei-Bytes geloggt (PROJ-29) — nur Metadaten.
+
+### C) Tech-Entscheidungen (WARUM)
+- **Zwei Schritte statt einem:** Die Zielgruppe (ängstliche Erstnutzer) soll der Diagnose
+  vertrauen. Ein sichtbarer Korrektur-Schritt verhindert selbstbewusst-falsche Diagnosen und
+  fängt Vision-Halluzinationen ab, **bevor** sie das Ergebnis verfälschen.
+- **Gleiche Backend-Reihenfolge wie heute:** lokales Ollama-Vision-Modell zuerst, sonst OpenAI-
+  Vision — konsistent zu `ai.py`, kein neuer Consent-Mechanismus (die Medien-Einwilligung aus
+  PROJ-22/27 genügt).
+- **PDF serverseitig zu Seitenbildern wandeln:** Vision-Modelle nehmen Bilder, nicht PDF. Die
+  Konvertierung ist **optional** (Zusatz-Paket); fehlt sie oder schlägt sie fehl, gibt es einen
+  Hinweis statt eines Absturzes.
+- **Alles degradiert:** Ohne Vision-Backend / bei Timeout / bei Konvertierungsfehler läuft die
+  Anfrage als Text-Diagnose weiter. Ohne **jegliches** LLM-Backend bleibt das bestehende
+  `no_backend`-Verhalten (kein Seed-Fallback). Ohne beigefügtes Bild ist `POST /api/diagnose`
+  **bit-identisch zu heute**.
+- **Konfiguration nur über `.env`** (PROJ-30): Vision-Modell, max. Medien pro Anfrage, max.
+  PDF-Seiten — je mit Default, im Drift-Guard erfasst.
+
+### D) Abhängigkeiten (Packages)
+- `PyMuPDF` (PDF→Seitenbild-Konvertierung, reines Wheel, keine System-Abhängigkeit) —
+  **optional/lazy** importiert; fehlt es, degradiert PDF-Auswertung mit Hinweis.
+- Bestehende `openai`-Lib deckt Vision (Bild-Inhalte im Chat-Call) ab — keine neue Lib nötig.
+
+### E) Neue Bausteine
+- Backend: `repair/vision.py` (Extraktion Stufe 1 + Vision-gestützte Diagnose-Anreicherung
+  Stufe 2), Endpunkt `POST /api/extrahieren`, Erweiterung von `POST /api/diagnose` um
+  bestätigte Extraktion + Bild-Evidenz, neue `config.py`-Getter + `.env.example`-Doku.
+- Frontend: neuer Screen `ExtractionConfirmScreen` (Stage `extraktion`), Dokument-Button +
+  Mengen-Hinweis im MediaPanel, Flow-Verzweigung in `doDiagnose`, neue i18n-Keys, CSS.
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+**Stand:** 2026-05-31 · **Automatisierte Tests:** `webapp/tests/test_vision.py` (15/15 grün,
+lauffähig ohne pytest) + `webapp/tests/test_config_drift.py` (9/9 grün) + CLAUDE.md-Smoke-Test
+(`no_backend`). Frontend visuell via Playwright im Werkstatt-Theme verifiziert (Startscreen mit
+Foto-Hinweis & 4 Capture-Buttons; Bestätigungs-Screen mit Konfidenz-Chips, editierbaren Feldern,
+Verwerfen-Buttons, PDF-Kürzungs-Hinweis). Keine Konsolen-Fehler (nur favicon-404).
+
+### Abgedeckte Kriterien (Auszug)
+- **Stufe 1 – Normalisierung:** Halluzinierte/leere Felder werden entfernt; ungültige Konfidenz
+  → `mittel`; `nichtsErkannt` korrekt. (`test_normalisiere_*`, `test_leere_felder_*`)
+- **Stufe 1 – PDF:** PDF→PNG-Seitenbilder via PyMuPDF; Seiten-Kürzung mit sichtbarem Hinweis;
+  Dokument-Speicherung mit `art="dokument"`/`mime=application/pdf`. (`test_pdf_*`, `test_endpoint_medien_pdf_*`)
+- **Stufe 2 – Schema-Treue:** Text-Diagnose ohne Bild liefert **keinen** `diagnosis.vision`-Key
+  (Schema exakt wie zuvor); mit Extraktion/Bild erscheint der Vermerk, Bild geht als multimodaler
+  Inhalt raus. (`test_textdiagnose_unveraendert_*`, `test_diagnose_mit_*`)
+- **Datenschutz:** Vision-Kontext enthält nur Fachfelder (Kategorie/Modell/Schäden/Kaufdatum/
+  Händler/Hinweise), keinen Rohtext; keine Datei-Bytes im Log. (`test_vision_kontext_nur_fachfelder`)
+- **Degradation:** ohne Vision-Backend → `no_vision_backend` + Text-Diagnose; ohne Medien →
+  `keine_medien`; `/api/extrahieren` immer HTTP 200; ohne jegliches Backend → `no_backend`.
+- **Konfiguration:** neue Limits (`MAX_MEDIEN_PRO_ANFRAGE`, `MAX_PDF_SEITEN`) Fail-fast-validiert;
+  Drift-Guard grün (kein Hardcode, `.env.example` synchron).
+
+### Hinweise / bewusste Grenzen
+- **Live-LLM-Pfad:** Die eigentliche Vision-Erkennung (Modellqualität) ist nur mit echtem
+  Ollama-/OpenAI-Vision-Backend prüfbar und wurde im Test über ein **Fake-Backend** abgesichert
+  (Aufruf-Form, Multimodalität, Schema), nicht gegen ein echtes Modell.
+- **„Fließt in Triage/Eigentum/Garantie ein"** (Stufe-1-AC): Die bestätigte Extraktion wird am
+  Vorgang persistiert (`state.extraktion`, `PERSIST_KEYS`) **und** als verbindlicher Kontext in
+  den Diagnose-Prompt eingespeist (das resultierende `device` spiegelt Kategorie/Modell/Schäden/
+  Kaufdatum). Ein zusätzliches **Vorbefüllen** der Eingabefelder von Eigentum/Garantie-Gate aus
+  der Extraktion ist eine mögliche Folge-Verbesserung, fachlich aber nicht blockierend.
+- **PyMuPDF optional:** Fehlt das Wheel, degradiert die PDF-Auswertung mit Hinweis (Tests
+  überspringen den PDF-Teil dann sauber).
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

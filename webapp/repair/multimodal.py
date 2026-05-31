@@ -3,8 +3,9 @@
 Speichert Fotos, Videos, Audio in webapp/media/ (gitignored).
 
 Öffentliche API:
-    save_medium(data, art)      → {id, art, ref, hinweis}
+    save_medium(data, art, mime)→ {id, art, ref, hinweis, mime}
     get_medium(id)              → (bytes, content_type) | None
+    get_medium_data_url(id)     → "data:<mime>;base64,…" | None   (für Vision, PROJ-31)
     transkribiere(audio_bytes)  → {text, source:"whisper|hinweis", hinweis?}
 
 Typ/Größen-Limit: konfigurierbar über ``MAX_UPLOAD_BYTES`` (Default 10 MB).
@@ -37,27 +38,35 @@ _MIME_TO_EXT: dict[str, str] = {
     "audio/ogg": ".ogg",
     "audio/mpeg": ".mp3",
     "audio/wav": ".wav",
+    "application/pdf": ".pdf",
 }
 
 _EXT_TO_MIME: dict[str, str] = {v: k for k, v in _MIME_TO_EXT.items()}
 
-_ERLAUBTE_ARTEN = frozenset(["foto", "video", "audio"])
+# „dokument" (PROJ-31): Bild ODER PDF, das als Beleg ausgewertet wird (Typenschild,
+# Rechnung, Anleitung). Bild-Dokumente teilen sich den Bild-MIME-Pfad mit „foto".
+_ERLAUBTE_ARTEN = frozenset(["foto", "video", "audio", "dokument"])
+
+# Bild-MIME-Typen, die ein Vision-Modell direkt verarbeiten kann.
+BILD_MIMES = frozenset(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
 
 def _ensure_media_dir() -> None:
     os.makedirs(MEDIA_DIR, exist_ok=True)
 
 
-def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
-    """Speichert ein Medium auf Disk und gibt {id, art, ref, hinweis} zurück.
+def save_medium(data: bytes | str | None, art: str = "foto", mime: str | None = None) -> dict:
+    """Speichert ein Medium auf Disk und gibt {id, art, ref, hinweis, mime} zurück.
 
-    ``data`` kann Bytes oder Data-URL (base64) sein.
+    ``data`` kann Bytes oder Data-URL (base64) sein. ``mime`` erlaubt es dem
+    Aufrufer, beim Bytes-Pfad den echten Typ mitzugeben (z. B. ``application/pdf``
+    aus einem multipart-Upload) — sonst gilt für rohe Bytes ``image/jpeg``.
     Scheitert nie hart — bei Fehler kommt ein freundlicher Hinweis.
     """
     try:
         _ensure_media_dir()
     except Exception:
-        return {"id": "", "art": art, "ref": "", "hinweis": "Medien-Verzeichnis konnte nicht erstellt werden."}
+        return {"id": "", "art": art, "ref": "", "hinweis": "Medien-Verzeichnis konnte nicht erstellt werden.", "mime": ""}
 
     art = (art or "foto").strip().lower()
     if art not in _ERLAUBTE_ARTEN:
@@ -76,20 +85,23 @@ def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
                 content_type = mime_part
             raw_bytes = base64.b64decode(b64.strip())
         except Exception:
-            return {"id": "", "art": art, "ref": "", "hinweis": "Data-URL konnte nicht dekodiert werden."}
+            return {"id": "", "art": art, "ref": "", "hinweis": "Data-URL konnte nicht dekodiert werden.", "mime": ""}
     elif isinstance(data, bytes):
         raw_bytes = data
+        mime = (mime or "").strip().lower()
+        if mime in _MIME_TO_EXT:
+            content_type = mime
     else:
-        return {"id": "", "art": art, "ref": "", "hinweis": "Kein Medium übergeben."}
+        return {"id": "", "art": art, "ref": "", "hinweis": "Kein Medium übergeben.", "mime": ""}
 
     # Größen-Check — Limit aus .env (MAX_UPLOAD_BYTES), Default 10 MB (PROJ-30)
     max_bytes = config.max_upload_bytes()
     if len(raw_bytes) > max_bytes:
         mb = max_bytes / (1024 * 1024)
-        return {"id": "", "art": art, "ref": "", "hinweis": f"Medium zu groß (max. {mb:.0f} MB)."}
+        return {"id": "", "art": art, "ref": "", "hinweis": f"Medium zu groß (max. {mb:.0f} MB).", "mime": ""}
 
     if not raw_bytes:
-        return {"id": "", "art": art, "ref": "", "hinweis": "Medium ist leer."}
+        return {"id": "", "art": art, "ref": "", "hinweis": "Medium ist leer.", "mime": ""}
 
     # Datei schreiben
     mid = secrets.token_urlsafe(12)
@@ -112,6 +124,7 @@ def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
         "art": art,
         "ref": f"/media/{mid}",
         "hinweis": "",
+        "mime": content_type,
     }
 
 
@@ -140,6 +153,25 @@ def get_medium(mid: str) -> tuple[bytes, str] | None:
             except Exception:
                 return None
     return None
+
+
+def get_medium_data_url(mid: str) -> str | None:
+    """Lädt ein Medium und gibt es als base64-Data-URL zurück (für Vision, PROJ-31).
+
+    Gibt None zurück, wenn das Medium nicht existiert oder nicht gelesen werden kann.
+    Loggt nur die Medien-ID/Größe, nie die Bytes (PROJ-29).
+    """
+    result = get_medium(mid)
+    if result is None:
+        return None
+    data_bytes, content_type = result
+    try:
+        b64 = base64.b64encode(data_bytes).decode("ascii")
+    except Exception:
+        return None
+    log.debug("Medium als Data-URL aufbereitet: id=%s typ=%s größe=%d Bytes",
+              mid, content_type, len(data_bytes))
+    return f"data:{content_type};base64,{b64}"
 
 
 def transkribiere(audio_bytes: bytes | None = None) -> dict:

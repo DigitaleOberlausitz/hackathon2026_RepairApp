@@ -49,7 +49,7 @@
 | PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Done | PROJ-9, PROJ-22 |
 | PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Done | — |
 | PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Done | — |
-| PROJ-31 | Vision-Diagnose aus Foto & Dokument | `aufnahme`/`diagnose` | D9 | Planned | PROJ-27, PROJ-9 |
+| PROJ-31 | Vision-Diagnose aus Foto & Dokument | `aufnahme`/`diagnose` | D9 | In Review | PROJ-27, PROJ-9 |
 
 ## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
 
@@ -60,7 +60,11 @@
 | PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Done | (Bezug: PROJ-29) |
 
 > **Offene Punkte (Stand 2026-05-31):** **PROJ-31** (Vision-Diagnose aus Foto & Dokument)
-> ist neu spezifiziert und `Planned` — baut auf PROJ-27/PROJ-9 auf. Alle übrigen Feature-IDs
+> ist implementiert und `In Review` — neuer Backend-Baustein `repair/vision.py` (Extraktion
+> Stufe 1, PDF→Bild via optionalem PyMuPDF, Diagnose-Kontext Stufe 2), Endpunkt
+> `POST /api/extrahieren`, additive Erweiterung von `POST /api/diagnose` (Bild-Evidenz +
+> bestätigte Extraktion → `diagnosis.vision`), neuer Bestätigungs-Screen `ExtractionConfirmScreen`.
+> Tests: `webapp/tests/test_vision.py` (15/15) + Drift-Guard (9/9). Alle übrigen Feature-IDs
 > (PROJ-1…30) sind auf `Done`.
 > PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
 > Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,

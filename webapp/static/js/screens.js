@@ -85,6 +85,7 @@
       lang: lang,
       setMediaConsentOpen: props.setMediaConsentOpen,
       uploadMedium: props.uploadMedium,
+      uploadDokument: props.uploadDokument,
       removeMedium: props.removeMedium,
       onVoiceResult: handleVoiceResult,
       onBarcodeResult: function (val) {
@@ -118,6 +119,8 @@
       props.error
         ? h('p', { class: 'rk-q-hint', role: 'alert', style: { color: 'var(--stop)' } }, props.error)
         : null,
+      // PROJ-31: aktiver, nicht-blockierender Hinweis, ein Foto/Dokument beizufügen.
+      h('p', { class: 'rk-foto-hint' }, t('start.fotoHint')),
       mediaPanel
     ];
 
@@ -264,6 +267,10 @@
         var tr = deriveTrust(props.trust, device);
         return TrustBadge(tr.level, tr.source, tr.reason, { onClick: function () { props.setConf(true); }, strong: stop });
       })(),
+      // PROJ-31: Vermerk, dass Bildmaterial in die Diagnose eingeflossen ist.
+      (props.visionMark && props.visionMark.einbezogen)
+        ? h('div', { class: 'rk-vision-mark' }, t('vision.included'))
+        : null,
       h('div', { class: 'rk-aiwarn ' + (stop ? 'rk-aiwarn-strong' : '') },
         (stop ? t('common.aiWarnStrong') : '') + t('common.aiWarn')
       )
@@ -1595,12 +1602,27 @@
       if (!medienConsent) { props.setMediaConsentOpen(true); return; }
       var input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/jpeg,image/png,image/webp';
       input.capture = 'environment';
       input.onchange = function () {
         var file = input.files && input.files[0];
         if (!file) return;
         props.uploadMedium(file, 'foto', null);
+      };
+      input.click();
+    }
+
+    // PROJ-31: Dokument/PDF beifügen (Typenschild, Rechnung, Anleitung).
+    function captureDokument() {
+      if (!medienConsent) { props.setMediaConsentOpen(true); return; }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp,application/pdf';
+      input.onchange = function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (props.uploadDokument) props.uploadDokument(file, null);
+        else props.uploadMedium(file, 'dokument', null);
       };
       input.click();
     }
@@ -1685,6 +1707,11 @@
         title: t('media.foto'),
       }, '📷'),
       h('button', {
+        class: 'rk-cap-btn rk-cap-doc',
+        onClick: captureDokument,
+        title: t('media.dokument'),
+      }, '📄'),
+      h('button', {
         class: 'rk-cap-btn rk-cap-voice' + (!hasSpeech ? ' rk-cap-unavail' : ''),
         onClick: captureVoice,
         title: t('media.sprache'),
@@ -1721,11 +1748,12 @@
     var grid = medien.length
       ? h('div', { class: 'rk-media-grid' },
         medien.map(function (m) {
+          var icon = '🎙️';
+          if (m.art === 'foto') icon = '📷';
+          else if (m.art === 'video') icon = '🎬';
+          else if (m.art === 'dokument') icon = (m.mime === 'application/pdf') ? '📄' : '🖼️';
           return h('div', { class: 'rk-media-item' },
-            m.art === 'foto' || m.art === 'video'
-              ? h('div', { class: 'rk-media-thumb' },
-                h('span', { class: 'rk-media-art' }, m.art === 'foto' ? '📷' : '🎬'))
-              : h('div', { class: 'rk-media-thumb' }, h('span', { class: 'rk-media-art' }, '🎙️')),
+            h('div', { class: 'rk-media-thumb' }, h('span', { class: 'rk-media-art' }, icon)),
             h('button', { class: 'rk-media-remove', onClick: function () { if (props.removeMedium) props.removeMedium(m.id); } }, '✕')
           );
         })
@@ -1733,7 +1761,7 @@
       : null;
 
     return h('div', { class: 'rk-media' },
-      h('div', { class: 'rk-media' }, btns),
+      h('div', { class: 'rk-cap-row' }, btns),
       voiceIndicator,
       voiceCorrect,
       scanResult,
@@ -1781,6 +1809,106 @@
     return h('div', {}, ampelListe, fazitBlock);
   }
 
+  /* ===================== EXTRAKTIONS-BESTÄTIGUNG (PROJ-31, Stufe 1) ===================== */
+  function ExtractionConfirmScreen(props) {
+    var ex = props.extraktion || {};
+    var f = ex.felder || {};
+    var nichts = !!ex.nichtsErkannt;
+    var hinweis = ex.hinweis || '';
+
+    function confChip(feld) {
+      if (!feld || !feld.erkannt) return null;
+      var lvl = feld.konfidenz || 'mittel';
+      if (['hoch', 'mittel', 'niedrig'].indexOf(lvl) === -1) lvl = 'mittel';
+      return h('span', { class: 'rk-extract-conf rk-extract-conf-' + lvl }, t('extract.conf.' + lvl));
+    }
+
+    // Skalar-Feld: editierbar + leerbar (verwerfen).
+    function scalarRow(key) {
+      var feld = f[key] || {};
+      var hasVal = !!(feld.wert && ('' + feld.wert).trim());
+      return h('div', { class: 'rk-extract-field' },
+        h('div', { class: 'rk-extract-head' },
+          h('span', { class: 'rk-extract-label' }, t('extract.f.' + key)),
+          confChip(feld)
+        ),
+        h('div', { class: 'rk-extract-row' },
+          h('input', {
+            class: 'rk-extract-input', type: 'text',
+            value: feld.wert || '',
+            placeholder: t('extract.ph'),
+            onInput: function (e) { props.setScalar(key, e.target.value); }
+          }),
+          hasVal
+            ? h('button', {
+              class: 'rk-extract-clear', title: t('extract.conf.niedrig'),
+              onClick: function () { props.clearScalar(key); }
+            }, '✕')
+            : null
+        )
+      );
+    }
+
+    // Listen-Feld (Schäden / Hinweise): je Eintrag editierbar + entfernbar, plus „Hinzufügen".
+    function listSection(key) {
+      var arr = Array.isArray(f[key]) ? f[key] : [];
+      return h('div', { class: 'rk-extract-field' },
+        h('div', { class: 'rk-extract-head' },
+          h('span', { class: 'rk-extract-label' }, t('extract.f.' + key))
+        ),
+        h('div', { class: 'rk-extract-list' },
+          arr.map(function (item, i) {
+            var val = (item && typeof item === 'object') ? (item.wert || '') : (item || '');
+            return h('div', { class: 'rk-extract-row' },
+              h('input', {
+                class: 'rk-extract-input', type: 'text', value: val,
+                placeholder: t('extract.phItem'),
+                onInput: function (e) { props.setListItem(key, i, e.target.value); }
+              }),
+              h('button', {
+                class: 'rk-extract-clear',
+                onClick: function () { props.removeListItem(key, i); }
+              }, '✕')
+            );
+          })
+        ),
+        h('button', {
+          class: 'rk-extract-add',
+          onClick: function () { props.addListItem(key); }
+        }, t('extract.add'))
+      );
+    }
+
+    var children = [
+      h('div', { class: 'rk-eyebrow' }, t('extract.eyebrow')),
+      h('h2', { class: 'rk-q rk-q-tight' }, t('extract.title')),
+      h('p', { class: 'rk-q-hint' }, nichts ? t('extract.nothing') : t('extract.intro')),
+      hinweis ? h('div', { class: 'rk-extract-hinweis' }, '⚠️ ' + hinweis) : null,
+      h('div', { class: 'rk-extract' },
+        scalarRow('kategorie'),
+        scalarRow('modell'),
+        listSection('schaeden'),
+        scalarRow('kaufdatum'),
+        scalarRow('haendler'),
+        listSection('hinweise')
+      ),
+      h('div', { class: 'rk-extract-actions' },
+        h('button', { class: 'rk-ghost rk-full', onClick: props.onRetake }, t('extract.retake')),
+        h('button', { class: 'rk-ghost rk-full', onClick: props.onTextOnly }, t('extract.textonly'))
+      )
+    ];
+
+    return Screen({
+      bar: AppBar({
+        left: IconBtn({ onClick: props.onBack, label: t('common.zurueck'), children: BackIcon() }),
+        title: t('extract.title'),
+        right: docBtn(props.onProtocol)
+      }),
+      footer: BigButton({ variant: 'primary', onClick: props.onConfirm, children: t('extract.confirm') }),
+      children: children
+    });
+  }
+
   /* ===================== EXPORT — WINDOW-ASSIGNMENT (alle Screens) ===================== */
   Object.assign(window, {
     StartScreen: StartScreen, OwnershipScreen: OwnershipScreen, TriageScreen: TriageScreen,
@@ -1793,6 +1921,7 @@
     // Stufe-3
     RecallScreen: RecallScreen, DiagScreen: DiagScreen, WipeScreen: WipeScreen,
     MediaConsentSheet: MediaConsentSheet, MediaPanel: MediaPanel,
+    ExtractionConfirmScreen: ExtractionConfirmScreen,
     GesamtFazitBlock: GesamtFazitBlock, SteerBar: SteerBar,
     ConsentGateOverlay: ConsentGateOverlay, ConsentStatus: ConsentStatus,
   });

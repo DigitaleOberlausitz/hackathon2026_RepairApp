@@ -4,7 +4,8 @@ Routen (SPEC.md + STUFE1.md + STUFE2.md + STUFE3.md §2):
     GET  /                           → rendert templates/index.html
     GET  /api/devices                → alle Seed-Geräte als {id: device}
     GET  /api/device/<id>            → einzelnes device (404 wenn unbekannt)
-    POST /api/diagnose               → {text, kategorie?, answers?, lang?} → {device, source, diagnosis}
+    POST /api/diagnose               → {text, kategorie?, answers?, lang?, extraktion?, medienIds?} → {device, source, diagnosis}
+    POST /api/extrahieren            → {vorgangId?, medienIds?, text?, lang?} → {felder, source, …}  (PROJ-31)
 
     POST /api/vorgang                → optional {state} → 201 {id, state, created, updated}
     GET  /api/vorgang/<id>           → {id, state, created, updated} | 404
@@ -75,6 +76,7 @@ from repair import (
     schwungrad,
     store,
     triage,
+    vision,
     wissensbasis,
 )
 
@@ -277,15 +279,68 @@ def api_diagnose():
     lang = str(payload.get("lang") or request.args.get("lang") or "de").strip().lower()
     if lang not in ("de", "en"):
         lang = "de"
+
+    # PROJ-31: bestätigte Extraktion + Bild-Evidenz (additiv, optional). Ohne
+    # beides verhält sich /api/diagnose exakt wie zuvor (reine Text-Diagnose).
+    extraktion = payload.get("extraktion") if isinstance(payload.get("extraktion"), dict) else None
+    medien_ids = payload.get("medienIds")
+    bilder: list = []
+    if isinstance(medien_ids, list) and medien_ids:
+        ids = [str(m) for m in medien_ids][: config.max_medien_pro_anfrage()]
+        try:
+            bilder, _hinweise = vision.bilder_aus_medien(ids)
+        except Exception:
+            bilder = []
+
     result = ai.diagnose(
         text=text if isinstance(text, str) else str(text),
         kategorie=kategorie,
         answers=answers,
         lang=lang,
+        extraktion=extraktion,
+        bilder=bilder,
     )
     if "error" in result:
         status = _DIAGNOSE_ERROR_STATUS.get(result.get("code"), 500)
         return jsonify(result), status
+    return jsonify(result)
+
+
+# ─── PROJ-31: Vision-Extraktion (Stufe 1) ─────────────────────────────────────
+
+
+@app.post("/api/extrahieren")
+def api_extrahieren():
+    """PROJ-31 Stufe 1 — strukturierte Extraktion aus beigefügten Fotos/Dokumenten.
+
+    Body: {vorgangId?, medienIds?, text?, lang?}
+      - medienIds: explizite Medien-IDs; fehlen sie, werden die am Vorgang
+        gespeicherten Medien (state.medien) ausgewertet.
+    Antwort (immer HTTP 200, scheitert nie hart):
+      {felder:{...}, source:"vision|no_vision_backend|vision_error|keine_medien",
+       hinweis, bildAnzahl, nichtsErkannt}
+    Die bestätigten/korrigierten Felder hält das Frontend im Vorgangs-State.
+    """
+    payload = request.get_json(silent=True) or {}
+    vid = str(payload.get("vorgangId") or "").strip()
+    text = str(payload.get("text") or "")
+    lang = str(payload.get("lang") or request.args.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+
+    medien_ids = payload.get("medienIds")
+    medien: list = []
+    if isinstance(medien_ids, list) and medien_ids:
+        medien = [str(m) for m in medien_ids]
+    elif vid:
+        vorgang = store.get_vorgang(vid)
+        if vorgang:
+            state_medien = (vorgang.get("state") or {}).get("medien")
+            if isinstance(state_medien, list):
+                medien = state_medien
+
+    medien = medien[: config.max_medien_pro_anfrage()]
+    result = vision.extrahiere(medien, text=text, lang=lang)
     return jsonify(result)
 
 
@@ -718,17 +773,24 @@ def api_vorgang_medien(vid: str):
 
     art = "foto"
     data = None
+    file_mime = ""
 
     # multipart/form-data
     if request.files:
         f = request.files.get("file")
         if f:
             data = f.read()
-            mime = f.content_type or ""
-            if "video" in mime:
+            file_mime = (f.content_type or "").lower()
+            # Explizite Art aus dem Formular hat Vorrang (PROJ-31: „dokument").
+            explicit = str(request.form.get("art") or "").strip().lower()
+            if explicit in ("foto", "video", "audio", "dokument"):
+                art = explicit
+            elif "video" in file_mime:
                 art = "video"
-            elif "audio" in mime:
+            elif "audio" in file_mime:
                 art = "audio"
+            elif "pdf" in file_mime:
+                art = "dokument"
             else:
                 art = "foto"
     else:
@@ -736,7 +798,7 @@ def api_vorgang_medien(vid: str):
         data = payload.get("dataUrl") or payload.get("data")
         art = str(payload.get("art") or "foto").strip().lower()
 
-    result = multimodal.save_medium(data=data, art=art)
+    result = multimodal.save_medium(data=data, art=art, mime=file_mime)
     if not result.get("id"):
         return jsonify(result)  # hinweis enthalten, 200
 
@@ -748,6 +810,7 @@ def api_vorgang_medien(vid: str):
         "art": result["art"],
         "ref": result["ref"],
         "hinweis": result.get("hinweis", ""),
+        "mime": result.get("mime", ""),
     })
     state["medien"] = medien
     store.save_vorgang(vid, state)

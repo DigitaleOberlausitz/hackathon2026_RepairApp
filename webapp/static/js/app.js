@@ -95,6 +95,31 @@
       'media.voiceLive': 'Ich höre zu …',
       'media.voiceCorrect': 'Erkannter Text — bitte prüfen:',
       'media.scanResult': 'Gefundene Gerätedaten:',
+      // Vision-Diagnose (PROJ-31)
+      'media.dokument': 'Dokument/PDF beifügen',
+      'media.limit': 'Höchstens {n} Medien pro Anfrage — bitte zuerst eins entfernen.',
+      'media.unsupported': 'Dieses Format wird nicht unterstützt (erlaubt: Bilder JPG/PNG/WebP & PDF).',
+      'start.fotoHint': 'Tipp: Ein Foto vom Gerät, Typenschild oder Schaden — oder die Rechnung als PDF — macht die Diagnose treffsicherer. Optional, reiner Text geht auch.',
+      'vision.included': '📷 Bild in die Diagnose einbezogen',
+      'extract.eyebrow': 'Prüfen',
+      'extract.title': 'Das habe ich erkannt',
+      'extract.intro': 'Bitte prüfe und korrigiere die Angaben, bevor die Diagnose startet. Jedes Feld kannst du ändern oder leeren.',
+      'extract.f.kategorie': 'Gerätekategorie',
+      'extract.f.modell': 'Modell / Typ',
+      'extract.f.schaeden': 'Sichtbare Schäden',
+      'extract.f.kaufdatum': 'Kaufdatum',
+      'extract.f.haendler': 'Händler',
+      'extract.f.hinweise': 'Hinweise aus Dokumenten',
+      'extract.ph': 'nicht erkannt — hier eintragen',
+      'extract.phItem': 'weiteren Eintrag hinzufügen',
+      'extract.add': '+ Hinzufügen',
+      'extract.confirm': 'Bestätigen & Diagnose starten',
+      'extract.nothing': 'Ich konnte nichts Sicheres erkennen. Du kannst die Angaben manuell ergänzen, ein neues Foto/Dokument aufnehmen oder direkt mit der Text-Diagnose fortfahren.',
+      'extract.retake': 'Neu aufnehmen',
+      'extract.textonly': 'Ohne Bild fortfahren',
+      'extract.conf.hoch': 'sicher erkannt',
+      'extract.conf.mittel': 'erkannt',
+      'extract.conf.niedrig': 'unsicher — bitte prüfen',
       // Lotse (PROJ-18)
       'steer.weiter': 'Weiter',
       'steer.profi': 'Profi / Café',
@@ -500,6 +525,31 @@
       'media.voiceLive': 'Listening …',
       'media.voiceCorrect': 'Recognised text — please check:',
       'media.scanResult': 'Found device data:',
+      // Vision diagnosis (PROJ-31)
+      'media.dokument': 'Attach document/PDF',
+      'media.limit': 'At most {n} media per request — please remove one first.',
+      'media.unsupported': 'This format is not supported (allowed: images JPG/PNG/WebP & PDF).',
+      'start.fotoHint': 'Tip: A photo of the device, type plate or damage — or the receipt as a PDF — makes the diagnosis more accurate. Optional, plain text works too.',
+      'vision.included': '📷 Image used in the diagnosis',
+      'extract.eyebrow': 'Review',
+      'extract.title': 'Here is what I recognised',
+      'extract.intro': 'Please check and correct the details before the diagnosis starts. You can change or clear every field.',
+      'extract.f.kategorie': 'Device category',
+      'extract.f.modell': 'Model / type',
+      'extract.f.schaeden': 'Visible damage',
+      'extract.f.kaufdatum': 'Purchase date',
+      'extract.f.haendler': 'Retailer',
+      'extract.f.hinweise': 'Notes from documents',
+      'extract.ph': 'not recognised — enter here',
+      'extract.phItem': 'add another entry',
+      'extract.add': '+ Add',
+      'extract.confirm': 'Confirm & start diagnosis',
+      'extract.nothing': 'I could not reliably recognise anything. You can fill in the details manually, take a new photo/document, or continue with the text diagnosis.',
+      'extract.retake': 'Capture again',
+      'extract.textonly': 'Continue without image',
+      'extract.conf.hoch': 'confidently recognised',
+      'extract.conf.mittel': 'recognised',
+      'extract.conf.niedrig': 'uncertain — please check',
       // Lotse
       'steer.weiter': 'Continue',
       'steer.profi': 'Pro / Café',
@@ -1025,6 +1075,8 @@
     // PROJ-27
     medienConsent: false,
     medien: [],
+    // PROJ-31
+    extraktion: null,
   };
 
   function nowIso() { try { return new Date().toISOString(); } catch (e) { return ''; } }
@@ -1042,6 +1094,7 @@
     // Stufe-3
     'lang', 'fehlerzustand', 'defekte', 'gesamtFazit', 'rueckruf',
     'datentragend', 'abgabe', 'datenloeschung', 'consent', 'schwungrad', 'medienConsent', 'medien',
+    'extraktion',  // PROJ-31: bestätigte Bild-/Dokument-Extraktion
   ];
 
   function serialize() {
@@ -1092,6 +1145,7 @@
     if (!state.schwungrad || typeof state.schwungrad !== 'object') state.schwungrad = { beigetragen: false, beitragId: '', ausgeschlossen: [] };
     if (typeof state.medienConsent !== 'boolean') state.medienConsent = false;
     if (!Array.isArray(state.medien)) state.medien = [];
+    if (!state.extraktion || typeof state.extraktion !== 'object') state.extraktion = null;
     // lang in localStorage spiegeln
     try { localStorage.setItem('rk-lang', state.lang); } catch (e) {}
     // transienter UI-State frisch
@@ -1244,7 +1298,7 @@
     var wasPending = state.ui.pendingDiagnose;
     state.ui.pendingDiagnose = false;
     if (wasPending && state.consent.status === 'erteilt') {
-      _doDiagnoseReal();
+      _proceedAfterIntake();
     } else {
       commit();
     }
@@ -1476,8 +1530,28 @@
     render();
   }
 
-  /* ===================== MEDIEN-UPLOAD (PROJ-27) ===================== */
+  /* ===================== MEDIEN-UPLOAD (PROJ-27 / PROJ-31) ===================== */
+  // PROJ-31: Obergrenze Medien pro Anfrage (serverseitig validiert; clientseitig
+  // freundlicher Hinweis statt Fehler). Wert kommt aus dem Server-Default; hier
+  // nur als sanftes UI-Limit gespiegelt.
+  var MAX_MEDIEN = 6;
+  // PROJ-31: erlaubte Datei-Formate für die Vision-Auswertung.
+  var ERLAUBTE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
   function uploadMedium(data, art, cb) {
+    // Mengen-Limit: nicht blockierend, Hinweis statt Fehler.
+    if (state.medien && state.medien.length >= MAX_MEDIEN) {
+      toast(t('media.limit', { n: MAX_MEDIEN }));
+      if (cb) cb(null);
+      return;
+    }
+    // Format-Check (nur für echte Datei-Objekte mit type).
+    if (data && typeof data === 'object' && data.type &&
+        ERLAUBTE_MIMES.indexOf((data.type || '').toLowerCase()) === -1) {
+      toast(t('media.unsupported'));
+      if (cb) cb(null);
+      return;
+    }
     ensureVorgang(function (id) {
       if (!id) { if (cb) cb(null); return; }
       var isDataUrl = typeof data === 'string' && data.indexOf('data:') === 0;
@@ -1500,11 +1574,18 @@
           if (d && d.id) {
             state.medien = state.medien.concat([d]);
             commit();
+          } else if (d && d.hinweis) {
+            toast(d.hinweis);  // z. B. „zu groß" — Hinweis statt Fehler
           }
           if (cb) cb(d);
         })
         .catch(function () { if (cb) cb(null); });
     });
+  }
+
+  // PROJ-31: Dokument/PDF beifügen (Bild ODER PDF). art="dokument".
+  function uploadDokument(file, cb) {
+    uploadMedium(file, 'dokument', cb);
   }
 
   function removeMedium(id) {
@@ -1524,6 +1605,7 @@
     state.error = null;
     state.foerder = null; state.linkUrl = null;
     state.kategorie = ''; state.trust = { level: '', source: '', reason: '' };
+    state.medien = []; state.extraktion = null;
     resetStufe2();
     resetStufe3();
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
@@ -1532,8 +1614,10 @@
 
   function doDiagnose() {
     var text = (state.draft || '').trim();
-    if (!text) return;
-    // Consent-Gate vor erster Verarbeitung prüfen
+    var hatMedien = !!(state.medien && state.medien.length);
+    // Ohne Text UND ohne Medien gibt es nichts zu tun.
+    if (!text && !hatMedien) return;
+    // Consent-Gate vor erster Verarbeitung prüfen (PROJ-22)
     if (state.consent.status === 'offen') {
       // Vorgang anlegen, damit POST /consent funktioniert
       ensureVorgang(function () {});
@@ -1542,16 +1626,134 @@
       render();
       return;
     }
-    _doDiagnoseReal();
+    _proceedAfterIntake();
   }
 
-  function _doDiagnoseReal() {
+  // PROJ-31: Nach Aufnahme + Consent entscheiden — mit auswertbaren Medien und
+  // erteilter Medien-Einwilligung erst die Extraktion (Stufe 1), sonst direkt die
+  // Text-Diagnose. Wird auch nach der Consent-Entscheidung erneut aufgerufen.
+  function _proceedAfterIntake() {
+    var hatMedien = !!(state.medien && state.medien.length);
+    if (hatMedien && state.medienConsent) {
+      startExtraktion();
+    } else {
+      _doDiagnoseReal();
+    }
+  }
+
+  // PROJ-31 Stufe 1: Bilder/Dokumente auswerten und Bestätigungs-Screen zeigen.
+  function startExtraktion() {
+    ensureVorgang(function (id) {
+      var ids = (state.medien || []).map(function (m) { return m.id; })
+        .filter(function (x) { return !!x; });
+      state.loading = true; state.error = null; render();
+      fetch('/api/extrahieren', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vorgangId: id, medienIds: ids,
+          text: (state.draft || '').trim(), lang: state.lang,
+        }),
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (data) {
+          state.loading = false;
+          if (data && data.felder) {
+            state.extraktion = data;
+          } else {
+            state.extraktion = { felder: emptyFelder(), source: 'vision_error', hinweis: '', nichtsErkannt: true, bildAnzahl: ids.length };
+          }
+          setStage('extraktion');
+          commit();
+        })
+        .catch(function () {
+          state.loading = false;
+          state.extraktion = { felder: emptyFelder(), source: 'vision_error', hinweis: '', nichtsErkannt: true, bildAnzahl: 0 };
+          setStage('extraktion');
+          commit();
+        });
+    });
+  }
+
+  // Leeres, schema-konformes Feld-Objekt (Spiegel von vision.leere_felder()).
+  function emptyFelder() {
+    return {
+      kategorie: { wert: '', konfidenz: 'niedrig', erkannt: false },
+      modell: { wert: '', konfidenz: 'niedrig', erkannt: false },
+      schaeden: [],
+      kaufdatum: { wert: '', konfidenz: 'niedrig', erkannt: false },
+      haendler: { wert: '', konfidenz: 'niedrig', erkannt: false },
+      hinweise: [],
+    };
+  }
+
+  function _extraktFelder() {
+    if (!state.extraktion || typeof state.extraktion !== 'object') state.extraktion = { felder: emptyFelder() };
+    if (!state.extraktion.felder) state.extraktion.felder = emptyFelder();
+    return state.extraktion.felder;
+  }
+
+  // Skalar-Feld (Kategorie/Modell/Kaufdatum/Händler) bearbeiten — KEIN Re-Render
+  // (Fokus erhalten), wie bei setDraft.
+  function setExtraktScalar(key, v) {
+    var f = _extraktFelder();
+    if (!f[key] || typeof f[key] !== 'object') f[key] = { konfidenz: 'mittel' };
+    f[key].wert = v;
+    f[key].erkannt = !!(v && v.trim());
+  }
+  // Listen-Eintrag (Schäden/Hinweise) bearbeiten — KEIN Re-Render.
+  function setExtraktListItem(key, i, v) {
+    var f = _extraktFelder();
+    if (!Array.isArray(f[key])) f[key] = [];
+    if (!f[key][i] || typeof f[key][i] !== 'object') f[key][i] = { konfidenz: 'mittel' };
+    f[key][i].wert = v;
+  }
+  function addExtraktListItem(key) {
+    var f = _extraktFelder();
+    if (!Array.isArray(f[key])) f[key] = [];
+    f[key].push({ wert: '', konfidenz: 'mittel' });
+    render();
+  }
+  function removeExtraktListItem(key, i) {
+    var f = _extraktFelder();
+    if (Array.isArray(f[key])) f[key].splice(i, 1);
+    render();
+  }
+  function clearExtraktScalar(key) {
+    var f = _extraktFelder();
+    f[key] = { wert: '', konfidenz: 'niedrig', erkannt: false };
+    render();
+  }
+
+  // Bestätigen → Diagnose mit Bild-Evidenz + bestätigten Feldern (Stufe 2).
+  function confirmExtraktion() {
+    _doDiagnoseReal({ withVision: true });
+  }
+  // Ohne Bild fortfahren → reine Text-Diagnose (Degradation/bewusste Wahl).
+  function extraktionTextOnly() {
+    _doDiagnoseReal();
+  }
+  // Neu aufnehmen → zurück zum Startscreen (Medien bleiben, können ersetzt werden).
+  function extraktionRetake() {
+    setStage('start');
+    render();
+  }
+
+  function _doDiagnoseReal(opts) {
+    opts = opts || {};
     var text = (state.draft || '').trim();
-    if (!text) return;
+    var withVision = !!opts.withVision;
+    if (!text && !withVision) return;
+    var body = { text: text, lang: state.lang };
+    if (withVision) {
+      body.vorgangId = state.id;
+      body.extraktion = { felder: _extraktFelder() };
+      body.medienIds = (state.medien || []).map(function (m) { return m.id; })
+        .filter(function (x) { return !!x; });
+    }
     state.loading = true; state.error = null; render();
     fetch('/api/diagnose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, lang: state.lang }),
+      body: JSON.stringify(body),
     })
       .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (data) {
@@ -1561,6 +1763,14 @@
           state.error = null;
           state.device = device;
           state.diagnosis = (data && data.diagnosis) || null;
+          // PROJ-31: sichtbarer Vermerk, dass Bildmaterial einbezogen wurde
+          // (bzw. ein Hinweis, falls es nicht ausgewertet werden konnte).
+          var vmark = state.diagnosis && state.diagnosis.vision;
+          if (vmark && vmark.einbezogen) {
+            toast(t('vision.included'));
+          } else if (vmark && vmark.hinweis) {
+            toast(vmark.hinweis);
+          }
           state.answers = []; state.ti = 0; state.draftFree = {};
           state.kategorie = deriveKategorie(device);
           state.trust = deriveTrust(device, state.diagnosis);
@@ -2039,6 +2249,7 @@
         medienConsent: state.medienConsent,
         setMediaConsentOpen: function (v) { state.ui.mediaConsentOpen = v; render(); },
         uploadMedium: uploadMedium,
+        uploadDokument: uploadDokument,   // PROJ-31: Dokument/PDF beifügen
         medien: state.medien,
         removeMedium: removeMedium,
         // Consent-Gate-Signal
@@ -2046,6 +2257,23 @@
         onConsentErteilen: consentErteilen,
         onConsentAblehnen: consentAblehnen,
         consent: state.consent,
+      });
+    }
+    // PROJ-31 Stufe 1: Bestätigungs-Screen — noch ohne device (vor !state.device-Guard).
+    if (s === 'extraktion') {
+      return window.ExtractionConfirmScreen({
+        extraktion: state.extraktion || { felder: emptyFelder() },
+        lang: state.lang,
+        setScalar: setExtraktScalar,
+        clearScalar: clearExtraktScalar,
+        setListItem: setExtraktListItem,
+        addListItem: addExtraktListItem,
+        removeListItem: removeExtraktListItem,
+        onConfirm: confirmExtraktion,
+        onTextOnly: extraktionTextOnly,
+        onRetake: extraktionRetake,
+        onBack: extraktionRetake,
+        onProtocol: openProto,
       });
     }
     if (!state.device) return window.StartScreen({
@@ -2146,6 +2374,7 @@
     if (s === 'ampel') {
       return window.AmpelScreen({
         device: state.device, trust: state.trust,
+        visionMark: state.diagnosis && state.diagnosis.vision,  // PROJ-31
         defekte: state.defekte, gesamtFazit: state.gesamtFazit,
         onContinue: ampelContinue,
         onBack: function () {

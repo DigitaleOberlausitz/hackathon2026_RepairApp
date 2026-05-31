@@ -18,7 +18,8 @@ webapp/
   repair/
     __init__.py          [AGENT-A]
     (data.py entfällt — keine Demo-/Seed-Geräte mehr; Diagnose nur via LLM)
-    ai.py                [AGENT-A]  OpenAI-ChatGPT-Diagnose -> device-Objekt
+    ai.py                [AGENT-A]  LLM-Diagnose -> device-Objekt (Text + opt. Bild-Evidenz, PROJ-31)
+    vision.py            [AGENT-A]  Vision-Extraktion (Stufe 1) + PDF->Bild + Diagnose-Kontext (PROJ-31)
     schema.py            [AGENT-A]  Validierung/Normalisierung eines device-Objekts
   templates/
     index.html           [AGENT-B]  SPA-Shell (enthält den HEAD-BLOCK unten 1:1)
@@ -80,6 +81,15 @@ Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Vari
                                    hinterlegten Demo-/Seed-Geräte mehr.
   Fehlerfall (nie hart scheitern): `{ "error": "…", "code": "…" }` mit HTTP-Status —
   `400` (leerer Text, `empty`), `503` (kein Backend, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
+  **PROJ-31 (additiv):** Body darf zusätzlich `extraktion` (bestätigte Felder) und `medienIds`
+  (Bild-Evidenz) enthalten; dann fließt Bildmaterial in die Diagnose ein und `diagnosis.vision`
+  vermerkt das. Ohne beides verhält sich der Endpunkt **exakt wie zuvor** (Schema unverändert).
+- `POST /api/extrahieren`        → Body `{ "vorgangId?", "medienIds?", "text?", "lang?" }` (PROJ-31, Stufe 1)
+                                   Antwort **immer** HTTP 200 (scheitert nie hart):
+                                   `{ "felder": {kategorie, modell, schaeden[], kaufdatum, haendler, hinweise[]},
+                                      "source": "vision|no_vision_backend|vision_error|keine_medien",
+                                      "hinweis", "bildAnzahl", "nichtsErkannt" }`. Vision-Backend-Wahl wie `ai.py`
+                                   (Ollama vor OpenAI); PDFs werden serverseitig in Seitenbilder gewandelt.
 
 ## Konfiguration — ausschließlich über `.env` (verbindlich, PROJ-30)
 

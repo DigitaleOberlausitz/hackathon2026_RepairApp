@@ -1137,8 +1137,13 @@ body {
 .rk-cap-btn:active { transform: translateY(1px); border-color: var(--accent); background: var(--accent-soft); }
 .rk-cap-btn span { font-size: 21px; }
 .rk-cap-photo { /* kein eigener Modifier nötig — Basis reicht */ }
+.rk-cap-doc   { /* PROJ-31: Dokument/PDF — Basis reicht */ }
 .rk-cap-voice { /* kein eigener Modifier nötig — Basis reicht */ }
 .rk-cap-scan  { /* kein eigener Modifier nötig — Basis reicht */ }
+/* PROJ-31: Capture-Buttons als Reihe (Foto · Dokument · Sprache · Scan) */
+.rk-cap-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
 /* Nicht verfügbare Modalität */
 .rk-cap-unavail {
   opacity: .42; pointer-events: none; filter: grayscale(.6);
@@ -1313,4 +1318,77 @@ body {
 @keyframes rkThink {
   0%, 80%, 100% { opacity: .25; transform: translateY(0); }
   40% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* ===================== PROJ-31: Vision-Diagnose ===================== */
+/* Aktiver, nicht-blockierender Hinweis auf dem Startscreen */
+.rk-foto-hint {
+  margin-top: 14px; padding: 10px 12px;
+  background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.45;
+}
+
+/* Vermerk „Bild einbezogen" auf der Ampel */
+.rk-vision-mark {
+  margin-top: 10px; padding: 8px 12px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  color: var(--accent-ink); text-align: center;
+}
+
+/* Bestätigungs-Screen (Stufe 1) */
+.rk-extract { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.rk-extract-field { display: flex; flex-direction: column; gap: 7px; }
+.rk-extract-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rk-extract-label {
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.rk-extract-conf {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: var(--radius-pill);
+}
+.rk-extract-conf-hoch    { background: var(--gut-bg); color: var(--gut-ink); }
+.rk-extract-conf-mittel  { background: var(--mittel-bg); color: var(--mittel-ink); }
+.rk-extract-conf-niedrig { background: var(--stop-bg); color: var(--stop-ink); }
+.rk-extract-row { display: flex; align-items: center; gap: 8px; }
+.rk-extract-input {
+  flex: 1; min-width: 0;
+  padding: 12px 13px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit; font-size: 14px; color: var(--ink);
+  transition: border-color var(--motion);
+}
+.rk-extract-input:focus { outline: none; border-color: var(--accent); }
+.rk-extract-input::placeholder { color: var(--ink-soft); opacity: .7; }
+.rk-extract-clear {
+  flex: none; width: 34px; height: 34px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--line);
+  color: var(--ink-soft); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--motion), color var(--motion), border-color var(--motion);
+}
+.rk-extract-clear:active { background: var(--stop-bg); color: var(--stop-ink); border-color: var(--stop); }
+.rk-extract-list { display: flex; flex-direction: column; gap: 7px; }
+.rk-extract-add {
+  align-self: flex-start;
+  font-size: 12.5px; color: var(--accent-ink);
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  transition: transform var(--motion);
+}
+.rk-extract-add:active { transform: translateY(1px); }
+.rk-extract-hinweis {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--mittel-bg); color: var(--mittel-ink);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; line-height: 1.45;
+}
+.rk-extract-actions {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 18px;
 }

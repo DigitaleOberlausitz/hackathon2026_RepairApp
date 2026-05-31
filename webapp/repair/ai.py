@@ -324,6 +324,8 @@ def diagnose(
     kategorie: str = "",
     answers: list | None = None,
     lang: str = "de",
+    extraktion: dict | None = None,
+    bilder: list | None = None,
 ) -> dict:
     """Diagnostiziert Freitext → ``{"device": {...}, "source": "ai", "diagnosis": {...}}``.
 
@@ -332,15 +334,54 @@ def diagnose(
     Erfolg {status, score, reason, trust} (PROJ-4/25) und additiv:
     {kandidaten, abgrenzung, unklar} (PROJ-17).
 
+    PROJ-31 (additiv): ``extraktion`` (vom Nutzer bestätigte Felder aus Fotos/
+    Dokumenten) wird in den Prompt eingespeist; ``bilder`` (Liste von Bild-Data-URLs)
+    fließt als Bild-Evidenz in einen multimodalen Call über das Vision-Backend.
+    Sind beide leer/None, verhält sich die Funktion **exakt wie zuvor** (reine
+    Text-Diagnose, gleiches Schema, gleiches Fehlerverhalten). Bei Bildern, aber
+    fehlendem Vision-Backend, läuft die Text-Diagnose weiter und ``diagnosis.vision``
+    vermerkt das (kein hartes Scheitern, D15).
+
     Signatur additiv erweitert: bestehende Aufrufe ``diagnose(text)`` bleiben gültig.
     """
     text = (text or "").strip()
-    log.debug("Diagnose-Anfrage: kategorie=%r lang=%s text=%r", kategorie, lang, _kurz(text))
-    if not text:
-        log.info("Diagnose ohne Freitext → Fehler (empty).")
+    bilder = [b for b in (bilder or []) if isinstance(b, str) and b.startswith("data:")]
+    log.debug("Diagnose-Anfrage: kategorie=%r lang=%s bilder=%d text=%r",
+              kategorie, lang, len(bilder), _kurz(text))
+
+    # PROJ-31: bestätigte Extraktionsfelder als verbindlichen Kontext einspeisen.
+    vision_kontext = ""
+    if extraktion:
+        try:
+            from . import vision
+            vision_kontext = vision.baue_vision_kontext(extraktion)
+        except Exception:
+            vision_kontext = ""
+
+    if not text and not bilder and not vision_kontext:
+        log.info("Diagnose ohne Freitext/Bild → Fehler (empty).")
         return _error("Bitte beschreibe zuerst, was kaputt ist.", "empty")
 
-    client, model, is_local = _resolve_backend()
+    # Backend-Wahl: mit Bildern zuerst das Vision-Backend, sonst Text-Backend.
+    client = model = None
+    is_local = False
+    vision_aktiv = False
+    vision_hinweis = ""
+    if bilder:
+        try:
+            from . import vision
+            client, model, is_local = vision._resolve_vision_backend()
+        except Exception:
+            client = None
+        if client is not None:
+            vision_aktiv = True
+        else:
+            vision_hinweis = (
+                "Kein Vision-Backend verfügbar — das Bild wurde nicht ausgewertet; "
+                "die Diagnose nutzt nur Text und deine Angaben."
+            )
+    if client is None:
+        client, model, is_local = _resolve_backend()
     if client is None:
         log.info("Kein KI-Backend konfiguriert/verfügbar → Fehler (no_backend).")
         return _error(
@@ -349,7 +390,8 @@ def diagnose(
             "ist deshalb nicht verfügbar.",
             "no_backend",
         )
-    log.debug("KI-Backend gewählt: %s, Modell=%s", "Ollama (lokal)" if is_local else "OpenAI-Cloud", model)
+    log.debug("KI-Backend gewählt: %s, Modell=%s, Vision=%s",
+              "Ollama (lokal)" if is_local else "OpenAI-Cloud", model, vision_aktiv)
 
     # PROJ-30: Timeout aus .env (LLM_TIMEOUT), zentral validiert; Default 180 s.
     timeout = config.llm_timeout()
@@ -364,6 +406,29 @@ def diagnose(
     if is_local:
         system_prompt += "\n\n/no_think"
 
+    # Benutzer-Nachricht: Text-only bleibt bit-identisch zu früher; nur mit
+    # Extraktions-Kontext und/oder Bildern weicht der Aufbau ab.
+    user_text = f"Problembeschreibung: {text}"
+    if vision_kontext:
+        user_text += "\n\n" + vision_kontext
+    if vision_aktiv and bilder:
+        user_content = [{"type": "text", "text": user_text}]
+        for url in bilder:
+            user_content.append({"type": "image_url", "image_url": {"url": url}})
+    else:
+        user_content = user_text
+
+    def _vision_marker(diag: dict) -> dict:
+        # Additiver Vermerk nur, wenn Bild/Extraktion im Spiel war (sonst Schema
+        # exakt wie zuvor).
+        if bilder or extraktion:
+            diag["vision"] = {
+                "einbezogen": bool(vision_aktiv and bilder),
+                "medienAnzahl": len(bilder),
+                "hinweis": vision_hinweis,
+            }
+        return diag
+
     try:
         response = client.chat.completions.create(
             model=model,
@@ -372,7 +437,7 @@ def diagnose(
             timeout=timeout,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Problembeschreibung: {text}"},
+                {"role": "user", "content": user_content},
             ],
         )
         # PROJ-28: Token-Usage des echten KI-Calls fürs Anfrage-Protokoll melden.
@@ -395,7 +460,7 @@ def diagnose(
                     timeout=timeout,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"Problembeschreibung: {text}"},
+                        {"role": "user", "content": user_content},
                     ],
                 )
                 content2 = response2.choices[0].message.content
@@ -413,8 +478,9 @@ def diagnose(
         device = normalize_device(raw)
         diagnosis = _build_diagnosis(device, "ai")
         diagnosis = _add_kuratierte_felder(diagnosis, text, kategorie, answers, lang)
-        log.info("Diagnose-Quelle=ai — Modell=%s, Gerät=%r, gefährlich=%s.",
-                 model, (device or {}).get("id"), _is_dangerous(device))
+        diagnosis = _vision_marker(diagnosis)
+        log.info("Diagnose-Quelle=ai — Modell=%s, Gerät=%r, gefährlich=%s, vision=%s.",
+                 model, (device or {}).get("id"), _is_dangerous(device), vision_aktiv)
         return {"device": device, "source": "ai", "diagnosis": diagnosis}
     except (json.JSONDecodeError, DeviceValidationError) as exc:
         log.warning("KI-Antwort unbrauchbar (%s: %s) → Fehler (ai_error).", type(exc).__name__, exc)

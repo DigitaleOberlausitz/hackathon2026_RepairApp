@@ -62,9 +62,10 @@ Keys, Modelle oder Limits im Code.
   Werten (z. B. `PORT=abc`) mit klarer, benennender Meldung ab. Default-Literale für
   Bind-Adresse/Port/Modelle/Limits stehen **nur** dort (bzw. `ai.py` `DEFAULT_*_MODEL`).
 - Aktuell ausgewertet: `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OLLAMA_MODEL`,
-  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`, `MAX_UPLOAD_BYTES`, `SEARXNG_URL`,
-  `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`, `HOST`, `PORT`. Geplant/noch nicht aktiv
-  (auskommentiert in `.env.example`): `VISION_MODEL`, `EMBED_MODEL`.
+  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`, `VISION_MODEL`, `MAX_UPLOAD_BYTES`,
+  `MAX_MEDIEN_PRO_ANFRAGE`, `MAX_PDF_SEITEN`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`,
+  `FLASK_DEBUG`, `HOST`, `PORT`. Geplant/noch nicht aktiv (auskommentiert in `.env.example`):
+  `EMBED_MODEL`.
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.
@@ -81,7 +82,8 @@ webapp/
   repair/
     config.py          zentrale .env-Konfiguration: getypte Getter + Fail-fast-Validierung (PROJ-30)
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
-    ai.py              diagnose() — reine LLM-Diagnose; ohne Backend/Fehler → Fehler-Objekt
+    ai.py              diagnose() — LLM-Diagnose (Text + optional Bild-Evidenz/Extraktion, PROJ-31)
+    vision.py          extrahiere() — Vision-Extraktion Stufe 1 + PDF→Bild + Diagnose-Kontext (PROJ-31)
     logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)
   templates/index.html SPA-Shell

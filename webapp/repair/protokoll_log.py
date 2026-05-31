@@ -44,6 +44,7 @@ PROTOKOLL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "p
 # Nur diese POST-Endpunkte werden protokolliert; alle GET-/Sicht-Routen NICHT.
 ENDPOINT_ROLLE: dict[str, str] = {
     "api_diagnose": "diagnose",            # POST /api/diagnose          (PROJ-17)
+    "api_extrahieren": "aufnahme",         # POST /api/extrahieren       (PROJ-31)
     "api_recherche": "recherche",          # POST /api/recherche         (PROJ-16)
     "api_wissensbasis_entwurf": "wissensbasis",  # POST /api/wissensbasis/entwurf (PROJ-15)
     "api_bewertung_gesamt": "bewertung",   # POST /api/bewertung/gesamt  (PROJ-21)
