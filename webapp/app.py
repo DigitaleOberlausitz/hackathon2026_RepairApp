@@ -142,12 +142,17 @@ def _prot_capture_payload() -> dict:
 
 
 def _prot_extract_vid(payload: dict) -> str | None:
-    """vid aus Pfad-Param <vid>, Body-Feld vorgangId/v oder Query ?v= ableiten."""
+    """vid aus Pfad-Param <vid>, Body-Feld vorgangId/vorgang_id/v oder Query ?v= ableiten.
+
+    ``/api/chat`` sendet snake_case ``vorgang_id`` (PROJ-37), die älteren Endpunkte
+    camelCase ``vorgangId`` — beide Schreibweisen akzeptieren, sonst landet jeder
+    Chat-Turn mangels erkannter vid in ``_ohne-vorgang.md``.
+    """
     if request.view_args and request.view_args.get("vid"):
         return request.view_args.get("vid")
     body = payload.get("json") if isinstance(payload, dict) else None
     if isinstance(body, dict):
-        v = body.get("vorgangId") or body.get("v")
+        v = body.get("vorgangId") or body.get("vorgang_id") or body.get("v")
         if v:
             return str(v)
     return request.args.get("v")
