@@ -59,7 +59,6 @@ from repair import (
     anonymisierung,
     bewertung,
     consent,
-    data,
     datenloeschung,
     entsorgung,
     ersatzteile,
@@ -90,6 +89,13 @@ app.config["JSON_AS_ASCII"] = False
 app.json.ensure_ascii = False
 # Request-Body-Limit (DoS-Schutz): Vorgangs-State ist klein — 1 MB genügt reichlich.
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+
+# HTTP-Status je Fehler-Code aus repair.ai.diagnose()
+_DIAGNOSE_ERROR_STATUS = {
+    "empty": 400,        # keine Problembeschreibung
+    "no_backend": 503,   # kein LLM-Backend konfiguriert
+    "ai_error": 502,     # KI-/Upstream-Fehler
+}
 
 
 # ─── PROJ-28: Anfrage-Protokoll (Betreiber-/Debug-Log) ───────────────────────
@@ -241,34 +247,15 @@ def index():
     return render_template("index.html")
 
 
-@app.get("/api/devices")
-def api_devices():
-    """Alle Seed-Geräte: {"toaster": {...}, "mikrowelle": {...}}."""
-    return jsonify(data.seed_devices())
-
-
-@app.get("/api/device/<device_id>")
-def api_device(device_id: str):
-    """Einzelnes Seed-Gerät oder 404.
-
-    Seed-Geräte sind kuratiert → backend-seitig mit ``diagnosis.trust``
-    (level="hoch", source="kuratiert") versehen (PROJ-25 / DoD-4), damit ein
-    direkt gewähltes Seed-Gerät korrekt als hoch/kuratiert markiert ist.
-    """
-    device = data.get_device(device_id)
-    if device is None:
-        return jsonify({"error": "unbekanntes Gerät", "id": device_id}), 404
-    device["diagnosis"] = ai.seed_diagnosis(device)
-    return jsonify(device)
-
-
 @app.post("/api/diagnose")
 def api_diagnose():
-    """Freitext → Live-Diagnose (KI) oder Fallback. Scheitert nie hart.
+    """Freitext → Live-Diagnose (KI). Ohne Backend/auf Fehler sauberes Fehler-JSON.
 
     Body: {text, kategorie?, answers?, lang?}
-    Antwort: {device, source, diagnosis}  (PROJ-4/17/24)
-    diagnosis enthält additiv: kandidaten, abgrenzung, unklar (PROJ-17)
+    Erfolg: {device, source:"ai", diagnosis}  (PROJ-4/17/24)
+      diagnosis enthält additiv: kandidaten, abgrenzung, unklar (PROJ-17)
+    Fehler: {error, code} mit HTTP-Status — 400 (empty), 503 (no_backend),
+      502 (ai_error). Es gibt keine hinterlegten Demo-/Seed-Geräte mehr.
     """
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
@@ -285,6 +272,9 @@ def api_diagnose():
         answers=answers,
         lang=lang,
     )
+    if "error" in result:
+        status = _DIAGNOSE_ERROR_STATUS.get(result.get("code"), 500)
+        return jsonify(result), status
     return jsonify(result)
 
 

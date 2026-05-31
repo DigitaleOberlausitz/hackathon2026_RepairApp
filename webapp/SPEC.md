@@ -17,7 +17,7 @@ webapp/
   README.md              [AGENT-A]  Setup/Run/Test-Anleitung
   repair/
     __init__.py          [AGENT-A]
-    data.py              [AGENT-A]  Seed-Geräte (Port von repair-data.js)
+    (data.py entfällt — keine Demo-/Seed-Geräte mehr; Diagnose nur via LLM)
     ai.py                [AGENT-A]  OpenAI-ChatGPT-Diagnose -> device-Objekt
     schema.py            [AGENT-A]  Validierung/Normalisierung eines device-Objekts
   templates/
@@ -74,12 +74,12 @@ Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Vari
 ## API-Endpunkte (AGENT-A implementiert, AGENT-B konsumiert)
 
 - `GET  /`                      → rendert `index.html`
-- `GET  /api/devices`           → `{ "toaster": {device…}, "mikrowelle": {device…} }` (Seed)
-- `GET  /api/device/<id>`       → einzelnes `device`-Objekt (404 wenn unbekannt)
 - `POST /api/diagnose`          → Body `{ "text": "Mein Toaster wirft nicht mehr aus" }`
-                                   Antwort `{ "device": {device…}, "source": "ai" | "fallback" }`
-                                   Nutzt OpenAI ChatGPT; ohne `OPENAI_API_KEY` → bestes Seed-Gerät als Fallback (`source:"fallback"`).
-  Fehlerfall: HTTP 200 mit `source:"fallback"` und Seed-Gerät (nie hart scheitern — Demo muss laufen).
+                                   Erfolg: `{ "device": {device…}, "source": "ai", "diagnosis": {…} }` (HTTP 200).
+                                   Nutzt ein echtes LLM-Backend (lokales Ollama oder OpenAI). Es gibt keine
+                                   hinterlegten Demo-/Seed-Geräte mehr.
+  Fehlerfall (nie hart scheitern): `{ "error": "…", "code": "…" }` mit HTTP-Status —
+  `400` (leerer Text, `empty`), `503` (kein Backend, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
 
 ## ChatGPT-Integration (AGENT-A, `repair/ai.py`)
 
@@ -87,7 +87,7 @@ Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Vari
 - System-Prompt: deutscher „ruhiger, ehrlicher Reparatur-Freund" (Ton siehe app-beschreibung im Chat-Transkript).
   Muss ein **valides `device`-JSON** nach obigem Schema zurückgeben (Structured Output / `response_format=json_object`).
   Sicherheits-Leitplanke: gefährliche Geräte (Mikrowelle, alles mit Hochspannung/Gas/Strom im Inneren) → `lights.Sicherheit.level="stop"`, `accentPath="stop"`, `recommend="pro"`.
-- `schema.py` validiert/normalisiert das KI-JSON (fehlende Felder ergänzen, Level auf gut/mittel/stop zwingen, genau 4 lights), sonst Fallback.
+- `schema.py` validiert/normalisiert das KI-JSON (fehlende Felder ergänzen, Level auf gut/mittel/stop zwingen, genau 4 lights); schlägt das fehl, liefert `diagnose` ein Fehler-Objekt (`code:"ai_error"`).
 
 ## HEAD-BLOCK (AGENT-B fügt diesen Block 1:1 in `<head>` von index.html ein)
 
@@ -117,7 +117,7 @@ JS am Body-Ende, in dieser Reihenfolge:
 
 - Genau **eine** Phone-Instanz, mittig, 384×812, im Phone-Frame (`.rk-phone`), auf neutralem Body-BG.
 - Theme-Switcher (oben, außerhalb des Phones): Solide / Werkstatt / Mutig → setzt CSS-Variablen am `.rk-phone`-Root + Klasse `rk-theme-<id>` und `rk-case-<upper|none>` am `.rk-app`. **Default: Werkstatt.**
-- Startscreen-Eingabefeld: Freitext → `POST /api/diagnose` → bei `source:"ai"` Live-Gerät durch den Flow; „Meine Geräte" listet die Seed-Geräte (sofort klickbar, kein Netz nötig).
+- Startscreen-Eingabefeld: Freitext → `POST /api/diagnose` → bei Erfolg (`source:"ai"`) Live-Gerät durch den Flow. Es gibt keine Geräteliste/Beispiele mehr; Freitext (+ Multimodal) ist der einzige Einstieg. Antwortet die API mit einem Fehler-Objekt, zeigt der Startscreen den Hinweistext (`error`) an.
 - Statemachine-Stages: `start → triage → ampel → decision → repair → result | path`, Protokoll-Sheet überall via Doc-Icon. Logik exakt wie `repair-app.jsx` (triage back/forward, answers slice, repair next/prev, handoff→pro, depth-Toggle Anfänger/Geübt).
 - Klassennamen 1:1 wie in `repair.css` übernehmen (siehe Liste unten) — sonst greift das Styling nicht.
 
@@ -155,7 +155,7 @@ Theme-Switch erfolgt per JS (setzt die Variablen am `.rk-phone`-Element) — CSS
 
 1. `pip install -r requirements.txt` && `flask --app app run` (oder `python app.py`) startet auf :5000.
 2. `/` zeigt das Phone mit Startscreen im Werkstatt-Theme; Theme-Switcher wechselt live.
-3. Seed-Flow Toaster 🟢: Start → 4 Fragen → grüne Ampel → „Ich mach's selbst" → 5 Schritte (Sicherheits-Callout, Anfänger/Geübt) → Rückblick (≈30 €, ≈12 kg).
-4. Seed-Flow Mikrowelle 🔴: rote Ampel → Decision mit Vergleichstabelle + Empfehlung „Profi" → Selbst-Pfad endet im Hochspannungs-Stopp → Handoff zur Werkstatt.
+3. Freitext im Startfeld + konfiguriertes LLM-Backend (Ollama oder OpenAI) → `/api/diagnose` liefert ein KI-Gerät; Flow Start → Triage → Ampel → Decision → Repair → Result | Path.
+4. Bei `accentPath:"stop"` (gefährliches Gerät): rote Ampel → Decision mit Vergleichstabelle + Empfehlung „Profi" → Selbst-Pfad endet im Stopp/Handoff zur Werkstatt.
 5. Protokoll-Sheet füllt sich live mit den getippten Antworten.
-6. Freitext im Startfeld → `/api/diagnose`: mit `OPENAI_API_KEY` echtes KI-Gerät; ohne Key sauberer Fallback (App bleibt benutzbar).
+6. Ohne LLM-Backend (oder bei API-Fehler): `/api/diagnose` antwortet mit Fehler-Objekt (`no_backend`/`ai_error`), der Startscreen zeigt den Hinweis — kein Crash.
