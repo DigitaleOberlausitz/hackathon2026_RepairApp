@@ -105,6 +105,30 @@ sind optional und filtern nur; ein Leertreffer liefert `fallback: true` + `hinwe
 Alle Service-Daten sind **kuratierte Demodaten** (jeder Eintrag mit `quelle` +
 `kuratiert: true`, keine Netzwerk-/Scraping-Zugriffe).
 
+## Logging (PROJ-29)
+
+Die App schreibt zur Laufzeit ein **zentrales Log gleichzeitig in eine Datei und
+auf die Konsole**:
+
+- **Speicherort:** `webapp/logs/repair.log` (das `logs/`-Verzeichnis wird beim
+  Start automatisch angelegt; es ist gitignored).
+- **Rotation & Aufbewahrung:** täglich um Mitternacht; **14** Tage werden
+  vorgehalten, ältere Dateien automatisch gelöscht. Rotierte Dateien tragen ein
+  Datums-Suffix, z. B. `repair.log.2026-05-30`.
+- **Level konfigurieren:** über `LOG_LEVEL` in der `.env`
+  (`DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL`). Default ist **`DEBUG`**;
+  ungültige Werte fallen ohne Crash auf `DEBUG` zurück.
+- **Inhalt:** jeder API-Request (Methode, Pfad, Status — 4xx/5xx auf
+  `WARNING`/`ERROR`), die Werkzeug-Zugriffslogs, Schlüssel-Ereignisse der
+  Fach-Module (Diagnose-Quelle `ai`/`fallback` + Modell, Lotse-Routing,
+  Vorgangs-CRUD, Wissensbasis-Freigaben, Recherche-Herkunft, Medien-Metadaten)
+  sowie jede unbehandelte Exception **mit Stacktrace**.
+
+> ⚠ **Datenschutz-Hinweis (PII):** Auf `DEBUG` können auch
+> **Klartext-Nutzereingaben** (Freitext-Symptome, Standort, Medien-Metadaten) im
+> Log landen. Diese Tiefe ist **nur für die lokale Dev-Umgebung** gedacht — für
+> Produktion `LOG_LEVEL=INFO` (oder höher) setzen.
+
 ## Projektstruktur (Backend-Anteil)
 
 ```
@@ -117,6 +141,7 @@ webapp/
     data.py            Seed-Geräte (Port von repair-data.js): Toaster 🟢, Mikrowelle 🔴
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
     ai.py              diagnose() — KI-Diagnose mit Seed-Fallback + Vertrauens-Indikator (PROJ-25)
+    logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     foerderung.py      kuratierte Reparatur-Förderungen (PROJ-6)
     store.py           Vorgang-Persistenz (sqlite3, PROJ-9)
     export.py          Protokoll-Renderer txt + Lese-Ansicht HTML (PROJ-10, +Stufe-2-Abschnitte)

@@ -22,11 +22,24 @@ Keyword-Heuristik, mit ``source: "fallback"``.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 
 from . import data
 from .schema import DeviceValidationError, normalize_device
+
+log = logging.getLogger(__name__)
+
+# Freitext fürs Log kürzen, damit sehr lange Eingaben das Log nicht fluten.
+_LOG_TEXT_MAX = 200
+
+
+def _kurz(text: str) -> str:
+    text = (text or "").replace("\n", " ")
+    if len(text) > _LOG_TEXT_MAX:
+        return text[:_LOG_TEXT_MAX] + f"… [+{len(text) - _LOG_TEXT_MAX} Zeichen]"
+    return text
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
@@ -266,6 +279,8 @@ def _fallback(text: str) -> dict:
     else:
         device = data.get_device("toaster")
     diagnosis = _build_diagnosis(device, "fallback")
+    log.info("Diagnose-Quelle=fallback — Seed-Gerät %r per Keyword-Heuristik.",
+             (device or {}).get("id"))
     return {"device": device, "source": "fallback", "diagnosis": diagnosis}
 
 
@@ -342,16 +357,20 @@ def diagnose(
     Signatur additiv erweitert: bestehende Aufrufe ``diagnose(text)`` bleiben gültig.
     """
     text = (text or "").strip()
+    log.debug("Diagnose-Anfrage: kategorie=%r lang=%s text=%r", kategorie, lang, _kurz(text))
     if not text:
+        log.info("Diagnose ohne Freitext → Fallback.")
         result = _fallback(text)
         result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
         return result
 
     client, model, is_local = _resolve_backend()
     if client is None:
+        log.info("Kein KI-Backend konfiguriert/verfügbar → Fallback.")
         result = _fallback(text)
         result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
         return result
+    log.debug("KI-Backend gewählt: %s, Modell=%s", "Ollama (lokal)" if is_local else "OpenAI-Cloud", model)
 
     try:
         timeout = float(os.environ.get("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
@@ -379,6 +398,12 @@ def diagnose(
                 {"role": "user", "content": f"Problembeschreibung: {text}"},
             ],
         )
+        # PROJ-28: Token-Usage des echten KI-Calls fürs Anfrage-Protokoll melden.
+        try:
+            from . import protokoll_log
+            protokoll_log.merke_usage(model, getattr(response, "usage", None))
+        except Exception:
+            pass
         content = response.choices[0].message.content
         if not content:
             result = _fallback(text)
@@ -401,6 +426,11 @@ def diagnose(
                 content2 = response2.choices[0].message.content
                 if content2:
                     content = content2
+                    try:
+                        from . import protokoll_log
+                        protokoll_log.merke_usage(model, getattr(response2, "usage", None))
+                    except Exception:
+                        pass
             except Exception:
                 pass  # Ersten Versuch behalten
 
@@ -408,13 +438,17 @@ def diagnose(
         device = normalize_device(raw)
         diagnosis = _build_diagnosis(device, "ai")
         diagnosis = _add_kuratierte_felder(diagnosis, text, kategorie, answers, lang)
+        log.info("Diagnose-Quelle=ai — Modell=%s, Gerät=%r, gefährlich=%s.",
+                 model, (device or {}).get("id"), _is_dangerous(device))
         return {"device": device, "source": "ai", "diagnosis": diagnosis}
-    except (json.JSONDecodeError, DeviceValidationError):
+    except (json.JSONDecodeError, DeviceValidationError) as exc:
+        log.warning("KI-Antwort unbrauchbar (%s: %s) → Fallback.", type(exc).__name__, exc)
         result = _fallback(text)
         result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
         return result
-    except Exception:
+    except Exception as exc:
         # Netzwerk, API-Fehler, alles andere — Demo muss laufen.
+        log.warning("KI-Call fehlgeschlagen (%s: %s) → Fallback.", type(exc).__name__, exc)
         result = _fallback(text)
         result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
         return result

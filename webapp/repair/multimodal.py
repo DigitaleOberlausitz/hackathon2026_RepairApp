@@ -13,8 +13,11 @@ Typ/Größen-Limit: 10 MB. Scheitert nie hart.
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import secrets
+
+log = logging.getLogger(__name__)
 
 # Medien-Verzeichnis: webapp/media/ (eine Ebene über repair/)
 MEDIA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media"))
@@ -94,8 +97,12 @@ def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
         with open(filepath, "wb") as f:
             f.write(raw_bytes)
     except Exception as exc:
+        log.warning("Medium-Speichern fehlgeschlagen (art=%s, %d Bytes): %s", art, len(raw_bytes), exc)
         return {"id": "", "art": art, "ref": "", "hinweis": f"Speichern fehlgeschlagen: {exc}"}
 
+    # Nur Metadaten loggen — niemals die rohen Datei-Bytes.
+    log.info("Medium gespeichert: id=%s art=%s typ=%s größe=%d Bytes",
+             mid, art, content_type, len(raw_bytes))
     return {
         "id": mid,
         "art": art,
@@ -169,6 +176,7 @@ def transkribiere(audio_bytes: bytes | None = None) -> dict:
                     file=f,
                     language="de",
                 )
+            log.info("Transkription erfolgreich: source=whisper (%d Bytes Audio)", len(audio_bytes))
             return {"text": result.text or "", "source": "whisper"}
         finally:
             try:
@@ -176,6 +184,7 @@ def transkribiere(audio_bytes: bytes | None = None) -> dict:
             except Exception:
                 pass
     except Exception as exc:
+        log.warning("Transkription fehlgeschlagen: %s", exc)
         return {
             "text": "",
             "source": "hinweis",

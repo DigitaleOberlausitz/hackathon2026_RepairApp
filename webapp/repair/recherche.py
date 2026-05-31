@@ -11,11 +11,14 @@ Quelle + Konfidenz sind NIEMALS leer.
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 
 from . import wissensbasis as _wb
 from .i18n import t
+
+log = logging.getLogger(__name__)
 
 
 def recherche(
@@ -31,10 +34,12 @@ def recherche(
     """
     frage = (frage or "").strip()
     lang = (lang or "de").strip().lower()
+    log.info("Recherche gestartet: lang=%s frage=%r", lang, frage[:120])
 
     # 1. Kuratierte Suche
     kuratiert = _suche_kuratiert(frage, kontext)
     if kuratiert:
+        log.info("Recherche-Ergebnis: herkunft=kuratiert quelle=%s", kuratiert.get("quelle"))
         return {
             "aussage": kuratiert["aussage"],
             "herkunft": "kuratiert",
@@ -48,11 +53,14 @@ def recherche(
     # 2. Online (SearXNG), nur wenn konfiguriert
     searxng_url = (os.environ.get("SEARXNG_URL") or "").strip()
     if searxng_url:
+        log.debug("Recherche: Online-Suche via SearXNG (%s)", searxng_url)
         online_result = _suche_online(frage, searxng_url, lang)
         if online_result:
+            log.info("Recherche-Ergebnis: herkunft=online quelle=%s", online_result.get("quelle"))
             return online_result
 
     # 3. KI-Fallback (Heuristik, keine echte KI ohne Key)
+    log.info("Recherche-Ergebnis: herkunft=ki-fallback (kein kuratierter/Online-Treffer)")
     return _ki_fallback(frage, lang)
 
 

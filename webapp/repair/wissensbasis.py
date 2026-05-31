@@ -27,11 +27,14 @@ Entwürfe: SQLite webapp/wissensbasis.db (gitignored).
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import secrets
 import sqlite3
 from datetime import datetime, timezone
+
+log = logging.getLogger(__name__)
 
 # DB liegt in webapp/ (eine Ebene über repair/)
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "wissensbasis.db"))
@@ -647,6 +650,7 @@ def entwurf_erzeugen(kat: str, symptom: str, lang: str = "de") -> dict:
         "_lang": lang,
     }
     _save_entwurf(entry)
+    log.info("Wissensbasis-Entwurf erzeugt: id=%s kategorie=%s", eid, entry["kategorie"])
     return entry
 
 
@@ -663,9 +667,11 @@ def freigeben(
     Bei jeder inhaltlichen Änderung: version+1, stand aktualisiert.
     """
     if not sicherheitBestaetigt:
+        log.warning("Freigabe abgelehnt (sicherheitBestaetigt fehlt): id=%s", entry_id)
         return None
     entry = _get_entwurf(entry_id)
     if not entry:
+        log.warning("Freigabe: Entwurf nicht gefunden: id=%s", entry_id)
         return None
     entry["status"] = "geprueft"
     entry["sicherheit"] = sicherheit
@@ -676,6 +682,8 @@ def freigeben(
     entry["stand"] = _TODAY
     entry["herkunft"] = "kuratiert"
     _save_entwurf(entry)
+    log.info("Wissensbasis-Eintrag freigegeben: id=%s sicherheit=%s version=%s",
+             entry_id, sicherheit, entry["version"])
     return entry
 
 
@@ -692,6 +700,7 @@ def zurueckziehen(entry_id: str) -> dict | None:
     entry["version"] = int(entry.get("version", 1)) + 1
     entry["stand"] = _TODAY
     _save_entwurf(entry)
+    log.info("Wissensbasis-Eintrag zurückgezogen: id=%s version=%s", entry_id, entry["version"])
     return entry
 
 

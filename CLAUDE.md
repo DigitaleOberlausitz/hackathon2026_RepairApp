@@ -53,7 +53,7 @@ Keys, Modelle oder Limits im Code.
 - `.env.example` und tatsächlich gelesene Variablen synchron halten (kein Drift: nur
   dokumentieren, was der Code auch ausliest).
 - Aktuell ausgewertet: `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OLLAMA_MODEL`,
-  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `SEARXNG_URL`, `FLASK_DEBUG`.
+  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`.
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.
@@ -71,6 +71,7 @@ webapp/
     data.py            Seed-Geräte (Port von repair-data.js): Toaster 🟢, Mikrowelle 🔴
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
     ai.py              diagnose() — OpenAI-Diagnose mit Seed-Fallback
+    logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
   templates/index.html SPA-Shell
   static/js/           ui.js · screens.js · app.js (Statemachine, Theme-Switcher)
   static/css/repair.css Komponenten-Styling + 3 Themes (Default: Werkstatt)
@@ -80,6 +81,11 @@ webapp/
 - `POST /api/diagnose` liefert immer HTTP 200 — KI (`source:"ai"`) oder Fallback (`source:"fallback"`).
 - Gefährliche Geräte (Hochspannung/Gas/Strom) → in der KI-Antwort `accentPath="stop"`,
   `recommend="pro"`, `lights.Sicherheit.level="stop"`.
+- **Logging (PROJ-29):** `repair/logconf.py` → `setup_logging()` wird in `app.py` einmalig
+  vor App-Start aufgerufen. Schreibt gleichzeitig nach `webapp/logs/repair.log` (täglich
+  rotiert, 14 Tage, gitignored) und auf die Konsole. Level über `LOG_LEVEL` (Default `DEBUG`).
+  Fach-Module loggen über `logging.getLogger(__name__)` (`repair.<modul>`). ⚠ Auf `DEBUG`
+  landen Klartext-Nutzereingaben (PII) — nur lokal/Dev, produktiv mind. `INFO`.
 
 ## Konzept-PDF bauen
 

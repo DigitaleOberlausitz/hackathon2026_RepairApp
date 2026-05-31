@@ -15,7 +15,10 @@ Nur prozedural — keine inhaltliche Pfad-/Sicherheits-Entscheidung.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
+
+log = logging.getLogger(__name__)
 
 # ─── Handoff-Graph (explizit, geschlossen) ────────────────────────────────────
 
@@ -182,6 +185,7 @@ def routing_log_eintrag(state: dict, ereignis: str, ziel: str | None = None) -> 
     stage = str((state or {}).get("stage", "")).strip()
     aktuelle_rolle = _STAGE_ZU_ROLLE.get(stage.lower(), "aufnahme")
     ts = datetime.now(timezone.utc).isoformat()
+    log.info("Lotse-Routing: ereignis=%s von=%s ziel=%s", ereignis, aktuelle_rolle, ziel or "(abbruch)")
     return {
         "ts": ts,
         "kind": "lotse",

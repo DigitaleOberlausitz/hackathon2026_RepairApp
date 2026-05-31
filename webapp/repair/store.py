@@ -17,10 +17,13 @@ Timestamps ISO 8601 UTC. Last-write-wins.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import secrets
 import sqlite3
 from datetime import datetime, timezone
+
+log = logging.getLogger(__name__)
 
 # vorgaenge.db liegt direkt in webapp/ (eine Ebene über repair/)
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "vorgaenge.db"))
@@ -68,6 +71,7 @@ def create_vorgang(state=None) -> dict:
         conn.commit()
     finally:
         conn.close()
+    log.info("Vorgang angelegt: id=%s (initial_state=%s)", vid, bool(state))
     return {"id": vid, "state": state_obj, "created": now, "updated": now}
 
 
@@ -82,7 +86,9 @@ def get_vorgang(vid: str) -> dict | None:
     finally:
         conn.close()
     if row is None:
+        log.debug("Vorgang nicht gefunden: id=%s", vid)
         return None
+    log.debug("Vorgang geladen: id=%s", vid)
     return _row_to_dict(row)
 
 
@@ -103,6 +109,7 @@ def save_vorgang(vid: str, state) -> dict | None:
         )
         conn.commit()
         if cursor.rowcount == 0:
+            log.debug("Vorgang nicht aktualisiert (unbekannt): id=%s", vid)
             return None
         row = conn.execute(
             "SELECT id, state, created, updated FROM vorgaenge WHERE id = ?",
@@ -112,4 +119,5 @@ def save_vorgang(vid: str, state) -> dict | None:
         conn.close()
     if row is None:
         return None
+    log.info("Vorgang aktualisiert: id=%s", vid)
     return _row_to_dict(row)

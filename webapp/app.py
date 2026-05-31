@@ -46,10 +46,12 @@ Start: `python app.py` (debug, :5000) oder `flask --app app run`.
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, g, got_request_exception, jsonify, render_template, request
 
 from repair import (
     ai,
@@ -63,9 +65,11 @@ from repair import (
     ersatzteile,
     export,
     foerderung,
+    logconf,
     lotse,
     multimodal,
     produktsuche,
+    protokoll_log,
     recherche,
     schwungrad,
     store,
@@ -75,12 +79,157 @@ from repair import (
 
 load_dotenv()
 
+# PROJ-29: zentrales Logging einmalig vor App-Start initialisieren (Datei +
+# Konsole, tägliche Rotation, 14 Tage). LOG_LEVEL via .env, Default DEBUG.
+logconf.setup_logging()
+log = logging.getLogger("repair.app")
+
 app = Flask(__name__)
 # Emojis/Umlaute nicht escapen
 app.config["JSON_AS_ASCII"] = False
 app.json.ensure_ascii = False
 # Request-Body-Limit (DoS-Schutz): Vorgangs-State ist klein — 1 MB genügt reichlich.
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+
+
+# ─── PROJ-28: Anfrage-Protokoll (Betreiber-/Debug-Log) ───────────────────────
+# Rein additive Beobachtung: vor dem View den Usage-Slot leeren und die
+# Request-Rohdaten erfassen (bevor der View den Body konsumiert), nach dem View
+# einen Markdown-Abschnitt schreiben. Best-effort — stört nie die Fachantwort.
+# Nur die in protokoll_log.ENDPOINT_ROLLE gewhitelisteten POST-Endpunkte; alle
+# GET-/Sicht-Routen erzeugen kein Protokoll.
+
+
+def _prot_capture_payload() -> dict:
+    """Erfasst die gesendeten Daten request-sicher (json/multipart/raw/leer)."""
+    body = request.get_json(silent=True)
+    if body is not None:
+        return {"kind": "json", "json": body}
+    if request.files or request.form:
+        files = []
+        for field, f in request.files.items(multi=True):
+            try:
+                f.stream.seek(0, os.SEEK_END)
+                size = f.stream.tell()
+                f.stream.seek(0)
+            except Exception:
+                size = f.content_length or 0
+            files.append({
+                "field": field,
+                "filename": f.filename,
+                "mimetype": f.mimetype,
+                "size": size,
+            })
+        return {"kind": "multipart", "files": files, "form": dict(request.form)}
+    raw = request.get_data(cache=True)
+    if raw:
+        try:
+            text = raw.decode("utf-8")
+        except Exception:
+            text = None
+        return {"kind": "raw", "size": len(raw), "text": text}
+    return {"kind": "empty"}
+
+
+def _prot_extract_vid(payload: dict) -> str | None:
+    """vid aus Pfad-Param <vid>, Body-Feld vorgangId/v oder Query ?v= ableiten."""
+    if request.view_args and request.view_args.get("vid"):
+        return request.view_args.get("vid")
+    body = payload.get("json") if isinstance(payload, dict) else None
+    if isinstance(body, dict):
+        v = body.get("vorgangId") or body.get("v")
+        if v:
+            return str(v)
+    return request.args.get("v")
+
+
+@app.before_request
+def _prot_before():
+    """Usage-Slot leeren und (nur für protokollierte Endpunkte) Rohdaten erfassen."""
+    protokoll_log.reset_usage()
+    g._prot = None
+    if protokoll_log.soll_protokollieren(request.endpoint):
+        try:
+            payload = _prot_capture_payload()
+            g._prot = {
+                "payload": payload,
+                "vid": _prot_extract_vid(payload),
+                "method": request.method,
+                "path": request.path,
+                "endpoint": request.endpoint,
+            }
+        except Exception:
+            g._prot = None
+
+
+@app.after_request
+def _prot_after(response):
+    """Nach dem View den Protokoll-Abschnitt schreiben (best-effort)."""
+    ctx = getattr(g, "_prot", None)
+    if ctx:
+        try:
+            response_json = None
+            if response.is_json:
+                response_json = json.loads(response.get_data(as_text=True))
+            protokoll_log.protokolliere(
+                method=ctx["method"],
+                path=ctx["path"],
+                endpoint=ctx["endpoint"],
+                request_payload=ctx["payload"],
+                response_json=response_json,
+                status=response.status_code,
+                vid=ctx["vid"],
+            )
+        except Exception:
+            pass
+    return response
+
+
+# ─── PROJ-29: Zentrales Request-Logging & Exception-Erfassung ────────────────
+# Eine zentrale Stelle statt pro-Route dupliziert. Status-Code bestimmt das
+# Level: 2xx/3xx → INFO, 4xx → WARNING, 5xx → ERROR. Statische/Sicht-Routen
+# bleiben dabei mit erfasst, sind aber am Pfad erkennbar.
+
+
+@app.after_request
+def _access_log_after(response):
+    """Loggt jeden Request (Methode, Pfad, Status) auf passendem Level."""
+    try:
+        status = response.status_code
+        if status >= 500:
+            level = logging.ERROR
+        elif status >= 400:
+            level = logging.WARNING
+        else:
+            level = logging.INFO
+        log.log(
+            level,
+            "%s %s → %s (endpoint=%s)",
+            request.method,
+            request.path,
+            status,
+            request.endpoint or "—",
+        )
+    except Exception:  # noqa: BLE001 — Logging darf die Antwort nie gefährden
+        pass
+    return response
+
+
+def _log_unhandled_exception(sender, exception, **extra):
+    """Loggt jede unbehandelte Exception mit Stacktrace (verändert nichts am
+    Fehlerverhalten der API — rein beobachtend über das Flask-Signal)."""
+    try:
+        log.exception(
+            "Unbehandelte Exception bei %s %s",
+            request.method,
+            request.path,
+            exc_info=exception,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
+got_request_exception.connect(_log_unhandled_exception, app)
 
 
 # ─── Bestehende Endpunkte ─────────────────────────────────────────────────────

@@ -54,14 +54,17 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Planned | PROJ-9 |
-| PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Planned | — |
-| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | In Progress | (Bezug: PROJ-29) |
+| PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Done | PROJ-9 |
+| PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Done | — |
+| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Done | (Bezug: PROJ-29) |
 
-> **Offene Punkte (Stand 2026-05-31):** PROJ-28 und PROJ-29 sind im Code noch nicht
-> vorhanden (kein Anfrage-Protokoll, kein zentrales Logging). PROJ-30 ist teilweise
-> umgesetzt: Der Code liest 8 Variablen, aber `SEARXNG_URL` fehlt noch in `.env.example`
-> (genau der Drift, den dieses Feature ausschließen soll).
+> **Offene Punkte (Stand 2026-05-31):** Keine mehr — **alle** Feature-IDs sind auf `Done`.
+> PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
+> Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,
+> Level über `LOG_LEVEL` (Default DEBUG), Werkzeug-Integration, zentrales Request-Logging
+> und Stacktrace bei unbehandelten Exceptions. PROJ-28 (Anfrage-Protokoll,
+> `repair/protokoll_log.py`) und PROJ-30 (`.env`-Konfiguration, kein Drift) sind ebenfalls
+> abgeschlossen.
 
 ## Empfohlene Build-Reihenfolge
 
