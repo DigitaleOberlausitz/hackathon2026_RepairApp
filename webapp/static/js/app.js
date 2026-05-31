@@ -26,12 +26,9 @@
       'start.hero': 'Was ist kaputt?',
       'start.heroSub': 'Erzähl einfach, was los ist — als würdest du es einem Bekannten beschreiben.',
       'start.placeholder': '„Mein Toaster wirft das Brot nicht mehr aus …"',
-      'start.meineGeraete': 'Meine Geräte',
       'start.methode.tippen': 'Tippen oder einsprechen',
       'start.methode.foto': 'Foto machen',
       'start.methode.etikett': 'Etikett scannen',
-      'start.chooser.title': 'Beispiel zum Ausprobieren',
-      'start.chooser.hinweis': 'In dieser Demo sind zwei Geräte hinterlegt — eines geht gut aus, eines ist ein klarer Fall fürs Abraten.',
       // Loading
       'loading.moment': 'Einen Moment …',
       'loading.schaue': 'Ich schaue mir dein Problem an.',
@@ -434,12 +431,9 @@
       'start.hero': 'What is broken?',
       'start.heroSub': "Just describe what's happening — as if you were telling a friend.",
       'start.placeholder': 'My toaster does not pop the bread up anymore …',
-      'start.meineGeraete': 'My devices',
       'start.methode.tippen': 'Type or speak',
       'start.methode.foto': 'Take a photo',
       'start.methode.etikett': 'Scan label',
-      'start.chooser.title': 'Example to try',
-      'start.chooser.hinweis': 'This demo has two devices — one works out well, the other clearly needs a pro.',
       // Loading
       'loading.moment': 'Just a moment …',
       'loading.schaue': "I'm looking at your problem.",
@@ -953,8 +947,8 @@
     themeId: 'werkstatt',
     lang: detectLang(),         // PROJ-24: Sprache
     // — transient —
-    devices: {},
     loading: false,
+    error: null,          // Startscreen-Fehlerhinweis (Diagnose nicht verfügbar)
     draft: '',            // Start-Freitext
     draftFree: {},        // Triage-Freitext-Entwürfe je Index (transient bis "Antwort")
     draftOwner: '',
@@ -1527,26 +1521,13 @@
     state.warranty = { asked: false, technicalDefect: null, purchaseAge: '', choice: '' };
     state.safetyConfirms = {}; state.decisionLog = [];
     state.draft = ''; state.draftFree = {}; state.draftOwner = ''; state.draftCostBearer = '';
+    state.error = null;
     state.foerder = null; state.linkUrl = null;
     state.kategorie = ''; state.trust = { level: '', source: '', reason: '' };
     resetStufe2();
     resetStufe3();
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     setStage('start'); render();
-  }
-
-  function pick(id) {
-    state.device = state.devices[id];
-    state.diagnosis = null;
-    state.answers = []; state.ti = 0; state.draftFree = {};
-    state.kategorie = deriveKategorie(state.device);
-    state.trust = deriveTrust(state.device, null);
-    resetStufe2();
-    resetStufe3();
-    setStage('ownership');
-    commit();
-    // Rückruf gleich laden (PROJ-19)
-    loadRueckruf();
   }
 
   function doDiagnose() {
@@ -1567,16 +1548,17 @@
   function _doDiagnoseReal() {
     var text = (state.draft || '').trim();
     if (!text) return;
-    state.loading = true; render();
+    state.loading = true; state.error = null; render();
     fetch('/api/diagnose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: text, lang: state.lang }),
     })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
       .then(function (data) {
         state.loading = false;
         var device = data && data.device;
         if (device) {
+          state.error = null;
           state.device = device;
           state.diagnosis = (data && data.diagnosis) || null;
           state.answers = []; state.ti = 0; state.draftFree = {};
@@ -1599,10 +1581,18 @@
           // Rückruf laden (PROJ-19)
           loadRueckruf();
         } else {
+          // Kein Gerät → KI nicht verfügbar / Fehler. Hinweis auf dem Startscreen.
+          state.error = (data && data.error) || t('toast.diagnoseFail');
+          toast(t('toast.diagnoseFail'));
           render();
         }
       })
-      .catch(function () { state.loading = false; toast(t('toast.diagnoseFail')); render(); });
+      .catch(function () {
+        state.loading = false;
+        state.error = t('toast.diagnoseFail');
+        toast(t('toast.diagnoseFail'));
+        render();
+      });
   }
 
   /* ---- Eigentum (PROJ-1) ---- */
@@ -2011,20 +2001,11 @@
   }
 
   /* Lokale UI-Setter */
-  function setChooser(v) { state.ui.chooser = v; render(); }
   function setConf(v) { state.ui.conf = v; render(); }
   function setActiveLight(v) { state.ui.activeLight = v; render(); }
   function setPhase(v) { state.ui.phase = v; render(); }
   function setWhy(v) { state.ui.why = v; render(); }
   function setDraft(v) { state.draft = v; } // kein Re-Render
-
-  /* ===================== DATEN ===================== */
-  function loadDevices() {
-    fetch('/api/devices')
-      .then(function (r) { return r.json(); })
-      .then(function (d) { state.devices = d || {}; window.REPAIR_DEVICES = state.devices; render(); })
-      .catch(function () { /* App bleibt nutzbar */ });
-  }
 
   /* ===================== SCREEN-AUSWAHL ===================== */
   function LoadingScreen() {
@@ -2052,9 +2033,8 @@
     var s = state.stage;
     if (s === 'start') {
       return window.StartScreen({
-        devices: state.devices, onPick: pick,
-        chooser: state.ui.chooser, setChooser: setChooser,
         draft: state.draft, setDraft: setDraft, onDiagnose: doDiagnose,
+        error: state.error,
         lang: state.lang,
         medienConsent: state.medienConsent,
         setMediaConsentOpen: function (v) { state.ui.mediaConsentOpen = v; render(); },
@@ -2069,8 +2049,8 @@
       });
     }
     if (!state.device) return window.StartScreen({
-      devices: state.devices, onPick: pick, chooser: state.ui.chooser, setChooser: setChooser,
       draft: state.draft, setDraft: setDraft, onDiagnose: doDiagnose,
+      error: state.error,
       lang: state.lang,
       medienConsent: state.medienConsent,
       medien: state.medien,
@@ -2392,7 +2372,6 @@
           state.loading = false;
           buildPhone();
           buildLangSwitch();
-          loadDevices();
           if (state.stage === 'decision' || state.stage === 'skillask' || state.stage === 'gate') loadFoerder();
           // Stufe-2: neue Stages wiederherstellen (Daten nachladen)
           if (state.stage === 'univtriage') loadUniv();
@@ -2411,11 +2390,9 @@
           toast(t('toast.vorgangNotFound'));
           setStage('start');
           buildPhone();
-          loadDevices();
         });
     } else {
       buildPhone();
-      loadDevices();
     }
   }
 

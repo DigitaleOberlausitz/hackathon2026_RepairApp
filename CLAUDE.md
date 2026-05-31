@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Zwei Stränge im Repo:
 
 1. **Lauffähige Web-App** in `webapp/` — eine echte Nachbildung des Design-Prototyps als
-   **Python (Flask)** Backend + **Vanilla-JS**-Statemachine-Frontend + **Tailwind CSS**, mit
-   optionaler **OpenAI-Live-Diagnose** aus Freitext. Verbindlicher Implementierungs-Vertrag:
-   `webapp/SPEC.md`; Setup/Run/Test: `webapp/README.md`.
+   **Python (Flask)** Backend + **Vanilla-JS**-Statemachine-Frontend + **Tailwind CSS**. Die
+   Diagnose läuft **ausschließlich** über ein echtes LLM-Backend (lokales Ollama oder OpenAI)
+   aus Freitext — es gibt keine hinterlegten Demo-/Seed-Geräte mehr. Verbindlicher
+   Implementierungs-Vertrag: `webapp/SPEC.md`; Setup/Run/Test: `webapp/README.md`.
 2. **Doku-Build** — das fachliche Konzept (`docs/konzept.adoc`) + die erlebbare Beschreibung
    (`docs/app-beschreibung.adoc`), via Gradle/Asciidoctor zu PDF gebaut.
 
@@ -24,21 +25,22 @@ Zwei Stränge im Repo:
 cd webapp
 python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env                                 # optional, s. u.
+cp .env.example .env                                 # LLM-Backend eintragen (Pflicht, s. u.)
 python app.py                                        # → http://127.0.0.1:5000
 ```
 
-Backend-Smoke-Test (läuft ohne Key, nutzt Fallback):
+Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import app; from repair import data, ai; print(len(data.seed_devices())); print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['source'])"
-# erwartet: 2  /  fallback
+python -c "import os; [os.environ.pop(k,None) for k in ('OPENAI_API_KEY','OLLAMA_BASE_URL')]; import app; from repair import ai; print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
+# erwartet: no_backend
 ```
 
-**OpenAI-Key (optional):** `OPENAI_API_KEY=sk-...` in `webapp/.env` (Modell via `OPENAI_MODEL`,
-Default `gpt-4o-mini`). **Ohne Key läuft die App weiter** — `POST /api/diagnose` fällt sauber auf
-das passendste Seed-Gerät zurück (`"source": "fallback"`), scheitert nie hart.
+**LLM-Backend (Pflicht):** lokales Ollama (`OLLAMA_BASE_URL`) **oder** OpenAI (`OPENAI_API_KEY`)
+in `webapp/.env` (Modell via `DIAGNOSE_MODEL`/`OPENAI_MODEL`/`OLLAMA_MODEL`). **Ohne Backend
+startet der Server zwar**, aber `POST /api/diagnose` liefert einen sauberen Fehler (`HTTP 503`,
+`code:"no_backend"`) — es gibt keine Demo-/Seed-Geräte als Fallback mehr.
 
 ### Konfiguration — immer über `.env`
 
@@ -66,18 +68,20 @@ Theme-Tokens stehen verbindlich in **`webapp/SPEC.md`** — vor Änderungen dort
 
 ```
 webapp/
-  app.py               Flask-App + Routen (GET /, /api/devices, /api/device/<id>, POST /api/diagnose)
+  app.py               Flask-App + Routen (GET /, POST /api/diagnose, Stufe-2/3-Dienste)
   repair/
-    data.py            Seed-Geräte (Port von repair-data.js): Toaster 🟢, Mikrowelle 🔴
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
-    ai.py              diagnose() — OpenAI-Diagnose mit Seed-Fallback
+    ai.py              diagnose() — reine LLM-Diagnose; ohne Backend/Fehler → Fehler-Objekt
   templates/index.html SPA-Shell
   static/js/           ui.js · screens.js · app.js (Statemachine, Theme-Switcher)
   static/css/repair.css Komponenten-Styling + 3 Themes (Default: Werkstatt)
 ```
 
 - JSON immer mit `ensure_ascii=False` (echte Emojis/Umlaute, kein ASCII-Escaping).
-- `POST /api/diagnose` liefert immer HTTP 200 — KI (`source:"ai"`) oder Fallback (`source:"fallback"`).
+- `POST /api/diagnose`: Erfolg → HTTP 200 mit `source:"ai"`. Fehler → `{error, code}` mit Status
+  `400` (`empty`), `503` (`no_backend`) oder `502` (`ai_error`). Kein Seed-Fallback, kein Crash.
+- Die Stufe-2/3-Dienste (`/api/anbieter`, `/api/foerderung`, `/api/entsorgung`, `/api/ersatzteile`,
+  `/api/wissensbasis` …) liefern weiterhin **kuratierte** Daten — das ist kein Demo-Gerät-Seed.
 - Gefährliche Geräte (Hochspannung/Gas/Strom) → in der KI-Antwort `accentPath="stop"`,
   `recommend="pro"`, `lights.Sicherheit.level="stop"`.
 
