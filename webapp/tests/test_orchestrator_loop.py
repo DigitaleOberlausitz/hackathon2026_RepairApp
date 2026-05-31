@@ -122,3 +122,39 @@ def test_backstop_dedup_ueber_turns():
     sicherheits_hinweise = [k for k in state["karten"]
                             if k["typ"] == "hinweis" and k["daten"]["art"] == "sicherheit"]
     assert len(sicherheits_hinweise) == 1  # turn-übergreifend nur EINER
+
+
+class _TextClient:
+    """Antwortet sofort mit Text (keine Tool-Calls) und merkt sich die messages."""
+    def __init__(self):
+        self.calls = 0
+        self.gesehen = None
+        self.chat = type("C", (), {"completions": self})()
+
+    def create(self, **kw):
+        self.calls += 1
+        self.gesehen = kw.get("messages")
+        return _Resp(_Msg(content="Verstanden."))
+
+
+def test_medien_hinweis_wird_an_user_nachricht_gehaengt():
+    # PROJ-31 im Chat-Flow: beigefügte Medien -> Hinweis auf extrahiere_aus_medien.
+    state = {"messages": [], "karten": [], "geladene_rollen": [],
+             "entscheidungsprotokoll": [], "medien": ["m1", "m2"]}
+    client = _TextClient()
+    orchestrator.run_turn(state, "Meine Waschmaschine pumpt nicht ab",
+                          client=client, model="x")
+    user_msg = next(m for m in state["messages"] if m["role"] == "user")
+    assert "extrahiere_aus_medien" in user_msg["content"]
+    assert state["_medien_announced"] == 2
+
+
+def test_medien_hinweis_nur_einmal_pro_neue_medien():
+    state = {"messages": [], "karten": [], "geladene_rollen": [],
+             "entscheidungsprotokoll": [], "medien": ["m1"]}
+    orchestrator.run_turn(state, "Frage 1", client=_TextClient(), model="x")
+    # Zweiter Turn ohne neue Medien -> kein erneuter Hinweis.
+    orchestrator.run_turn(state, "Frage 2", client=_TextClient(), model="x")
+    user_msgs = [m for m in state["messages"] if m["role"] == "user"]
+    hinweise = [m for m in user_msgs if "extrahiere_aus_medien" in m["content"]]
+    assert len(hinweise) == 1

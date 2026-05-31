@@ -332,7 +332,10 @@ def api_vorgang_create():
 def api_chat():
     """Einen Chat-Turn über den Orchestrator ausführen (PROJ-37).
 
-    Body: {"vorgang_id": "...", "text": "..."}
+    Body: {"vorgang_id": "...", "text": "...", "medienIds"?: [...]}
+      medienIds (PROJ-31, optional): am Vorgang beigefügte Foto-/Dokument-Medien;
+      werden dem Vorgangs-Zustand zugefügt, der Orchestrator wertet sie bei Bedarf
+      über das Tool `extrahiere_aus_medien` aus.
     Erfolg 200: {vorgang_id, antwort_text, karten, abgebrochen}
     Fehler: {error, code} — 400 (empty), 404 (no_vorgang), 503 (no_backend),
       502 (ai_error).
@@ -347,6 +350,13 @@ def api_chat():
         return _json_error("Unbekannter Vorgang.", "no_vorgang", 404)
     state = v["state"] if isinstance(v.get("state"), dict) else {}
     state.setdefault("vorgang_id", vid)
+    # PROJ-31: neu beigefügte Medien-IDs in den Vorgangs-Zustand übernehmen (dedup,
+    # Reihenfolge erhalten) — der Orchestrator nutzt sie via extrahiere_aus_medien.
+    neue_medien = body.get("medienIds")
+    if isinstance(neue_medien, list) and neue_medien:
+        bestehend = state.get("medien") if isinstance(state.get("medien"), list) else []
+        zusammen = bestehend + [str(m) for m in neue_medien if str(m) not in bestehend]
+        state["medien"] = zusammen
     result = orchestrator.run_turn(state, text)
     store.save_vorgang(vid, state)
     if result.get("error"):

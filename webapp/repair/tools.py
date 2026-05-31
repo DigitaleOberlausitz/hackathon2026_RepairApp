@@ -8,9 +8,18 @@ from __future__ import annotations
 
 import json
 
-from . import roles, cards
+from . import roles, cards, store, vision
 from . import anbieter, ersatzteile, foerderung, entsorgung
 from . import recherche as recherche_mod
+
+
+def _medien_des_vorgangs(vorgang_id: str) -> list:
+    """Am Vorgang gespeicherte Medien-IDs (PROJ-27/31). Leere Liste bei Unbekannt."""
+    v = store.get_vorgang(vorgang_id) if vorgang_id else None
+    if not v:
+        return []
+    medien = (v.get("state") or {}).get("medien")
+    return medien if isinstance(medien, list) else []
 
 # Rollennamen für die lade_rolle-Whitelist (enum) aus dem Katalog ableiten:
 def _rollen_enum() -> list[str]:
@@ -57,6 +66,15 @@ def specs() -> list[dict]:
                            "mit Quelle und Konfidenz.",
             "parameters": {"type": "object", "required": ["frage"], "properties": {
                 "frage": {"type": "string"}, "kontext": {"type": "string"}}}}},
+        {"type": "function", "function": {
+            "name": "extrahiere_aus_medien",
+            "description": "Wertet die dem Vorgang beigefügten Fotos/Dokumente per "
+                           "Vision aus und liefert erkannte Gerätefelder (Kategorie, "
+                           "Modell, Schäden, Kaufdatum, Händler). Ohne medienIds werden "
+                           "alle am Vorgang gespeicherten Medien ausgewertet. Scheitert "
+                           "nie hart; ohne Bild/Backend kommt eine source-Kennung zurück.",
+            "parameters": {"type": "object", "properties": {
+                "medienIds": {"type": "array", "items": {"type": "string"}}}}}},
     ]
 
 
@@ -86,6 +104,12 @@ def dispatch(name: str, args: dict, vorgang_id: str) -> dict:
             return {"content": json.dumps(
                 recherche_mod.recherche(args["frage"], args.get("kontext")),
                 ensure_ascii=False)}
+        if name == "extrahiere_aus_medien":
+            medien = args.get("medienIds")
+            if not isinstance(medien, list) or not medien:
+                medien = _medien_des_vorgangs(vorgang_id)
+            return {"content": json.dumps(
+                vision.extrahiere(medien), ensure_ascii=False)}
         return {"error": f"Unbekanntes Tool: {name}"}
     except cards.CardValidationError as exc:
         return {"error": str(exc)}

@@ -97,6 +97,7 @@ def run_turn(state: dict, user_text: str, *, client=None, model=None,
     lang = state.get("lang", "de")
 
     state["messages"].append({"role": "user", "content": user_text})
+    _medien_hinweis_anhaengen(state)  # PROJ-31: auf neu beigefügte Medien hinweisen
     neue_karten: list[dict] = []
     vorgang_id = state.get("vorgang_id", "")
 
@@ -242,6 +243,25 @@ def _sicherheits_backstop(neue_karten: list[dict], state: dict) -> None:
                       "Bevor du das Gerät aus der Hand gibst: Backup anlegen, Daten "
                       "löschen, Konten abmelden.", "warnung")
             break
+
+
+def _medien_hinweis_anhaengen(state: dict) -> None:
+    """PROJ-31 (Vision im Chat-Flow): Sind dem Vorgang Medien beigefügt, die noch
+    nicht angekündigt wurden, einen knappen Hinweis an die letzte User-Nachricht
+    hängen — so weiß das Modell, dass es ``extrahiere_aus_medien`` nutzen kann.
+    Idempotent über Turns via ``_medien_announced`` (zählt angekündigte Medien)."""
+    medien = state.get("medien")
+    if not isinstance(medien, list) or not medien:
+        return
+    n = len(medien)
+    if n <= state.get("_medien_announced", 0):
+        return
+    if state["messages"] and state["messages"][-1].get("role") == "user":
+        state["messages"][-1]["content"] += (
+            f"\n\n[Hinweis an den Assistenten: Dem Vorgang sind {n} Foto(s)/"
+            f"Dokument(e) beigefügt — mit dem Tool extrahiere_aus_medien lassen sich "
+            f"Gerät, Modell und Schäden daraus auslesen.]")
+    state["_medien_announced"] = n
 
 
 def _assistant_dict(msg, tool_calls) -> dict:

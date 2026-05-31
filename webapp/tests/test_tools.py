@@ -5,7 +5,19 @@ def test_tool_specs_enthalten_kern_tools():
     namen = {t["function"]["name"] for t in tools.specs()}
     assert {"lade_rolle", "zeige_karte", "finde_anbieter",
             "suche_ersatzteil", "finde_foerderung", "finde_entsorgung",
-            "recherche"} <= namen
+            "recherche", "extrahiere_aus_medien"} <= namen
+
+
+def test_dispatch_extrahiere_aus_medien_unbekannte_medien():
+    # PROJ-31 im Chat-Flow: unbekannte/leere Medien → scheitert nie hart,
+    # liefert ein Vision-Ergebnis-Objekt mit source-Kennzeichnung ans Modell.
+    import json
+    res = tools.dispatch("extrahiere_aus_medien",
+                         {"medienIds": ["gibtsnicht"]}, vorgang_id="v1")
+    assert "content" in res
+    daten = json.loads(res["content"])
+    assert daten["source"] in ("keine_medien", "no_vision_backend", "vision_error")
+    assert "felder" in daten
 
 
 def test_dispatch_lade_rolle():
