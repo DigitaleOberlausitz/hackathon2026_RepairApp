@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-31
+**Next Available ID:** PROJ-32
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -49,6 +49,7 @@
 | PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Done | PROJ-9, PROJ-22 |
 | PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Done | — |
 | PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Done | — |
+| PROJ-31 | Vision-Diagnose aus Foto & Dokument | `aufnahme`/`diagnose` | D9 | Planned | PROJ-27, PROJ-9 |
 
 ## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
 
@@ -58,7 +59,9 @@
 | PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Done | — |
 | PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Done | (Bezug: PROJ-29) |
 
-> **Offene Punkte (Stand 2026-05-31):** Keine mehr — **alle** Feature-IDs sind auf `Done`.
+> **Offene Punkte (Stand 2026-05-31):** **PROJ-31** (Vision-Diagnose aus Foto & Dokument)
+> ist neu spezifiziert und `Planned` — baut auf PROJ-27/PROJ-9 auf. Alle übrigen Feature-IDs
+> (PROJ-1…30) sind auf `Done`.
 > PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
 > Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,
 > Level über `LOG_LEVEL` (Default DEBUG), Werkzeug-Integration, zentrales Request-Logging
