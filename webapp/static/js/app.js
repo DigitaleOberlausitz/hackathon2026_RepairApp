@@ -101,6 +101,13 @@
       'media.unsupported': 'Dieses Format wird nicht unterstützt (erlaubt: Bilder JPG/PNG/WebP & PDF).',
       'start.fotoHint': 'Tipp: Ein Foto vom Gerät, Typenschild oder Schaden — oder die Rechnung als PDF — macht die Diagnose treffsicherer. Optional, reiner Text geht auch.',
       'vision.included': '📷 Bild in die Diagnose einbezogen',
+      // Chat-Anhang (PROJ-31 Frontend)
+      'chat.attach': 'Foto oder Dokument anhängen',
+      'chat.attachHint': 'Bild wird zur Auswertung an die KI gesendet.',
+      'chat.attachDefaultText': '(Bild angehängt)',
+      'chat.attachUploading': 'Wird hochgeladen …',
+      'chat.attachFail': 'Anhang konnte nicht hochgeladen werden.',
+      'chat.attachRemove': 'Anhang entfernen',
       'extract.eyebrow': 'Prüfen',
       'extract.title': 'Das habe ich erkannt',
       'extract.intro': 'Bitte prüfe und korrigiere die Angaben, bevor die Diagnose startet. Jedes Feld kannst du ändern oder leeren.',
@@ -531,6 +538,13 @@
       'media.unsupported': 'This format is not supported (allowed: images JPG/PNG/WebP & PDF).',
       'start.fotoHint': 'Tip: A photo of the device, type plate or damage — or the receipt as a PDF — makes the diagnosis more accurate. Optional, plain text works too.',
       'vision.included': '📷 Image used in the diagnosis',
+      // Chat attachment (PROJ-31 frontend)
+      'chat.attach': 'Attach a photo or document',
+      'chat.attachHint': 'The image will be sent to the AI for analysis.',
+      'chat.attachDefaultText': '(image attached)',
+      'chat.attachUploading': 'Uploading …',
+      'chat.attachFail': 'The attachment could not be uploaded.',
+      'chat.attachRemove': 'Remove attachment',
       'extract.eyebrow': 'Review',
       'extract.title': 'Here is what I recognised',
       'extract.intro': 'Please check and correct the details before the diagnosis starts. You can change or clear every field.',
@@ -999,6 +1013,10 @@
     medienConsent: false,
     medien: [],
     extraktion: null,
+    // PROJ-31 Frontend: transiente, noch nicht gesendete Anhänge der nächsten Nachricht
+    pendingMedien: [],       // [{ id, name, art }]
+    mediaConsentOpen: false, // Consent-Sheet sichtbar?
+    mediaUploading: false,   // läuft gerade ein Upload?
   };
   window.RepairAppState = State; // Debug-Hook
 
@@ -1021,23 +1039,32 @@
 
   function sendeNachricht(text) {
     text = (text || '').trim();
-    if (!text || State.pending || State.abgebrochen) return;
+    var medienIds = State.pendingMedien.map(function (m) { return m.id; });
+    // Backend verlangt Text (empty→400). Bei reinen Anhängen einen kurzen
+    // Default-Text mitsenden, damit Senden mit Bild + leerem Text funktioniert.
+    if (!text && medienIds.length) text = t('chat.attachDefaultText');
+    if (!text || State.pending || State.abgebrochen || State.mediaUploading) return;
 
     function doSend(vorgangId) {
-      State.verlauf.push({ rolle: 'user', text: text });
+      var pending = State.pendingMedien.slice();
+      State.verlauf.push({ rolle: 'user', text: text, medien: pending });
       State.draft = '';
       State.error = null;
       State.pending = true;
+      State.pendingMedien = []; // optimistisch leeren — bei Fehler wiederherstellen
       render();
+      var body = { vorgang_id: vorgangId, text: text };
+      if (medienIds.length) body.medienIds = medienIds;
       fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vorgang_id: vorgangId, text: text }),
+        body: JSON.stringify(body),
       })
         .then(function (r) { return r.json().catch(function () { return { code: 'ai_error' }; }); })
         .then(function (data) {
           State.pending = false;
           if (!data || data.code) {
             State.error = data || { code: 'ai_error' };
+            State.pendingMedien = pending; // Anhänge erneut anbieten
             render();
             return;
           }
@@ -1054,6 +1081,7 @@
         .catch(function () {
           State.pending = false;
           State.error = { code: 'ai_error' };
+          State.pendingMedien = pending; // Anhänge erneut anbieten
           render();
         });
     }
@@ -1082,9 +1110,87 @@
     State.pending = false;
     State.abgebrochen = false;
     State.vorgangId = null;
+    State.pendingMedien = [];
+    State.mediaConsentOpen = false;
+    State.mediaUploading = false;
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     render();
     initVorgang().then(function () { render(); });
+  }
+
+  /* ===================== MEDIEN-ANHANG (PROJ-31 Frontend) ===================== */
+  // Medien-Art aus dem MIME-Typ ableiten (Backend kennt foto|dokument).
+  function medienArt(file) {
+    if (file && file.type === 'application/pdf') return 'dokument';
+    if (file && /^image\//.test(file.type)) return 'foto';
+    return 'dokument';
+  }
+
+  // Eine Datei an POST /api/vorgang/<vid>/medien hochladen → Promise({id,art,…}|null).
+  function uploadEine(vorgangId, file) {
+    var fd = new FormData();
+    fd.append('file', file);
+    return fetch('/api/vorgang/' + encodeURIComponent(vorgangId) + '/medien', {
+      method: 'POST', body: fd,
+    })
+      .then(function (r) { return r.json().catch(function () { return null; }); })
+      .then(function (res) {
+        if (res && res.id) {
+          return { id: res.id, name: file.name || (res.art || 'Anhang'), art: res.art || medienArt(file) };
+        }
+        return null;
+      })
+      .catch(function () { return null; });
+  }
+
+  // Dateiauswahl verarbeiten: Consent prüfen, Vorgang sicherstellen, hochladen.
+  function verarbeiteDateien(fileList) {
+    var files = [];
+    for (var i = 0; i < (fileList ? fileList.length : 0); i++) files.push(fileList[i]);
+    if (!files.length) return;
+    if (State.abgebrochen) return;
+
+    // Consent-Gate (PROJ-27): vor dem ersten Upload Einwilligung einholen.
+    if (!State.medienConsent) {
+      State.mediaConsentOpen = true;
+      render();
+      return;
+    }
+
+    function start(vorgangId) {
+      if (!vorgangId) { toast(t('chat.attachFail')); return; }
+      State.mediaUploading = true;
+      render();
+      Promise.all(files.map(function (f) { return uploadEine(vorgangId, f); }))
+        .then(function (results) {
+          State.mediaUploading = false;
+          var ok = false;
+          results.forEach(function (m) {
+            if (m) { State.pendingMedien.push(m); ok = true; }
+          });
+          if (!ok) toast(t('chat.attachFail'));
+          render();
+        });
+    }
+
+    if (State.vorgangId) start(State.vorgangId);
+    else initVorgang().then(start);
+  }
+
+  function entfernePendingMedium(id) {
+    State.pendingMedien = State.pendingMedien.filter(function (m) { return m.id !== id; });
+    render();
+  }
+
+  // Consent-Sheet-Aktionen
+  function onMediaConsentAccept() {
+    State.medienConsent = true;
+    State.mediaConsentOpen = false;
+    render();
+  }
+  function onMediaConsentDecline() {
+    State.mediaConsentOpen = false;
+    render();
   }
 
   /* ===================== UI-SETTER ===================== */
@@ -1103,6 +1209,14 @@
       setDraft: setDraft,
       onSend: onSend,
       onRestart: neuerVorgang,
+      // PROJ-31: Anhang-Fluss
+      pendingMedien: State.pendingMedien,
+      mediaUploading: State.mediaUploading,
+      mediaConsentOpen: State.mediaConsentOpen,
+      onAttach: verarbeiteDateien,
+      onRemovePending: entfernePendingMedium,
+      onMediaConsentAccept: onMediaConsentAccept,
+      onMediaConsentDecline: onMediaConsentDecline,
     });
     State.appEl.replaceChildren(screen);
     // Nach dem Rendern ans Ende scrollen + Eingabe fokussieren.

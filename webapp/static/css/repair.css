@@ -1352,6 +1352,24 @@ body {
 .rk-chat-send:active { transform: translateY(1px); }
 .rk-chat-send:disabled { opacity: .5; }
 
+/* PROJ-31: Anhang im Chat — Button, Chips, Hinweis */
+.rk-chat-inputbox { display: flex; flex-direction: column; gap: 8px; }
+.rk-chat-attach { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); font-size: 17px; display: flex; align-items: center; justify-content: center; transition: transform var(--motion), border-color var(--motion), color var(--motion); }
+.rk-chat-attach:hover { border-color: var(--accent); color: var(--accent2); }
+.rk-chat-attach:active { transform: translateY(1px); }
+.rk-chat-attach:disabled { opacity: .5; pointer-events: none; }
+.rk-chat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rk-chat-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 6px 5px 10px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent); border-radius: var(--radius-pill); font-size: 12px; color: var(--accent-ink); }
+.rk-chat-chip-icon { flex: none; font-size: 13px; }
+.rk-chat-chip-name { min-width: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-chat-chip-x { flex: none; width: 18px; height: 18px; border-radius: 50%; background: rgba(8,6,12,.18); color: inherit; font-size: 11px; display: flex; align-items: center; justify-content: center; transition: background var(--motion); }
+.rk-chat-chip-x:hover { background: var(--stop); color: #fff; }
+.rk-chat-attach-note { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); padding: 0 2px; }
+
+/* PROJ-31: Anhang-Marker an der gesendeten User-Bubble */
+.rk-bubble-medien { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.rk-bubble-medium { display: inline-flex; align-items: center; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); background: rgba(255,255,255,.18); }
+
 /* ---------- Generische Karte ---------- */
 .rk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px var(--pad); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
 .rk-card > .rk-eyebrow { margin-bottom: 0; }

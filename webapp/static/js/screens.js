@@ -1855,7 +1855,15 @@
     var feed = h('div', { class: 'rk-chat-feed' });
     (verlauf || []).forEach(function (m) {
       if (m.rolle === 'user') {
-        feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-user' }, m.text || ''));
+        var ubody = [h('div', { class: 'rk-bubble-text' }, m.text || '')];
+        // PROJ-31: gesendete Anhänge als kleine Marker an der User-Bubble.
+        if (m.medien && m.medien.length) {
+          ubody.push(h('div', { class: 'rk-bubble-medien' }, m.medien.map(function (md) {
+            var ic = md.art === 'foto' ? '📷' : (md.art === 'dokument' ? '📄' : '📎');
+            return h('span', { class: 'rk-bubble-medium', title: md.name || '' }, ic + ' ' + (md.name || md.art || ''));
+          })));
+        }
+        feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-user' }, ubody));
         return;
       }
       // Assistenz-Bubble
@@ -1907,19 +1915,38 @@
       ));
     }
 
+    var busy = props.pending || props.mediaUploading;
+
     var input = h('input', {
       class: 'rk-chat-input', type: 'text',
       placeholder: t('start.placeholder'),
       value: props.draft || '',
-      disabled: props.pending ? true : null,
+      disabled: busy ? true : null,
       onInput: function (e) { if (props.setDraft) props.setDraft(e.target.value); },
       onKeydown: function (e) {
         if (e.key === 'Enter') { e.preventDefault(); if (props.onSend) props.onSend(); }
       },
     });
+
+    // PROJ-31: verstecktes File-Input + Anhang-Button (Foto/Dokument).
+    // change-Listener imperativ (h() kennt nur onClick/onInput/onKeydown).
+    var fileInput = h('input', {
+      type: 'file', accept: 'image/jpeg,image/png,image/webp,application/pdf',
+      multiple: true, style: { display: 'none' },
+    });
+    fileInput.addEventListener('change', function (e) {
+      if (props.onAttach) props.onAttach(e.target.files);
+      e.target.value = ''; // gleiche Datei erneut wählbar machen
+    });
+    var attachBtn = h('button', {
+      class: 'rk-chat-attach', 'aria-label': t('chat.attach'), title: t('chat.attach'),
+      disabled: busy ? true : null,
+      onClick: function () { fileInput.click(); },
+    }, '📎');
+
     var sendBtn = h('button', {
       class: 'rk-chat-send', 'aria-label': t('nav.weiter'),
-      disabled: props.pending ? true : null,
+      disabled: busy ? true : null,
       onClick: function () { if (props.onSend) props.onSend(); },
     }, '➤');
 
@@ -1932,11 +1959,54 @@
         : h('span', {}),
     });
 
+    // PROJ-31: Chips der noch nicht gesendeten Anhänge (über der Eingabezeile).
+    var pendingMedien = props.pendingMedien || [];
+    function mediumIcon(art) {
+      if (art === 'foto') return '📷';
+      if (art === 'dokument') return '📄';
+      if (art === 'video') return '🎬';
+      return '📎';
+    }
+    var chips = pendingMedien.length
+      ? h('div', { class: 'rk-chat-chips' }, pendingMedien.map(function (m) {
+        return h('div', { class: 'rk-chat-chip', title: m.name || '' },
+          h('span', { class: 'rk-chat-chip-icon' }, mediumIcon(m.art)),
+          h('span', { class: 'rk-chat-chip-name' }, m.name || mediumIcon(m.art)),
+          h('button', {
+            class: 'rk-chat-chip-x', 'aria-label': t('chat.attachRemove'),
+            onClick: function () { if (props.onRemovePending) props.onRemovePending(m.id); },
+          }, '✕')
+        );
+      }))
+      : null;
+
+    // Hinweis vor dem Senden + Upload-Status.
+    var attachNote = null;
+    if (props.mediaUploading) {
+      attachNote = h('div', { class: 'rk-chat-attach-note' }, t('chat.attachUploading'));
+    } else if (pendingMedien.length) {
+      attachNote = h('div', { class: 'rk-chat-attach-note' }, t('chat.attachHint'));
+    }
+
+    var inputrow = h('div', { class: 'rk-chat-inputbox' },
+      chips,
+      attachNote,
+      h('div', { class: 'rk-chat-inputrow' }, fileInput, attachBtn, input, sendBtn)
+    );
+
+    // PROJ-27 Consent-Sheet vor dem ersten Upload.
+    var consentSheet = props.mediaConsentOpen && window.MediaConsentSheet
+      ? window.MediaConsentSheet({
+        onAccept: props.onMediaConsentAccept,
+        onDecline: props.onMediaConsentDecline,
+      })
+      : null;
+
     return Screen({
       bar: bar,
       footer: props.abgebrochen
         ? GhostButton({ full: true, onClick: props.onRestart, children: t('nav.startseite') })
-        : h('div', { class: 'rk-chat-inputrow' }, input, sendBtn),
+        : inputrow,
       children: [
         // Begrüßung, solange noch kein Verlauf existiert
         (!props.verlauf || !props.verlauf.length) && !props.pending
@@ -1945,6 +2015,7 @@
             h('p', { class: 'rk-hero-sub' }, t('start.heroSub')))
           : null,
         feed,
+        consentSheet,
       ],
     });
   }
