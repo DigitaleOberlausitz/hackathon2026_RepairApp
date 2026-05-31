@@ -132,6 +132,11 @@ Bewusstsein schaffen, dass eine Reparatur in vielen Fällen die sinnvollere
 Alternative ist — und konkrete Hilfsmittel an die Hand geben.
 
 
+// =====================  Folien: App-Laufzeit-Rollen  ========================
+// Übersicht + je eine Detail-Folie pro Rolle (Quelle: docs/runtime-roles/).
+include::folien/runtime-roles.adoc[]
+
+
 // =====================  FOLIE 8 — Abschluss  ================================
 <<<
 [.text-center]

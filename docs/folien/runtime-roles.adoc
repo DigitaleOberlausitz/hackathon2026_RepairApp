@@ -1,0 +1,847 @@
+// =============================================================================
+// FOLIEN: App-Laufzeit-Rollen (runtime-roles)
+// -----------------------------------------------------------------------------
+// Eingebunden aus praesentation.adoc via include::folien/runtime-roles.adoc[].
+// Quelle der Wahrheit für die Inhalte: docs/runtime-roles/*.md + README.md.
+//
+// Aufbau:
+//   * 1 Übersichts-Folie mit dem gesamten Ablauf-Graphen (mermaid, LR).
+//   * 14 Rollen-Folien, je zweispaltig: links derselbe Ablauf-Graph (mermaid, TB)
+//     mit der AKTIVEN Rolle hervorgehoben, rechts die Details der Rolle.
+//
+// Pflege-Hinweis: Die 14 linken Graphen sind bewusst fast identisch — sie
+// unterscheiden sich nur in der `class <rolle> active`-Zeile. Mermaid kann hier
+// nicht parametrisiert werden; jeder Block muss ein eigenständiges PNG ergeben.
+// =============================================================================
+
+
+// =====================  Übersicht — Ablauf & Abhängigkeiten  =================
+<<<
+== Die Laufzeit-Rollen im Überblick
+
+14 spezialisierte KI-Rollen führen den Nutzer durch seinen Reparaturfall —
+geordnet in fünf Klassen, verbunden über einen geschlossenen Handoff-Graphen.
+
+[mermaid]
+....
+flowchart LR
+  classDef orch fill:#ddd6fe,stroke:#7c3aed,color:#1e1b4b
+  classDef journey fill:#bbf7d0,stroke:#16a34a,color:#052e16
+  classDef alt fill:#fed7aa,stroke:#ea580c,color:#431407
+  classDef cross fill:#bae6fd,stroke:#0284c7,color:#082f49
+  classDef back fill:#e5e7eb,stroke:#6b7280,color:#111827
+
+  lotse([lotse]):::orch
+  aufnahme[aufnahme]:::journey
+  diagnose[diagnose]:::journey
+  bewertung[bewertung]:::journey
+  abwaegung{abwägung}:::journey
+  begleitung[begleitung]:::journey
+  wirkung[wirkung]:::journey
+  produktsuche[produktsuche]:::alt
+  entsorgung[entsorgung]:::alt
+  ende(((Ende))):::journey
+
+  lotse -. Einstieg .-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  wirkung --> ende
+
+  subgraph QS["Querschnitt & Back-Office (genutzt, kein Handoff)"]
+    direction TB
+    recherche[recherche]:::cross
+    vermittlung[vermittlung]:::cross
+    beschaffung[beschaffung]:::cross
+    protokoll[protokoll]:::cross
+    wissensbasis[wissensbasis]:::back
+  end
+
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -. Zustands-Bus .-> abwaegung
+  wissensbasis -.-> recherche
+....
+
+[.small]
+*Farbkodierung der Klassen:* Orchestrierung (lila) · Journey-Schritt (grün) ·
+Alternativpfad (orange) · Querschnittsdienst (blau) · Back-Office (grau).
+
+
+// =====================  lotse  ==============================================
+<<<
+== lotse
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#ddd6fe,stroke:#7c3aed,stroke-width:3px,color:#1e1b4b
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class lotse active
+....
+
+|
+*Klasse:* Orchestrierung
+
+*Aufgabe* +
+Steuert den Vorgang zielgerichtet, ruft die Fach-Rollen und lässt den Nutzer
+jederzeit selbst lenken.
+
+*Verantwortung*
+
+* Routing: welche Fach-Rolle als Nächstes (abhängig vom Stand)
+* Vorzeitige Empfehlung / Abbruch jederzeit; Misserfolg sicher zur Fachkraft
+* Consent-Gate (D10) & Fähigkeits-Rückfrage (D11)
+
+*Übergabe* → `aufnahme` (Einstieg), danach gemäß Routing
+|===
+
+
+// =====================  aufnahme  ===========================================
+<<<
+== aufnahme
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class aufnahme active
+....
+
+|
+*Klasse:* Journey-Schritt · Schicht A (Triage)
+
+*Aufgabe* +
+Nimmt das Problem für _jedes_ Gerät strukturiert und sicher auf — auch
+sicherheitskritisches.
+
+*Verantwortung*
+
+* Geführte Aufnahme: Symptom, Bedingungen, Historie, bereits Getestetes
+* Multimodal: Text, Foto/Video, Voice, Barcode/Modell-Scan
+* Eigentum/Kostenträger klären (D14); Tagebuch-Wiedererkennung
+
+*Übergabe* → `diagnose` · schreibt über `protokoll`
+|===
+
+
+// =====================  diagnose  ===========================================
+<<<
+== diagnose
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class diagnose active
+....
+
+|
+*Klasse:* Journey-Schritt
+
+*Aufgabe* +
+Schließt von den aufgenommenen Symptomen auf die wahrscheinliche Ursache.
+
+*Verantwortung*
+
+* Symptom → Ursache(n) über die kuratierte Fehlerzustand-Sammlung (D4)
+* Abgrenzungsfragen zwischen konkurrierenden Ursachen
+* Vertrauens-Indikator (D3): Konfidenz + Begründung je Aussage
+
+*Übergabe* → `bewertung` · nutzt `recherche`
+|===
+
+
+// =====================  bewertung  ==========================================
+<<<
+== bewertung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class bewertung active
+....
+
+|
+*Klasse:* Journey-Schritt · _Herzstück_
+
+*Aufgabe* +
+Die *Warn-Ampel* — Entscheidungs-Knotenpunkt nach dem Prinzip „warnen statt
+sperren".
+
+*Verantwortung*
+
+* Vier Achsen: Sicherheit · Komplexität · Kostenaufwand · Machbarkeit
+* Empfehlung: selbst machen · Repair Café · Profi · entsorgen
+* Haftungshinweis (D16), skalierende Warnung, Vertrauens-Indikator (D3)
+
+*Übergabe* → `abwaegung` · nutzt `vermittlung`, `recherche`
+|===
+
+
+// =====================  abwaegung  ==========================================
+<<<
+== abwägung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class abwaegung active
+....
+
+|
+*Klasse:* Journey-Schritt · _Weiche_
+
+*Aufgabe* +
+Macht die Handlungspfade vergleichbar und gibt eine begründete Empfehlung.
+
+*Verantwortung*
+
+* Pfadvergleich Reparatur / Profi / Austausch / Entsorgung über Kosten, Zeit,
+  Ökologie, Förderung
+* Gesamtaufwand gegenüberstellen (Neukauf vs. Reparatur ± Förderung)
+* Zielkonflikt transparent — der Nutzer entscheidet (D18)
+
+*Übergabe* → `begleitung` / `produktsuche` / `entsorgung`
+|===
+
+
+// =====================  begleitung  =========================================
+<<<
+== begleitung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class begleitung active
+....
+
+|
+*Klasse:* Journey-Schritt · Schicht B (DIY)
+
+*Aufgabe* +
+Konkrete Schritt-für-Schritt-DIY-Anleitung mit adaptiver Tiefe.
+
+*Verantwortung*
+
+* Anleitungstiefe an das Können anpassen (Anfänger/geübt, D11)
+* Garantie-/Gewährleistungs-Gate; Haftung beim Anwender (D16)
+* Misserfolgs-Pfad: sicherer Rückweg zur Fachkraft, ermutigende Rahmung
+
+*Übergabe* → `wirkung` · nutzt `beschaffung`, `recherche`
+|===
+
+
+// =====================  wirkung  ============================================
+<<<
+== wirkung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bbf7d0,stroke:#16a34a,stroke-width:3px,color:#052e16
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class wirkung active
+....
+
+|
+*Klasse:* Journey-Schritt · Abschluss
+
+*Aufgabe* +
+Reflexion am Ende jedes Pfades — macht den Mehrwert sichtbar und stärkt die
+Selbstwirksamkeit.
+
+*Verantwortung*
+
+* Drei Werthebel sichtbar machen: ökologisch · finanziell · sozial
+* Selbstwirksamkeit auch ohne Erfolg würdigen
+* Bestärkende, ehrliche Rahmung („Versuchen war richtig")
+
+*Übergabe* → Endpunkt des Vorgangs · liest über `protokoll`
+|===
+
+
+// =====================  produktsuche  =======================================
+<<<
+== produktsuche
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#fed7aa,stroke:#ea580c,stroke-width:3px,color:#431407
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class produktsuche active
+....
+
+|
+*Klasse:* Alternativpfad
+
+*Aufgabe* +
+Zeigt Alternativgeräte / Neukauf-Optionen, wenn ein Austausch empfohlen wurde.
+
+*Verantwortung*
+
+* Alternativgeräte zum defekten Gerät vorschlagen
+* Vergleichbar machen (Anschaffung + Einrichtung + Zeit)
+
+*Übergabe* ← `abwaegung` → `wirkung`
+|===
+
+
+// =====================  entsorgung  =========================================
+<<<
+== entsorgung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#fed7aa,stroke:#ea580c,stroke-width:3px,color:#431407
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class entsorgung active
+....
+
+|
+*Klasse:* Alternativpfad
+
+*Aufgabe* +
+Nennt fachgerechte Entsorgungs-/Recyclingwege, wenn ein Gerät nicht (sinnvoll)
+reparierbar ist.
+
+*Verantwortung*
+
+* Wertstoffhof / Rücknahme / Sammelstelle zu Gerät und Standort
+* Rohstoff- und Umwelt-Aspekt der korrekten Entsorgung einordnen
+
+*Übergabe* ← `abwaegung` → `wirkung`
+|===
+
+
+// =====================  recherche  ==========================================
+<<<
+== recherche
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class recherche active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Beschafft und belegt Wissen für andere Rollen — statt selbst zu diagnostizieren
+oder zu bewerten.
+
+*Verantwortung*
+
+* Kuratierte Quellen zuerst (iFixit, Hersteller) — mit Quelle belegen
+* Fallback: Online-Recherche, deutlich als KI-Eigenrecherche gekennzeichnet
+* Konfidenz + Herkunft je Aussage (Grundlage D3)
+
+*Genutzt von* `diagnose`, `bewertung`, `abwaegung` · speist sich aus `wissensbasis`
+|===
+
+
+// =====================  vermittlung  ========================================
+<<<
+== vermittlung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class vermittlung active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Findet Menschen und Orte, die helfen — Repair Cafés, Werkstätten,
+Reparaturbetriebe.
+
+*Verantwortung*
+
+* Anbieter/Standorte zu Gerät und Ort ermitteln
+* Offene Datenbanken (reparatur-initiativen.de), ggf. OpenStreetMap
+* Ehrenamtlich (Repair Café) vs. wirtschaftlich unterscheiden
+
+*Genutzt von* `bewertung` (Profi/Café), `abwaegung`
+|===
+
+
+// =====================  beschaffung  ========================================
+<<<
+== beschaffung
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class beschaffung active
+....
+
+|
+*Klasse:* Querschnittsdienst
+
+*Aufgabe* +
+Findet Ersatzteile und macht sie über die integrierte Bestellung verfügbar.
+
+*Verantwortung*
+
+* Benötigte Teile/Werkzeug bestimmen, Bezugsquellen nennen
+* Integrierte Bestellung — nachgelagert und transparent gekennzeichnet
+* D8-Leitplanke: die Empfehlung folgt _immer_ der Warn-Ampel
+
+*Genutzt von* `begleitung`, `abwaegung`
+|===
+
+
+// =====================  protokoll  ==========================================
+<<<
+== protokoll
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#bae6fd,stroke:#0284c7,stroke-width:3px,color:#082f49
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class protokoll active
+....
+
+|
+*Klasse:* Querschnittsdienst · _Zustands-Bus_
+
+*Aufgabe* +
+Erzeugt und verwaltet das Problemaufnahme-Protokoll, durch das alle Rollen lesen
+und schreiben.
+
+*Verantwortung*
+
+* Portables Artefakt: Brücke DIY ↔ Profi (exportier-/teilbar)
+* KI-Entscheidungsprotokoll (Quelle/Konfidenz, D3); Reparatur-Tagebuch
+* Daten-Schwungrad mit Consent; Eigentums-/Kostenträger-Vermerk (D14)
+
+*Übergabe* Zustands-Bus für _alle_ Rollen · speist mit Consent `wissensbasis`
+|===
+
+
+// =====================  wissensbasis  =======================================
+<<<
+== wissensbasis
+
+[cols="2a,3a", frame=none, grid=none]
+|===
+|
+[mermaid]
+....
+flowchart TB
+  classDef dim fill:#eef0f2,stroke:#cbd5e1,color:#94a3b8
+  classDef active fill:#e5e7eb,stroke:#6b7280,stroke-width:3px,color:#111827
+  lotse([lotse]):::dim
+  aufnahme[aufnahme]:::dim
+  diagnose[diagnose]:::dim
+  bewertung[bewertung]:::dim
+  abwaegung{abwägung}:::dim
+  begleitung[begleitung]:::dim
+  produktsuche[produktsuche]:::dim
+  entsorgung[entsorgung]:::dim
+  wirkung[wirkung]:::dim
+  recherche[recherche]:::dim
+  vermittlung[vermittlung]:::dim
+  beschaffung[beschaffung]:::dim
+  protokoll[protokoll]:::dim
+  wissensbasis[wissensbasis]:::dim
+  lotse -.-> aufnahme
+  aufnahme --> diagnose --> bewertung --> abwaegung
+  abwaegung --> begleitung --> wirkung
+  abwaegung --> produktsuche --> wirkung
+  abwaegung --> entsorgung --> wirkung
+  recherche -.-> diagnose
+  vermittlung -.-> bewertung
+  beschaffung -.-> begleitung
+  protokoll -.-> abwaegung
+  wissensbasis -.-> recherche
+  class wissensbasis active
+....
+
+|
+*Klasse:* Back-Office (nicht pro Fall)
+
+*Aufgabe* +
+Pflegt die Wissensgrundlage, aus der sich `recherche` / `diagnose` bedienen.
+
+*Verantwortung*
+
+* Fehlerzustand-Sammlung kuratieren; Sicherheits-Einstufung bleibt menschlich (D5)
+* Daten-Schwungrad betreiben (anonymisierte Protokolle einarbeiten)
+* Förder- und Quellenlisten pflegen („Stand / gültig-bis", D13)
+
+*Übergabe* versorgt `recherche` / `diagnose` · bezieht aus `protokoll`
+|===
