@@ -922,7 +922,7 @@ folgende *Datenquellen-Fragen* aufgetaucht, die noch zu klären sind:
 * *Lizenz-/Partner-Lage Ersatzteil-Bestellung* (Rolle `beschaffung`): Bedingungen der
   integrierten Bestellfunktion und Partneranbindung (vgl. D8-Leitplanke).
 
-Neue offene Punkte hier ergänzen, sobald sie auftauchen.
+== Neue offene Punkte hier ergänzen, sobald sie auftauchen.
 
 - Runtime-Roles / App um automatische Modellwahl erweitern, um Token zu sparen und effizient zu arbeiten (ähnlich wie bei den Skills in Claude Code).
 - Anbindung an Ollama integrieren.
@@ -934,3 +934,58 @@ Neue offene Punkte hier ergänzen, sobald sie auftauchen.
 - Unterstützung der Nutzung eigener KI-Accounts einbinden.
 - Bilder generieren, um die Reparaturanleitung zu unterstützen.
 - Download Reparaturanleitung, Reparaturprotokoll, Service-Protokoll für Reparaturannahme-Station.
+
+
+=== Skill-Optimierung - Loops
+
+Die Rollen-Architektur (D19, <<rollen-architektur>>) ist auf der Ebene des
+*Handoff-Graphen* bewusst *gerichtet und schleifenfrei* (Top-Down): Die Journey
+verläuft als verdichtender Trichter `aufnahme` → `diagnose` → `bewertung` →
+`abwaegung` → `begleitung` → `wirkung`. Jede Rolle macht den Fall konkreter und
+übergibt an die nächste — der Ablauf konvergiert, ohne dass die Journey selbst
+eine Rückkopplung braucht.
+
+Das *Nachfragen / Iterieren* ist deshalb nicht aus der Architektur verschwunden,
+sondern auf drei Ebenen verlagert, die im Handoff-Graphen nicht sichtbar sind:
+
+[cols="1,4"]
+|===
+| Ebene | Wo die Schleife sitzt
+
+| Rollen-intern (Mikro) | Jede Rolle iteriert für sich, bis ihr Ergebnis trägt:
+`aufnahme` stellt geführte Fragen, `diagnose` stellt *Abgrenzungsfragen und grenzt
+Kandidaten ein*, `begleitung` und `lotse` machen die *Fähigkeits-Rückfrage* (D11).
+| Call/Return (Querschnitt) | Eine Journey-Rolle *ruft einen Querschnittsdienst auf
+und kehrt zurück* — z. B. `diagnose`/`bewertung` → `recherche` für belegtes
+Zusatzwissen. Wie ein Funktionsaufruf, orthogonal zur Hauptlinie.
+| Steuer-Rücksprung (Makro) | `lotse` bietet *jederzeit* Abbruch/Pfadwechsel an
+(<<steuerung>>, D12). Das ist die einzige Stelle echter Nichtlinearität in der Journey.
+|===
+
+*Bewusst nicht modelliert sind heute Rückwärtskanten zwischen Journey-Stufen* —
+etwa „`diagnose` zu unsicher → zurück zu `aufnahme` für mehr Symptome" oder
+„`begleitung` scheitert → zurück zu `abwaegung` für einen Alternativpfad" (heute
+führt der Misserfolg direkt nach `wirkung` bzw. nur improvisiert über `lotse`).
+
+==== Zu prüfen
+
+*Künftig ist zu prüfen, ob explizite Loops das Ergebnis der Rollen/Skills
+verbessern — oder ob sie überwiegen schaden.* Die Abwägung erfolgt entlang:
+
+* *Ergebnisqualität* — bringt eine Wiederholungsschleife (z. B. Diagnose erneut mit
+  nachgeschärften Symptomen) tatsächlich bessere/sicherere Ergebnisse, oder dreht die
+  KI sich im Kreis?
+* *Kosten* — jede zusätzliche Schleife bedeutet weitere LLM-Aufrufe (Token, Latenz).
+  Lohnt der Qualitätsgewinn die Mehrkosten? (vgl. die geplante automatische Modellwahl
+  oben.)
+* *Bedienbarkeit / Nutzerführung* — wiederholtes Nachfragen kann gründlicher wirken,
+  aber auch ermüden oder Unsicherheit signalisieren („die KI weiß es selbst nicht").
+  Der ehrliche Ton (D11) darf nicht in Endlosschleifen kippen.
+* *Komplexität der App* — Rückwärtskanten machen den Orchestrierungs-Zustand
+  (Abbruchbedingungen, Schleifen-Limits, Zustands-Konsistenz im `protokoll`)
+  deutlich aufwändiger und schwerer testbar als der heutige azyklische Graph.
+
+Entscheidungsregel als Leitlinie: Loops nur dort einführen, wo sie *messbar* die
+Ergebnisqualität oder Sicherheit heben und der Mehrwert die Mehrkosten an Token,
+Wartezeit und Komplexität klar überwiegt. Im Zweifel bleibt der schleifenfreie
+Top-Down-Ablauf — Wiederholung passiert rollen-intern, nicht als Graph-Kante.
