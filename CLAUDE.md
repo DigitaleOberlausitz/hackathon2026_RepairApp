@@ -8,8 +8,8 @@ Zwei Stränge im Repo:
 
 1. **Lauffähige Web-App** in `webapp/` — eine echte Nachbildung des Design-Prototyps als
    **Python (Flask)** Backend + **Vanilla-JS**-Statemachine-Frontend + **Tailwind CSS**. Die
-   Diagnose läuft **ausschließlich** über ein echtes LLM-Backend (lokales Ollama oder OpenAI)
-   aus Freitext — es gibt keine hinterlegten Demo-/Seed-Geräte mehr. Verbindlicher
+   Diagnose läuft **ausschließlich** über die OpenAI-Cloud (ChatGPT) aus Freitext — es gibt
+   keine hinterlegten Demo-/Seed-Geräte mehr. Verbindlicher
    Implementierungs-Vertrag: `webapp/SPEC.md`; Setup/Run/Test: `webapp/README.md`.
 2. **Doku-Build** — das fachliche Konzept (`docs/konzept.adoc`) + die erlebbare Beschreibung
    (`docs/app-beschreibung.adoc`), via Gradle/Asciidoctor zu PDF gebaut.
@@ -25,7 +25,7 @@ Zwei Stränge im Repo:
 cd webapp
 python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env                                 # LLM-Backend eintragen (Pflicht, s. u.)
+cp .env.example .env                                 # OPENAI_API_KEY eintragen (Pflicht, s. u.)
 python app.py                                        # → http://127.0.0.1:5000
 ```
 
@@ -33,14 +33,14 @@ Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import os; [os.environ.pop(k,None) for k in ('OPENAI_API_KEY','OLLAMA_BASE_URL')]; import app; from repair import ai; print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
+python -c "import os; os.environ.pop('OPENAI_API_KEY',None); import app; from repair import ai; print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
 # erwartet: no_backend
 ```
 
-**LLM-Backend (Pflicht):** lokales Ollama (`OLLAMA_BASE_URL`) **oder** OpenAI (`OPENAI_API_KEY`)
-in `webapp/.env` (Modell via `DIAGNOSE_MODEL`/`OPENAI_MODEL`/`OLLAMA_MODEL`). **Ohne Backend
-startet der Server zwar**, aber `POST /api/diagnose` liefert einen sauberen Fehler (`HTTP 503`,
-`code:"no_backend"`) — es gibt keine Demo-/Seed-Geräte als Fallback mehr.
+**LLM-Backend (Pflicht):** OpenAI (`OPENAI_API_KEY`) in `webapp/.env` (Modell via
+`OPENAI_MODEL`, Default `gpt-4o-mini`). **Ohne Key startet der Server zwar**, aber
+`POST /api/diagnose` liefert einen sauberen Fehler (`HTTP 503`, `code:"no_backend"`) —
+es gibt keine Demo-/Seed-Geräte als Fallback mehr.
 
 ### Konfiguration — immer über `.env`
 
@@ -61,10 +61,9 @@ Keys, Modelle oder Limits im Code.
   `config.validate()` läuft beim Start in `app.py` und bricht bei syntaktisch ungültigen
   Werten (z. B. `PORT=abc`) mit klarer, benennender Meldung ab. Default-Literale für
   Bind-Adresse/Port/Modelle/Limits stehen **nur** dort (bzw. `ai.py` `DEFAULT_*_MODEL`).
-- Aktuell ausgewertet: `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OLLAMA_MODEL`,
-  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`, `MAX_UPLOAD_BYTES`, `SEARXNG_URL`,
-  `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`, `HOST`, `PORT`. Geplant/noch nicht aktiv
-  (auskommentiert in `.env.example`): `VISION_MODEL`, `EMBED_MODEL`.
+- Aktuell ausgewertet: `OPENAI_API_KEY`, `OPENAI_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`,
+  `MAX_UPLOAD_BYTES`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`,
+  `HOST`, `PORT`.
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.

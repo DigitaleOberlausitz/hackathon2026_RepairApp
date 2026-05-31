@@ -924,9 +924,13 @@ folgende *Datenquellen-Fragen* aufgetaucht, die noch zu klären sind:
 
 Neue offene Punkte hier ergänzen, sobald sie auftauchen.
 
-- die runtime-roles / die app so anpassen, das sie automatisch das passende modell auswählt um token zu sparen und effizient zu arbeiten. ähnlich wie bei den skills unter claude code
-- Anbindung an ollama integrieren.
-- in der App auswählen mit welchem model gearbeitet werden soll.
-- in der app die velräufe speichern so das man diese sich später noch mal ansehen kann
-- in der app PDF download für report and Service-Statison hinzufügen
-- wissensbasis aufbauen. zum Beisipiel in dem die antowrt mit bewertet wird.
+- Runtime-Roles / App um automatische Modellwahl erweitern, um Token zu sparen und effizient zu arbeiten (ähnlich wie bei den Skills in Claude Code).
+- Anbindung an Ollama integrieren.
+- In der App Modellauswahl ermöglichen (welches Modell für welche Aufgabe).
+- In der App Vorgangsverläufe speichern, sodass diese später wieder einsehbar sind.
+- In der App PDF-Download für Bericht und Service-Station hinzufügen.
+- Wissensbasis aufbauen, z. B. durch Bewertung der Antworten.
+- Unterstützung mehrerer KI-Anbieter (Ollama, andere Modelle, lokale Modelle).
+- Unterstützung der Nutzung eigener KI-Accounts einbinden.
+- Bilder generieren, um die Reparaturanleitung zu unterstützen.
+- Download Reparaturanleitung, Reparaturprotokoll, Service-Protokoll für Reparaturannahme-Station.

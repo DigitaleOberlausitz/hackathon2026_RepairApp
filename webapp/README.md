@@ -2,10 +2,10 @@
 
 Echte Web-App-Nachbildung des Claude-Design-Prototyps `ReparaturApp.html`.
 **Python (Flask)**-Backend + Vanilla-JS-Frontend + Tailwind CSS. Die Diagnose
-läuft **ausschließlich** über ein echtes LLM-Backend (lokales Ollama oder
-OpenAI) aus Freitext — es gibt keine hinterlegten Demo-/Seed-Geräte mehr.
+läuft **ausschließlich** über die OpenAI-Cloud aus Freitext — es gibt keine
+hinterlegten Demo-/Seed-Geräte mehr.
 
-Verbindlicher Vertrag (Schema, Endpunkte, Dateieigentum): [`SPEC.md`](SPEC.md).
+Verbindlicher Vertrag (Schema, Endpunkte): [`SPEC.md`](SPEC.md).
 
 ## Schnellstart
 
@@ -19,7 +19,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 # 2. Abhängigkeiten installieren
 pip install -r requirements.txt
 
-# 3. Konfiguration anlegen — LLM-Backend ist Pflicht (s. u.)
+# 3. Konfiguration anlegen — OpenAI-Key ist Pflicht (s. u.)
 cp .env.example .env
 
 # 4. starten
@@ -30,52 +30,19 @@ flask --app app run                 # ggf. --debug für Auto-Reload
 
 Die App läuft auf **Port 5000**.
 
-## Diagnose-Backend wählen
+## Diagnose-Backend (OpenAI)
 
-Die Live-Diagnose (`POST /api/diagnose` aus Freitext) braucht ein echtes
-LLM-Backend; `ai.py` wählt automatisch in dieser Reihenfolge:
-
-1. **Lokaler Ollama** — sobald `OLLAMA_BASE_URL` gesetzt ist (offline, empfohlen).
-2. **OpenAI-Cloud** — wenn nur `OPENAI_API_KEY` gesetzt ist.
-
-**Ohne ein konfiguriertes Backend** antwortet `POST /api/diagnose` mit einem
-sauberen Fehler (`HTTP 503`, `"code": "no_backend"`) und das Frontend zeigt
-einen Hinweis auf dem Startscreen — es wird nie hart gescheitert, aber es gibt
-auch keinen Demo-Modus mehr (keine hinterlegten Seed-Geräte).
-
-### Variante A — Lokales LLM via Docker (CPU-only)
-
-Voraussetzung: Docker **inkl. Compose-Plugin** (`docker compose version` muss
-laufen; ggf. `docker-compose-plugin` bzw. `docker-buildx`/`docker-compose`
-nachinstallieren).
-
-```bash
-cd webapp
-docker compose up -d        # ollama + open-webui + searxng + qdrant
-./pull-models.sh            # einmalig: empfohlene Modelle in Ollama laden
-
-# .env: Ollama aktivieren
-echo "OLLAMA_BASE_URL=http://localhost:11434/v1" >> .env
-echo "DIAGNOSE_MODEL=qwen3:8b" >> .env
-```
-
-| Dienst      | Port  | Zweck                                              |
-|-------------|-------|----------------------------------------------------|
-| ollama      | 11434 | Modell-Server (OpenAI-kompatibel, `/v1`)           |
-| open-webui  | 3000  | Chat-UI zum Testen + RAG + Web-Search-Hook         |
-| searxng     | 8080  | private Meta-Suche → Online-Recherche-Fallback     |
-| qdrant      | 6333  | Vektor-DB für die kuratierte Fehlerzustand-Sammlung|
-
-Empfohlene Modelle (CPU-tauglich, ~30 GiB RAM): `qwen3:8b` (Diagnose-Default),
-`qwen3:4b` (schnelle Rollen), `qwen2.5vl:7b` (Vision/OCR), `bge-m3`
-(RAG-Embeddings); optional `qwen3:30b-a3b` (MoE, schweres Reasoning, lädt nur
-bei Bedarf). Steuerung über `.env` (`DIAGNOSE_MODEL`/`OLLAMA_MODEL`,
-`LLM_TIMEOUT`).
-
-### Variante B — OpenAI-Cloud
+Die Live-Diagnose (`POST /api/diagnose` aus Freitext) läuft ausschließlich über
+die OpenAI-Cloud:
 
 - Key in `.env` eintragen: `OPENAI_API_KEY=sk-...`
-- Modell optional über `OPENAI_MODEL` (oder `DIAGNOSE_MODEL`), Default `gpt-4o-mini`.
+- Modell optional über `OPENAI_MODEL`, Default `gpt-4o-mini`.
+- Timeout je Antwort über `LLM_TIMEOUT` (Sekunden), Default `180`.
+
+**Ohne gesetzten Key** antwortet `POST /api/diagnose` mit einem sauberen Fehler
+(`HTTP 503`, `"code": "no_backend"`) und das Frontend zeigt einen Hinweis auf
+dem Startscreen — es wird nie hart gescheitert, aber es gibt auch keinen
+Demo-Modus (keine hinterlegten Seed-Geräte).
 
 ## API-Endpunkte
 
@@ -141,11 +108,8 @@ sodass die App auch **ganz ohne** `.env` startet.
 
 | Variable | Default | Zweck |
 |---|---|---|
-| `OLLAMA_BASE_URL` | _(leer)_ | Lokaler Ollama-Endpunkt (offline, hat Vorrang) |
-| `OPENAI_API_KEY` | _(leer)_ | OpenAI-Cloud-Key (Fallback, wenn kein Ollama) |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Modell für OpenAI |
-| `OLLAMA_MODEL` | `qwen3:8b` | Modell für Ollama |
-| `DIAGNOSE_MODEL` | _(leer)_ | Überschreibt `OLLAMA_MODEL`/`OPENAI_MODEL` |
+| `OPENAI_API_KEY` | _(leer)_ | OpenAI-Cloud-Key (Pflicht für die Diagnose) |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Modell für die Diagnose |
 | `LLM_TIMEOUT` | `180` | Timeout (s) je LLM-Antwort — **> 0**, sonst Fail-fast |
 | `WHISPER_MODEL` | `whisper-1` | Modell für die Audio-Transkription (PROJ-27) |
 | `MAX_UPLOAD_BYTES` | `10485760` | Max. Mediengröße in Bytes — **> 0**, sonst Fail-fast |
@@ -161,10 +125,7 @@ Syntaktisch **ungültige** Werte (`PORT=abc`, `PORT=99999`, `LLM_TIMEOUT=xyz`,
 `MAX_UPLOAD_BYTES=-1`) brechen den Start mit einer klaren, die Variable und den
 erwarteten Bereich benennenden Meldung ab (`config.validate()` in `app.py`).
 
-**Geplant, noch nicht aktiv:** `VISION_MODEL`, `EMBED_MODEL` stehen als
-auskommentierte Platzhalter in `.env.example` und werden vom Code (noch) **nicht**
-gelesen. **Ausnahme** (kein `.env`): layout-abgeleitete Pfade (`DB_PATH`,
-`MEDIA_DIR`).
+**Ausnahme** (kein `.env`): layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`).
 
 **Drift-Guard lokal ausführen** — gleicht `.env.example` ↔ Code in beide
 Richtungen ab und schlägt bei verbotenen Hardcode-Mustern an:
@@ -208,7 +169,7 @@ Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import os; [os.environ.pop(k, None) for k in ('OPENAI_API_KEY','OLLAMA_BASE_URL')]; \
+python -c "import os; os.environ.pop('OPENAI_API_KEY', None); \
 import app; from repair import ai, schema; \
 print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
 # erwartet:
@@ -229,13 +190,13 @@ Endpunkte manuell prüfen (Server läuft auf :5000):
 ```bash
 # entfernte Demo-Routen sind jetzt 404
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/devices            # 404
-# Diagnose: 503 ohne Backend, 200 mit Ollama/OpenAI
+# Diagnose: 503 ohne Key, 200 mit gesetztem OPENAI_API_KEY
 curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:5000/api/diagnose \
   -H "Content-Type: application/json" -d '{"text":"Meine Mikrowelle brummt laut"}'
 # Stufe-2/3-Dienste (kuratierte Daten) bleiben verfügbar
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/anbieter           # 200
 ```
 
-Voller UI-Flow (mit gesetztem LLM-Backend): siehe `SPEC.md`
+Voller UI-Flow (mit gesetztem OpenAI-Key): siehe `SPEC.md`
 „Lauf-/Testkriterien" — Freitext-Diagnose → KI-Gerät durch den Flow,
 Protokoll-Sheet, Theme-Switcher.
