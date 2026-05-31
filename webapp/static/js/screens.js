@@ -65,7 +65,8 @@
       if (inp) { inp.value = transcript; }
     }
 
-    // Freitext-Eingabe für die Live-Diagnose (POST /api/diagnose) — einziger Einstieg.
+    // LEGACY (Stufe 1/2) — StartScreen ist im Chat-Flow nicht mehr der Einstieg;
+    // der aktive Einstieg ist ChatScreen (app.js, POST /api/vorgang + /api/chat).
     var input = h('div', { class: 'rk-input' },
       h('input', {
         class: 'rk-input-ph', type: 'text',
@@ -379,7 +380,7 @@
         h('div', { class: 'rk-compare-head' }, h('span', {}, d.e + ' ' + d.t), isReco ? h('span', { class: 'rk-compare-reco' }, t('compare.reco')) : null),
         cell(t('compare.geld'), p.geld),
         cell(t('compare.zeit'), p.zeit),
-        cell(t('compare.umwelt'), p.umwelt),
+        cell(t('compare.umwelt'), p.umwelt || p.oekologie),
       ];
       if (d.key === 'neu' && p.versteckt && p.versteckt.length) {
         children.push(
