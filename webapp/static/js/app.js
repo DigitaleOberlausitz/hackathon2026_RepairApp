@@ -1113,6 +1113,7 @@
     State.pendingMedien = [];
     State.mediaConsentOpen = false;
     State.mediaUploading = false;
+    State._pendingFiles = null;
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     render();
     initVorgang().then(function () { render(); });
@@ -1151,7 +1152,9 @@
     if (State.abgebrochen) return;
 
     // Consent-Gate (PROJ-27): vor dem ersten Upload Einwilligung einholen.
+    // Auswahl zwischenspeichern, damit der Upload nach Zustimmung weiterläuft.
     if (!State.medienConsent) {
+      State._pendingFiles = files;
       State.mediaConsentOpen = true;
       render();
       return;
@@ -1186,10 +1189,18 @@
   function onMediaConsentAccept() {
     State.medienConsent = true;
     State.mediaConsentOpen = false;
-    render();
+    // Zwischengespeicherte Auswahl jetzt automatisch hochladen.
+    var queued = State._pendingFiles;
+    State._pendingFiles = null;
+    if (queued && queued.length) {
+      verarbeiteDateien(queued);
+    } else {
+      render();
+    }
   }
   function onMediaConsentDecline() {
     State.mediaConsentOpen = false;
+    State._pendingFiles = null; // verworfene Auswahl nicht aufheben
     render();
   }
 
