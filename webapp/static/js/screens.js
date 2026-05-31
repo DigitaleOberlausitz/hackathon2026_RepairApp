@@ -1825,9 +1825,11 @@
   }
 
   // Eine Karte -> passende UI.*-Komponente (Task 8).
-  function renderKarte(k) {
+  // ctx (optional): { frageInteraktiv, onAntwort, onFrageAttach, pendingMedien }
+  function renderKarte(k, ctx) {
     if (!k || !k.typ) return null;
     var d = k.daten || {};
+    ctx = ctx || {};
     switch (k.typ) {
       case 'aufnahme':  return UI.Aufnahme ? UI.Aufnahme(d) : null;
       case 'diagnose':  return UI.Diagnose ? UI.Diagnose(d) : null;
@@ -1838,6 +1840,12 @@
       case 'anbieter':  return UI.Anbieter ? UI.Anbieter(d) : null;
       case 'ersatzteil':return UI.Ersatzteil ? UI.Ersatzteil(d) : null;
       case 'erfolg':    return UI.Erfolg ? UI.Erfolg(d) : null;
+      case 'frage':     return UI.Frage ? UI.Frage(d, {
+        interaktiv: !!ctx.frageInteraktiv,
+        onAntwort: ctx.onAntwort,
+        onAttach: ctx.onFrageAttach,
+        pendingMedien: ctx.pendingMedien,
+      }) : null;
       default:          return document.createComment('unbekannte karte: ' + k.typ);
     }
   }
@@ -1850,10 +1858,26 @@
     });
   }
 
+  // Position der jüngsten frage-Karte ermitteln (turnIdx, kartenIdx) — nur sie
+  // wird interaktiv gerendert; ältere frage-Karten bleiben read-only.
+  function letzteFrageKarte(verlauf) {
+    var pos = null;
+    (verlauf || []).forEach(function (m, ti) {
+      if (m.rolle !== 'assistant') return;
+      (m.karten || []).forEach(function (k, ki) {
+        if (k && k.typ === 'frage') pos = { ti: ti, ki: ki };
+      });
+    });
+    return pos;
+  }
+
   // Rendert den kompletten Verlauf (User- + Assistenz-Bubbles).
-  function renderVerlauf(verlauf) {
+  // opts (optional): { frageAktiv, onAntwort, onFrageAttach, pendingMedien }
+  function renderVerlauf(verlauf, opts) {
+    opts = opts || {};
     var feed = h('div', { class: 'rk-chat-feed' });
-    (verlauf || []).forEach(function (m) {
+    var letzteFrage = opts.frageAktiv ? letzteFrageKarte(verlauf) : null;
+    (verlauf || []).forEach(function (m, ti) {
       if (m.rolle === 'user') {
         var ubody = [h('div', { class: 'rk-bubble-text' }, m.text || '')];
         // PROJ-31: gesendete Anhänge als kleine Marker an der User-Bubble.
@@ -1872,8 +1896,14 @@
       var karten = m.karten || [];
       if (karten.length) {
         var kartenWrap = h('div', { class: 'rk-chat-cards' });
-        karten.forEach(function (k) {
-          var el = renderKarte(k);
+        karten.forEach(function (k, ki) {
+          var istInteraktiveFrage = !!(letzteFrage && letzteFrage.ti === ti && letzteFrage.ki === ki);
+          var el = renderKarte(k, {
+            frageInteraktiv: istInteraktiveFrage,
+            onAntwort: opts.onAntwort,
+            onFrageAttach: opts.onFrageAttach,
+            pendingMedien: opts.pendingMedien,
+          });
           if (el) kartenWrap.appendChild(el);
         });
         inner.push(kartenWrap);
@@ -1906,7 +1936,13 @@
   // Chat-Bildschirm: scrollbarer Verlauf (Body) + Eingabe-Zeile (Footer).
   function ChatScreen(props) {
     props = props || {};
-    var feed = renderVerlauf(props.verlauf || []);
+    var feed = renderVerlauf(props.verlauf || [], {
+      // frage interaktiv, solange keine Anfrage läuft und der Vorgang nicht beendet ist
+      frageAktiv: !props.pending && !props.abgebrochen && !props.mediaUploading,
+      onAntwort: props.onAntwort,
+      onFrageAttach: props.onAttach,
+      pendingMedien: props.pendingMedien,
+    });
     if (props.error) feed.appendChild(renderFehler(props.error));
     if (props.pending) {
       feed.appendChild(h('div', { class: 'rk-bubble rk-bubble-ai rk-bubble-pending' },

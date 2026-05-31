@@ -1220,6 +1220,8 @@
       setDraft: setDraft,
       onSend: onSend,
       onRestart: neuerVorgang,
+      // frage-Karte: Antwort auf eine Rückfrage als nächster Chat-Turn
+      onAntwort: function (text) { sendeNachricht(text); },
       // PROJ-31: Anhang-Fluss
       pendingMedien: State.pendingMedien,
       mediaUploading: State.mediaUploading,

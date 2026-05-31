@@ -1370,6 +1370,23 @@ body {
 .rk-bubble-medien { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .rk-bubble-medium { display: inline-flex; align-items: center; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); background: rgba(255,255,255,.18); }
 
+/* ---------- frage-Karte: gezielte Rückfrage im Chat ---------- */
+.rk-frage-q { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 15.5px; line-height: 1.35; color: var(--ink); }
+.rk-frage-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+/* read-only-Chips (ältere, nicht-jüngste frage-Karten) */
+.rk-answer-ro { opacity: .5; pointer-events: none; filter: grayscale(.35); }
+.rk-frage-submit { align-self: flex-start; margin-top: 2px; padding: 9px 16px; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 600; box-shadow: var(--shadow-sm); transition: transform var(--motion), opacity var(--motion); }
+.rk-frage-submit:active { transform: translateY(1px); }
+.rk-frage-submit:disabled { opacity: .45; pointer-events: none; }
+.rk-frage-frei-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-soft); }
+.rk-frage-attachrow { margin-top: 2px; }
+.rk-frage-attach { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: var(--radius-pill); background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); font-size: 12.5px; font-weight: 600; transition: border-color var(--motion), color var(--motion), transform var(--motion); }
+.rk-frage-attach:hover { border-color: var(--accent); color: var(--accent2); }
+.rk-frage-attach:active { transform: translateY(1px); }
+/* read-only-Karte dezent absetzen */
+.rk-card-frage-ro { opacity: .82; }
+.rk-theme-werkstatt .rk-frage-submit { box-shadow: var(--shadow); }
+
 /* ---------- Generische Karte ---------- */
 .rk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px var(--pad); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
 .rk-card > .rk-eyebrow { margin-bottom: 0; }

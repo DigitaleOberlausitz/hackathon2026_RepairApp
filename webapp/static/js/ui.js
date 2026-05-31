@@ -522,6 +522,95 @@
     );
   }
 
+  /* ---- frage: EINE gezielte Rückfrage mit Optionen/Freitext/Bild (Chat) ----
+     ctx = { interaktiv, onAntwort(text), onAttach(files), pendingMedien } —
+     nur die jüngste frage-Karte ist interaktiv; ältere werden ausgegraut. */
+  function CardFrage(d, ctx) {
+    d = d || {};
+    ctx = ctx || {};
+    var interaktiv = !!ctx.interaktiv;
+    var optionen = Array.isArray(d.optionen) ? d.optionen : [];
+    var mehrfach = !!d.mehrfachauswahl;
+    var freitext = (d.freitext_erlaubt !== false); // Default: erlaubt
+    var bildErlaubt = !!d.bild_erlaubt;
+
+    var kids = [];
+    if (d.feld) kids.push(h('div', { class: 'rk-eyebrow' }, '' + d.feld));
+    kids.push(h('div', { class: 'rk-frage-q' }, d.frage || '—'));
+
+    // lokaler Mehrfachauswahl-Zustand (lebt bis zum nächsten render())
+    var gewaehlt = [];
+
+    if (optionen.length) {
+      var submitBtn = null;
+      var chipEls = [];
+
+      function updateSubmit() {
+        if (!submitBtn) return;
+        var leer = gewaehlt.length === 0;
+        submitBtn.disabled = leer ? true : null;
+        if (leer) submitBtn.setAttribute('disabled', '');
+        else submitBtn.removeAttribute('disabled');
+      }
+
+      var chips = h('div', { class: 'rk-frage-opts' }, optionen.map(function (opt) {
+        var chip = h('button', {
+          class: 'rk-answer' + (interaktiv ? '' : ' rk-answer-ro'),
+          disabled: interaktiv ? null : true,
+          onClick: function () {
+            if (!interaktiv) return;
+            if (mehrfach) {
+              var i = gewaehlt.indexOf(opt);
+              if (i >= 0) { gewaehlt.splice(i, 1); chip.classList.remove('rk-answer-on'); }
+              else { gewaehlt.push(opt); chip.classList.add('rk-answer-on'); }
+              updateSubmit();
+            } else {
+              if (ctx.onAntwort) ctx.onAntwort(opt);
+            }
+          },
+        }, opt);
+        chipEls.push(chip);
+        return chip;
+      }));
+      kids.push(chips);
+
+      if (mehrfach) {
+        submitBtn = h('button', {
+          class: 'rk-frage-submit', disabled: true,
+          onClick: function () {
+            if (!interaktiv || !gewaehlt.length) return;
+            if (ctx.onAntwort) ctx.onAntwort(gewaehlt.join(', '));
+          },
+        }, 'Auswahl absenden');
+        kids.push(submitBtn);
+      }
+    }
+
+    if (freitext && interaktiv) {
+      kids.push(h('div', { class: 'rk-frage-frei-hint' }, '… oder eigene Antwort unten eingeben'));
+    }
+
+    if (bildErlaubt && interaktiv) {
+      var fileInput = h('input', {
+        type: 'file', accept: 'image/jpeg,image/png,image/webp,application/pdf',
+        multiple: true, style: { display: 'none' },
+      });
+      fileInput.addEventListener('change', function (e) {
+        if (ctx.onAttach) ctx.onAttach(e.target.files);
+        e.target.value = '';
+      });
+      var pend = (ctx.pendingMedien || []).length;
+      var attachBtn = h('button', {
+        class: 'rk-frage-attach', onClick: function () { fileInput.click(); },
+      }, '📎 Foto anhängen' + (pend ? ' (' + pend + ')' : ''));
+      kids.push(h('div', { class: 'rk-frage-attachrow' }, fileInput, attachBtn));
+    }
+
+    var card = cardShell('Rückfrage', 'Frage', kids);
+    if (!interaktiv) card.classList.add('rk-card-frage-ro');
+    return card;
+  }
+
   var UI = {
     Aufnahme: CardAufnahme,
     Diagnose: CardDiagnose,
@@ -532,6 +621,7 @@
     Anbieter: CardAnbieter,
     Ersatzteil: CardErsatzteil,
     Erfolg: CardErfolg,
+    Frage: CardFrage,
     cardLevelMeta: cardLevelMeta,
     cardTrustRow: cardTrustRow,
   };
