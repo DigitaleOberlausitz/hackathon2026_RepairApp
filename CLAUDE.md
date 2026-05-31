@@ -33,13 +33,13 @@ Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import os; os.environ.pop('OPENAI_API_KEY',None); import app; from repair import ai; print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
+env -u OPENAI_API_KEY .venv/bin/python -c "from repair import orchestrator; print(orchestrator.run_turn({'messages':[]}, 'Toaster kaputt').get('code'))"
 # erwartet: no_backend
 ```
 
 **LLM-Backend (Pflicht):** OpenAI (`OPENAI_API_KEY`) in `webapp/.env` (Modell via
 `OPENAI_MODEL`, Default `gpt-4o-mini`). **Ohne Key startet der Server zwar**, aber
-`POST /api/diagnose` liefert einen sauberen Fehler (`HTTP 503`, `code:"no_backend"`) —
+`POST /api/chat` liefert einen sauberen Fehler (`HTTP 503`, `code:"no_backend"`) —
 es gibt keine Demo-/Seed-Geräte als Fallback mehr.
 
 ### Konfiguration — immer über `.env`
@@ -61,9 +61,9 @@ Keys, Modelle oder Limits im Code.
   `config.validate()` läuft beim Start in `app.py` und bricht bei syntaktisch ungültigen
   Werten (z. B. `PORT=abc`) mit klarer, benennender Meldung ab. Default-Literale für
   Bind-Adresse/Port/Modelle/Limits stehen **nur** dort (bzw. `ai.py` `DEFAULT_*_MODEL`).
-- Aktuell ausgewertet: `OPENAI_API_KEY`, `OPENAI_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`,
-  `MAX_UPLOAD_BYTES`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`,
-  `HOST`, `PORT`.
+- Aktuell ausgewertet: `OPENAI_API_KEY`, `OPENAI_MODEL`, `LLM_TIMEOUT`, `MAX_TOOL_ITERATIONS`,
+  `WHISPER_MODEL`, `MAX_UPLOAD_BYTES`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`,
+  `FLASK_DEBUG`, `HOST`, `PORT`.
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.
@@ -71,16 +71,20 @@ Keys, Modelle oder Limits im Code.
 ### Architektur & Dateieigentum
 
 Quelle/Design-of-truth: `docs/design-handoff/project/` (HTML/CSS/JSX-Prototyp, **pixelgenau**
-nachbauen). Der `device`-Datenvertrag, die API-Endpunkte, der Klassennamen-Vertrag und die
+nachbauen). Die Karten-Schemata (Datenvertrag), die API-Endpunkte, der Klassennamen-Vertrag und die
 Theme-Tokens stehen verbindlich in **`webapp/SPEC.md`** — vor Änderungen dort nachsehen.
 
 ```
 webapp/
-  app.py               Flask-App + Routen (GET /, POST /api/diagnose, Stufe-2/3-Dienste)
+  app.py               Flask-App + Routen (GET /, POST /api/vorgang, POST /api/chat, Stufe-2/3-Dienste)
   repair/
     config.py          zentrale .env-Konfiguration: getypte Getter + Fail-fast-Validierung (PROJ-30)
-    schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
-    ai.py              diagnose() — reine LLM-Diagnose; ohne Backend/Fehler → Fehler-Objekt
+    ai.py              _resolve_backend() — OpenAI-Backend-Auflösung für den Orchestrator
+    roles.py           Rollen-Registry: liest docs/runtime-roles/*.md, Progressive Disclosure (PROJ-32)
+    cards.py           Karten-Schemata (9 Typen) + validate(typ, daten) (PROJ-33)
+    tools.py           OpenAI-Function-Calling: specs() + dispatch() der Werkzeuge (PROJ-34)
+    orchestrator.py    system_prefix() + run_turn() Tool-Call-Schleife + Sicherheits-Backstop (PROJ-35/36)
+    schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts (Alt-Helfer)
     logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)
     store.py           Vorgang-Persistenz via stdlib sqlite3 (PROJ-9, → vorgaenge.db)
@@ -103,12 +107,20 @@ webapp/
 ```
 
 - JSON immer mit `ensure_ascii=False` (echte Emojis/Umlaute, kein ASCII-Escaping).
-- `POST /api/diagnose`: Erfolg → HTTP 200 mit `source:"ai"`. Fehler → `{error, code}` mit Status
-  `400` (`empty`), `503` (`no_backend`) oder `502` (`ai_error`). Kein Seed-Fallback, kein Crash.
+- **Orchestrator-Flow (Stufe 4, harter Schnitt):** `POST /api/vorgang` legt einen Vorgang an
+  (Antwort **HTTP 200** `{vorgang_id}` — bewusste Abweichung von 201). `POST /api/chat`
+  `{vorgang_id, text}` führt **einen** Chat-Turn über `orchestrator.run_turn` aus (Tool-Call-Schleife,
+  Iterations-Limit `MAX_TOOL_ITERATIONS`, Default 12) → 200 `{vorgang_id, antwort_text, karten:[{typ,daten}], abgebrochen}`.
+  Fehler → `{error, code}` mit Status `400` (`empty`), `404` (`no_vorgang`), `503` (`no_backend`)
+  oder `502` (`ai_error`). Kein Seed-Fallback, kein Crash. `POST /api/diagnose` ist **entfernt**.
+- Strukturierte Ergebnisse sind **Karten** (`cards.py`, 9 Typen, server-validiert via `zeige_karte`);
+  die Karten-Schemata sind der maßgebliche Datenvertrag (nicht mehr das `device`-Objekt).
 - Die Stufe-2/3-Dienste (`/api/anbieter`, `/api/foerderung`, `/api/entsorgung`, `/api/ersatzteile`,
   `/api/wissensbasis` …) liefern weiterhin **kuratierte** Daten — das ist kein Demo-Gerät-Seed.
-- Gefährliche Geräte (Hochspannung/Gas/Strom) → in der KI-Antwort `accentPath="stop"`,
-  `recommend="pro"`, `lights.Sicherheit.level="stop"`.
+- Sicherheit ist **nicht-sperrend** (D15): kein deterministisches Stop-Gate mehr. Der
+  `orchestrator._sicherheits_backstop` hängt bei Gefahr (rote Sicherheits-Ampel / `danger:true`-Schritt),
+  Fremd-Eigentum oder datentragenden Geräten server-erzwungene `hinweis`-Karten an — er warnt
+  eskalierend, sperrt aber nichts.
 - **Logging (PROJ-29):** `repair/logconf.py` → `setup_logging()` wird in `app.py` einmalig
   vor App-Start aufgerufen. Schreibt gleichzeitig nach `webapp/logs/repair.log` (täglich
   rotiert, 14 Tage, gitignored) und auf die Konsole. Level über `LOG_LEVEL` (Default `DEBUG`).

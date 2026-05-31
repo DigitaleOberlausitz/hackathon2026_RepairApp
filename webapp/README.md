@@ -1,8 +1,9 @@
 # Reparatur-Helfer — Web-App
 
 Echte Web-App-Nachbildung des Claude-Design-Prototyps `ReparaturApp.html`.
-**Python (Flask)**-Backend + Vanilla-JS-Frontend + Tailwind CSS. Die Diagnose
-läuft **ausschließlich** über die OpenAI-Cloud aus Freitext — es gibt keine
+**Python (Flask)**-Backend + Vanilla-JS-Frontend + Tailwind CSS. Der gesamte
+Reparatur-Flow läuft **ausschließlich** als LLM-orchestrierter Chat über die
+OpenAI-Cloud (Function-Calling + typisierte Karten) — es gibt keine
 hinterlegten Demo-/Seed-Geräte mehr.
 
 Verbindlicher Vertrag (Schema, Endpunkte): [`SPEC.md`](SPEC.md).
@@ -30,32 +31,37 @@ flask --app app run                 # ggf. --debug für Auto-Reload
 
 Die App läuft auf **Port 5000**.
 
-## Diagnose-Backend (OpenAI)
+## Diagnose-Backend (OpenAI, Orchestrator-Flow)
 
-Die Live-Diagnose (`POST /api/diagnose` aus Freitext) läuft ausschließlich über
-die OpenAI-Cloud:
+Der Chat-Flow (`POST /api/chat`) läuft ausschließlich über die OpenAI-Cloud
+(Function-Calling-Schleife im `repair/orchestrator.py`):
 
 - Key in `.env` eintragen: `OPENAI_API_KEY=sk-...`
 - Modell optional über `OPENAI_MODEL`, Default `gpt-4o-mini`.
 - Timeout je Antwort über `LLM_TIMEOUT` (Sekunden), Default `180`.
+- Tool-Call-Runden pro Chat-Turn über `MAX_TOOL_ITERATIONS`, Default `12`.
 
-**Ohne gesetzten Key** antwortet `POST /api/diagnose` mit einem sauberen Fehler
-(`HTTP 503`, `"code": "no_backend"`) und das Frontend zeigt einen Hinweis auf
-dem Startscreen — es wird nie hart gescheitert, aber es gibt auch keinen
-Demo-Modus (keine hinterlegten Seed-Geräte).
+**Ohne gesetzten Key** antwortet `POST /api/chat` mit einem sauberen Fehler
+(`HTTP 503`, `"code": "no_backend"`) und das Frontend zeigt einen Hinweis — es
+wird nie hart gescheitert, aber es gibt auch keinen Demo-Modus (keine
+hinterlegten Seed-Geräte).
 
 ## API-Endpunkte
 
 | Methode + Pfad            | Antwort                                                        |
 |---------------------------|----------------------------------------------------------------|
 | `GET  /`                  | rendert `templates/index.html` (SPA-Shell)                     |
-| `POST /api/diagnose`      | Body `{"text": "…"}` → Erfolg `{"device": {device…}, "source": "ai", "diagnosis": {status, score, reason, trust}}` |
+| `POST /api/vorgang`       | Body optional `{"lang":"de"\|"en"}` → `{"vorgang_id": "…"}` (**HTTP 200**, bewusste Abweichung von 201) |
+| `POST /api/chat`          | Body `{"vorgang_id","text"}` → Erfolg `{"vorgang_id", "antwort_text", "karten": [{typ, daten}…], "abgebrochen"}` |
 
-Bei Erfolg ist `source` immer `"ai"`. Im Fehlerfall liefert der Endpunkt ein
-Objekt `{"error": "…", "code": "…"}` mit passendem HTTP-Status: `400` (leerer
-Text, `empty`), `503` (kein LLM-Backend, `no_backend`), `502` (KI-/Upstream-Fehler,
-`ai_error`). `diagnosis.trust` (PROJ-25) trägt `{level, source, reason}`.
-Alle JSON-Antworten sind UTF-8 mit echten Emojis/Umlauten (kein ASCII-Escaping).
+`POST /api/chat` führt **einen** Chat-Turn über den Orchestrator aus; die
+`karten` sind typisierte, server-validierte Karten (9 Typen, s. `repair/cards.py`
+und `SPEC.md`). `abgebrochen=true`, wenn das Iterations-Limit (`MAX_TOOL_ITERATIONS`)
+erreicht wurde. Im Fehlerfall liefert der Endpunkt ein Objekt
+`{"error": "…", "code": "…"}` mit passendem HTTP-Status: `400` (leerer Text,
+`empty`), `404` (unbekannter Vorgang, `no_vorgang`), `503` (kein LLM-Backend,
+`no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`). Alle JSON-Antworten sind
+UTF-8 mit echten Emojis/Umlauten (kein ASCII-Escaping).
 
 ### Stufe-2-Service-Endpunkte (PROJ-11/12/13/14/26)
 
@@ -111,6 +117,7 @@ sodass die App auch **ganz ohne** `.env` startet.
 | `OPENAI_API_KEY` | _(leer)_ | OpenAI-Cloud-Key (Pflicht für die Diagnose) |
 | `OPENAI_MODEL` | `gpt-4o-mini` | Modell für die Diagnose |
 | `LLM_TIMEOUT` | `180` | Timeout (s) je LLM-Antwort — **> 0**, sonst Fail-fast |
+| `MAX_TOOL_ITERATIONS` | `12` | Tool-Call-Runden pro Chat-Turn (Orchestrator) — **≥ 1**, sonst Fail-fast |
 | `WHISPER_MODEL` | `whisper-1` | Modell für die Audio-Transkription (PROJ-27) |
 | `MAX_UPLOAD_BYTES` | `10485760` | Max. Mediengröße in Bytes — **> 0**, sonst Fail-fast |
 | `SEARXNG_URL` | _(leer)_ | SearXNG für die Online-Recherche (PROJ-16) |
@@ -147,8 +154,12 @@ webapp/
   repair/
     __init__.py
     config.py          zentrale .env-Konfiguration: getypte Getter + Fail-fast-Validierung (PROJ-30)
-    schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
-    ai.py              diagnose() — reine LLM-Diagnose (ohne Backend/Fehler → Fehler-Objekt) + Vertrauens-Indikator (PROJ-25)
+    ai.py              _resolve_backend() — OpenAI-Backend-Auflösung für den Orchestrator
+    roles.py           Rollen-Registry: liest docs/runtime-roles/*.md, Progressive Disclosure (PROJ-32)
+    cards.py           Karten-Schemata (9 Typen) + validate(typ, daten) (PROJ-33)
+    tools.py           OpenAI-Function-Calling: specs() + dispatch() (PROJ-34)
+    orchestrator.py    system_prefix() + run_turn() Tool-Call-Schleife + Backstop (PROJ-35/36)
+    schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts (Alt-Helfer)
     logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)
     foerderung.py      kuratierte Reparatur-Förderungen (PROJ-6)
@@ -169,9 +180,8 @@ Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import os; os.environ.pop('OPENAI_API_KEY', None); \
-import app; from repair import ai, schema; \
-print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
+env -u OPENAI_API_KEY .venv/bin/python -c \
+  "from repair import orchestrator; print(orchestrator.run_turn({'messages':[]}, 'Toaster kaputt').get('code'))"
 # erwartet:
 #   no_backend
 ```
@@ -188,15 +198,18 @@ python tests/test_config_drift.py
 Endpunkte manuell prüfen (Server läuft auf :5000):
 
 ```bash
-# entfernte Demo-Routen sind jetzt 404
+# entfernte Routen sind jetzt 404 (Demo-Geräte und der alte Single-Shot /api/diagnose)
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/devices            # 404
-# Diagnose: 503 ohne Key, 200 mit gesetztem OPENAI_API_KEY
 curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:5000/api/diagnose \
-  -H "Content-Type: application/json" -d '{"text":"Meine Mikrowelle brummt laut"}'
+  -H "Content-Type: application/json" -d '{"text":"x"}'                                # 404
+# Chat-Flow: Vorgang anlegen (200), dann ein Turn (503 ohne Key, 200 mit gesetztem OPENAI_API_KEY)
+VID=$(curl -s -X POST http://127.0.0.1:5000/api/vorgang | python -c "import sys,json;print(json.load(sys.stdin)['vorgang_id'])")
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:5000/api/chat \
+  -H "Content-Type: application/json" -d "{\"vorgang_id\":\"$VID\",\"text\":\"Meine Mikrowelle brummt laut\"}"
 # Stufe-2/3-Dienste (kuratierte Daten) bleiben verfügbar
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/anbieter           # 200
 ```
 
 Voller UI-Flow (mit gesetztem OpenAI-Key): siehe `SPEC.md`
-„Lauf-/Testkriterien" — Freitext-Diagnose → KI-Gerät durch den Flow,
-Protokoll-Sheet, Theme-Switcher.
+„Lauf-/Testkriterien" — Freitext → `/api/vorgang` + `/api/chat`, Chat-Renderer
+mit typisierten Karten, Theme-Switcher.
