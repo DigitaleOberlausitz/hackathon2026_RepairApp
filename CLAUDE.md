@@ -62,8 +62,9 @@ Keys, Modelle oder Limits im Code.
   Werten (z. B. `PORT=abc`) mit klarer, benennender Meldung ab. Default-Literale für
   Bind-Adresse/Port/Modelle/Limits stehen **nur** dort (bzw. `ai.py` `DEFAULT_*_MODEL`).
 - Aktuell ausgewertet: `OPENAI_API_KEY`, `OPENAI_MODEL`, `LLM_TIMEOUT`, `MAX_TOOL_ITERATIONS`,
-  `WHISPER_MODEL`, `MAX_UPLOAD_BYTES`, `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`,
-  `FLASK_DEBUG`, `HOST`, `PORT`.
+  `WHISPER_MODEL`, `VISION_MODEL`, `MAX_UPLOAD_BYTES`, `MAX_MEDIEN_PRO_ANFRAGE`, `MAX_PDF_SEITEN`,
+  `SEARXNG_URL`, `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`, `HOST`, `PORT`. `VISION_MODEL`
+  ist seit PROJ-31 aktiv (Vision via OpenAI; ohne Override gilt das Cloud-Diagnose-Modell).
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.
@@ -82,8 +83,9 @@ webapp/
     ai.py              _resolve_backend() — OpenAI-Backend-Auflösung für den Orchestrator
     roles.py           Rollen-Registry: liest docs/runtime-roles/*.md, Progressive Disclosure (PROJ-32)
     cards.py           Karten-Schemata (9 Typen) + validate(typ, daten) (PROJ-33)
-    tools.py           OpenAI-Function-Calling: specs() + dispatch() der Werkzeuge (PROJ-34)
+    tools.py           OpenAI-Function-Calling: specs() + dispatch() der Werkzeuge (PROJ-34, inkl. extrahiere_aus_medien für Vision PROJ-31)
     orchestrator.py    system_prefix() + run_turn() Tool-Call-Schleife + Sicherheits-Backstop (PROJ-35/36)
+    vision.py          extrahiere() — Vision-Extraktion + PDF→Bild, im Chat-Flow via Tool (PROJ-31)
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts (Alt-Helfer)
     logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
     protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)

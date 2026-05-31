@@ -119,7 +119,10 @@ sodass die App auch **ganz ohne** `.env` startet.
 | `LLM_TIMEOUT` | `180` | Timeout (s) je LLM-Antwort — **> 0**, sonst Fail-fast |
 | `MAX_TOOL_ITERATIONS` | `12` | Tool-Call-Runden pro Chat-Turn (Orchestrator) — **≥ 1**, sonst Fail-fast |
 | `WHISPER_MODEL` | `whisper-1` | Modell für die Audio-Transkription (PROJ-27) |
+| `VISION_MODEL` | _(leer)_ | Vision-Modell für die Bild-/Dokument-Auswertung (PROJ-31); leer → Cloud-Diagnosemodell (`OPENAI_MODEL`, kann Vision) |
 | `MAX_UPLOAD_BYTES` | `10485760` | Max. Mediengröße in Bytes — **> 0**, sonst Fail-fast |
+| `MAX_MEDIEN_PRO_ANFRAGE` | `6` | Max. Medien je Diagnose-Anfrage (PROJ-31) — **1..100**, sonst Fail-fast |
+| `MAX_PDF_SEITEN` | `5` | Max. ausgewertete PDF-Seiten je Dokument (PROJ-31) — **1..50**, sonst Fail-fast |
 | `SEARXNG_URL` | _(leer)_ | SearXNG für die Online-Recherche (PROJ-16) |
 | `PROTOKOLL_ENABLED` | `1` | Anfrage-Protokoll an/aus (PROJ-28) |
 | `LOG_LEVEL` | `DEBUG` | Log-Level (PROJ-29) |
@@ -132,7 +135,14 @@ Syntaktisch **ungültige** Werte (`PORT=abc`, `PORT=99999`, `LLM_TIMEOUT=xyz`,
 `MAX_UPLOAD_BYTES=-1`) brechen den Start mit einer klaren, die Variable und den
 erwarteten Bereich benennenden Meldung ab (`config.validate()` in `app.py`).
 
-**Ausnahme** (kein `.env`): layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`).
+`VISION_MODEL` ist seit PROJ-31 aktiv (bleibt mit sinnvollem Default
+auskommentiert; Vision läuft über OpenAI). **Ausnahme** (kein `.env`):
+layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`).
+
+**PDF-Auswertung (PROJ-31):** Für die Vision-Auswertung beigefügter **PDFs**
+wird `PyMuPDF` benötigt (in `requirements.txt`). Es ist **optional/lazy**
+importiert — fehlt es, degradiert die PDF-Auswertung mit Hinweis statt zu
+crashen (Bilder funktionieren weiterhin).
 
 **Drift-Guard lokal ausführen** — gleicht `.env.example` ↔ Code in beide
 Richtungen ab und schlägt bei verbotenen Hardcode-Mustern an:

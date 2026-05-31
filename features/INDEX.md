@@ -49,7 +49,7 @@
 | PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Done | PROJ-9, PROJ-22 |
 | PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Done | — |
 | PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Done | — |
-| PROJ-31 | Vision-Diagnose aus Foto & Dokument | `aufnahme`/`diagnose` | D9 | Planned | PROJ-27, PROJ-9 |
+| PROJ-31 | Vision-Diagnose aus Foto & Dokument (in Chat-Flow integriert) | `aufnahme`/`diagnose` | D9 | Done | PROJ-27, PROJ-9, PROJ-34 |
 
 ## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
 
@@ -62,9 +62,12 @@
 > **Offene Punkte (Stand 2026-05-31):** Die **Stufe-4-Orchestrierung (PROJ-32…37)** ist
 > umgesetzt — der Single-Shot `POST /api/diagnose` + `device`-Monolith wurde durch den
 > LLM-orchestrierten Chat-Flow (`POST /api/vorgang` + `POST /api/chat`, Rollen-Registry,
-> Karten, Function-Calling, nicht-sperrender Backstop) ersetzt. Damit ist **nur noch
-> PROJ-31** (Vision-Diagnose aus Foto & Dokument) offen (`Planned`, baut auf PROJ-27/PROJ-9 auf).
-> Alle übrigen Feature-IDs (PROJ-1…30, 32…37) sind auf `Done`.
+> Karten, Function-Calling, nicht-sperrender Backstop) ersetzt. **PROJ-31** (Vision-Diagnose)
+> wurde in diesen Chat-Flow **integriert**: `repair/vision.py` (Extraktion, PDF→Bild via
+> optionalem PyMuPDF) und `POST /api/extrahieren` bleiben; die Bild-/Extraktions-Evidenz
+> fließt jetzt über ein Orchestrator-Tool (`extrahiere_aus_medien`) + `medienIds` im
+> `POST /api/chat`, statt über das entfernte `/api/diagnose`. Alle Feature-IDs
+> (PROJ-1…38) sind auf `Done`.
 > PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
 > Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,
 > Level über `LOG_LEVEL` (Default DEBUG), Werkzeug-Integration, zentrales Request-Logging

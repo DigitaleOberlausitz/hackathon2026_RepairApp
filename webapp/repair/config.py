@@ -38,6 +38,8 @@ DEFAULT_WHISPER_MODEL = "whisper-1"
 DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 DEFAULT_LLM_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
 DEFAULT_MAX_TOOL_ITERATIONS = 12  # Tool-Call-Runden pro Chat-Turn (Orchestrator)
+DEFAULT_MAX_MEDIEN_PRO_ANFRAGE = 6  # max. Medien je Diagnose-Anfrage (PROJ-31)
+DEFAULT_MAX_PDF_SEITEN = 5  # max. ausgewertete PDF-Seiten je Dokument (PROJ-31)
 
 
 def _raw(name: str) -> str | None:
@@ -115,6 +117,26 @@ def max_upload_bytes() -> int:
     return _int("MAX_UPLOAD_BYTES", DEFAULT_MAX_UPLOAD_BYTES, lo=1, hi=2**63 - 1)
 
 
+def vision_model() -> str | None:
+    """Vision-Modell-Override für die Bild-/Dokument-Auswertung (PROJ-31).
+
+    ``None`` (ungesetzt) → ``vision.py`` nutzt das Cloud-Diagnose-Modell
+    (``OPENAI_MODEL`` / ``gpt-4o-…``, das ebenfalls Vision kann). Bewusst kein
+    Default-Literal hier — der Default ist das ohnehin konfigurierte OpenAI-Modell.
+    """
+    return _raw("VISION_MODEL")
+
+
+def max_medien_pro_anfrage() -> int:
+    """Obergrenze Medien pro Diagnose-Anfrage. Default 6; 1..100 (sonst Fail-fast)."""
+    return _int("MAX_MEDIEN_PRO_ANFRAGE", DEFAULT_MAX_MEDIEN_PRO_ANFRAGE, lo=1, hi=100)
+
+
+def max_pdf_seiten() -> int:
+    """Max. ausgewertete PDF-Seiten je Dokument. Default 5; 1..50 (sonst Fail-fast)."""
+    return _int("MAX_PDF_SEITEN", DEFAULT_MAX_PDF_SEITEN, lo=1, hi=50)
+
+
 def llm_timeout() -> float:
     """Timeout (Sekunden) für eine LLM-Antwort. Default 180; > 0 (sonst Fail-fast)."""
     return _float_pos("LLM_TIMEOUT", DEFAULT_LLM_TIMEOUT)
@@ -142,7 +164,8 @@ def validate() -> None:
     ``app.py`` nach ``load_dotenv()`` aufgerufen.
     """
     fehler: list[str] = []
-    for getter in (port, llm_timeout, max_upload_bytes, max_tool_iterations):
+    for getter in (port, llm_timeout, max_upload_bytes, max_tool_iterations,
+                   max_medien_pro_anfrage, max_pdf_seiten):
         try:
             getter()
         except ConfigError as exc:

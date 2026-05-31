@@ -86,6 +86,7 @@
       lang: lang,
       setMediaConsentOpen: props.setMediaConsentOpen,
       uploadMedium: props.uploadMedium,
+      uploadDokument: props.uploadDokument,
       removeMedium: props.removeMedium,
       onVoiceResult: handleVoiceResult,
       onBarcodeResult: function (val) {
@@ -119,6 +120,8 @@
       props.error
         ? h('p', { class: 'rk-q-hint', role: 'alert', style: { color: 'var(--stop)' } }, props.error)
         : null,
+      // PROJ-31: aktiver, nicht-blockierender Hinweis, ein Foto/Dokument beizufügen.
+      h('p', { class: 'rk-foto-hint' }, t('start.fotoHint')),
       mediaPanel
     ];
 
@@ -265,6 +268,10 @@
         var tr = deriveTrust(props.trust, device);
         return TrustBadge(tr.level, tr.source, tr.reason, { onClick: function () { props.setConf(true); }, strong: stop });
       })(),
+      // PROJ-31: Vermerk, dass Bildmaterial in die Diagnose eingeflossen ist.
+      (props.visionMark && props.visionMark.einbezogen)
+        ? h('div', { class: 'rk-vision-mark' }, t('vision.included'))
+        : null,
       h('div', { class: 'rk-aiwarn ' + (stop ? 'rk-aiwarn-strong' : '') },
         (stop ? t('common.aiWarnStrong') : '') + t('common.aiWarn')
       )
@@ -1596,12 +1603,27 @@
       if (!medienConsent) { props.setMediaConsentOpen(true); return; }
       var input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/jpeg,image/png,image/webp';
       input.capture = 'environment';
       input.onchange = function () {
         var file = input.files && input.files[0];
         if (!file) return;
         props.uploadMedium(file, 'foto', null);
+      };
+      input.click();
+    }
+
+    // PROJ-31: Dokument/PDF beifügen (Typenschild, Rechnung, Anleitung).
+    function captureDokument() {
+      if (!medienConsent) { props.setMediaConsentOpen(true); return; }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp,application/pdf';
+      input.onchange = function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (props.uploadDokument) props.uploadDokument(file, null);
+        else props.uploadMedium(file, 'dokument', null);
       };
       input.click();
     }
@@ -1686,6 +1708,11 @@
         title: t('media.foto'),
       }, '📷'),
       h('button', {
+        class: 'rk-cap-btn rk-cap-doc',
+        onClick: captureDokument,
+        title: t('media.dokument'),
+      }, '📄'),
+      h('button', {
         class: 'rk-cap-btn rk-cap-voice' + (!hasSpeech ? ' rk-cap-unavail' : ''),
         onClick: captureVoice,
         title: t('media.sprache'),
@@ -1722,11 +1749,12 @@
     var grid = medien.length
       ? h('div', { class: 'rk-media-grid' },
         medien.map(function (m) {
+          var icon = '🎙️';
+          if (m.art === 'foto') icon = '📷';
+          else if (m.art === 'video') icon = '🎬';
+          else if (m.art === 'dokument') icon = (m.mime === 'application/pdf') ? '📄' : '🖼️';
           return h('div', { class: 'rk-media-item' },
-            m.art === 'foto' || m.art === 'video'
-              ? h('div', { class: 'rk-media-thumb' },
-                h('span', { class: 'rk-media-art' }, m.art === 'foto' ? '📷' : '🎬'))
-              : h('div', { class: 'rk-media-thumb' }, h('span', { class: 'rk-media-art' }, '🎙️')),
+            h('div', { class: 'rk-media-thumb' }, h('span', { class: 'rk-media-art' }, icon)),
             h('button', { class: 'rk-media-remove', onClick: function () { if (props.removeMedium) props.removeMedium(m.id); } }, '✕')
           );
         })
@@ -1734,7 +1762,7 @@
       : null;
 
     return h('div', { class: 'rk-media' },
-      h('div', { class: 'rk-media' }, btns),
+      h('div', { class: 'rk-cap-row' }, btns),
       voiceIndicator,
       voiceCorrect,
       scanResult,

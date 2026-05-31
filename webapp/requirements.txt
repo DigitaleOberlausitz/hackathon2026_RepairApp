@@ -2,3 +2,7 @@ Flask>=3.0,<4.0
 openai>=1.30,<2.0
 python-dotenv>=1.0,<2.0
 jsonschema>=4.21
+# PROJ-31: PDF→Seitenbild-Konvertierung für die Vision-Auswertung von Dokumenten.
+# Reines Wheel (keine System-Abhängigkeit). Optional/lazy importiert — fehlt es,
+# degradiert die PDF-Auswertung mit Hinweis statt zu crashen.
+PyMuPDF>=1.24,<2.0

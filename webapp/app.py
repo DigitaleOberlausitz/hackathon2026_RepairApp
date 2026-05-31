@@ -6,6 +6,7 @@ Routen (SPEC.md + STUFE1.md + STUFE2.md + STUFE3.md §2):
     GET  /api/device/<id>            → einzelnes device (404 wenn unbekannt)
     POST /api/vorgang                → optional {lang} → 200 {vorgang_id}  (PROJ-37)
     POST /api/chat                   → {vorgang_id, text} → {antwort_text, karten, abgebrochen}  (PROJ-37)
+    POST /api/extrahieren            → {vorgangId?, medienIds?, text?, lang?} → {felder, source, …}  (PROJ-31)
     GET  /api/vorgang/<id>           → {id, state, created, updated} | 404
     PUT  /api/vorgang/<id>           → {state} → {id, state, created, updated} | 404
     GET  /api/foerderung             → {items: [...]}
@@ -74,6 +75,7 @@ from repair import (
     schwungrad,
     store,
     triage,
+    vision,
     wissensbasis,
 )
 
@@ -256,6 +258,44 @@ def _json_error(msg: str, code: str, status: int):
         status=status,
         mimetype="application/json",
     )
+
+
+# ─── PROJ-31: Vision-Extraktion (Stufe 1) ─────────────────────────────────────
+
+
+@app.post("/api/extrahieren")
+def api_extrahieren():
+    """PROJ-31 Stufe 1 — strukturierte Extraktion aus beigefügten Fotos/Dokumenten.
+
+    Body: {vorgangId?, medienIds?, text?, lang?}
+      - medienIds: explizite Medien-IDs; fehlen sie, werden die am Vorgang
+        gespeicherten Medien (state.medien) ausgewertet.
+    Antwort (immer HTTP 200, scheitert nie hart):
+      {felder:{...}, source:"vision|no_vision_backend|vision_error|keine_medien",
+       hinweis, bildAnzahl, nichtsErkannt}
+    Die bestätigten/korrigierten Felder hält das Frontend im Vorgangs-State.
+    """
+    payload = request.get_json(silent=True) or {}
+    vid = str(payload.get("vorgangId") or "").strip()
+    text = str(payload.get("text") or "")
+    lang = str(payload.get("lang") or request.args.get("lang") or "de").strip().lower()
+    if lang not in ("de", "en"):
+        lang = "de"
+
+    medien_ids = payload.get("medienIds")
+    medien: list = []
+    if isinstance(medien_ids, list) and medien_ids:
+        medien = [str(m) for m in medien_ids]
+    elif vid:
+        vorgang = store.get_vorgang(vid)
+        if vorgang:
+            state_medien = (vorgang.get("state") or {}).get("medien")
+            if isinstance(state_medien, list):
+                medien = state_medien
+
+    medien = medien[: config.max_medien_pro_anfrage()]
+    result = vision.extrahiere(medien, text=text, lang=lang)
+    return jsonify(result)
 
 
 # ─── PROJ-9 / PROJ-37: Vorgang-Persistenz + Chat-Flow ─────────────────────────
@@ -735,17 +775,24 @@ def api_vorgang_medien(vid: str):
 
     art = "foto"
     data = None
+    file_mime = ""
 
     # multipart/form-data
     if request.files:
         f = request.files.get("file")
         if f:
             data = f.read()
-            mime = f.content_type or ""
-            if "video" in mime:
+            file_mime = (f.content_type or "").lower()
+            # Explizite Art aus dem Formular hat Vorrang (PROJ-31: „dokument").
+            explicit = str(request.form.get("art") or "").strip().lower()
+            if explicit in ("foto", "video", "audio", "dokument"):
+                art = explicit
+            elif "video" in file_mime:
                 art = "video"
-            elif "audio" in mime:
+            elif "audio" in file_mime:
                 art = "audio"
+            elif "pdf" in file_mime:
+                art = "dokument"
             else:
                 art = "foto"
     else:
@@ -753,7 +800,7 @@ def api_vorgang_medien(vid: str):
         data = payload.get("dataUrl") or payload.get("data")
         art = str(payload.get("art") or "foto").strip().lower()
 
-    result = multimodal.save_medium(data=data, art=art)
+    result = multimodal.save_medium(data=data, art=art, mime=file_mime)
     if not result.get("id"):
         return jsonify(result)  # hinweis enthalten, 200
 
@@ -765,6 +812,7 @@ def api_vorgang_medien(vid: str):
         "art": result["art"],
         "ref": result["ref"],
         "hinweis": result.get("hinweis", ""),
+        "mime": result.get("mime", ""),
     })
     state["medien"] = medien
     store.save_vorgang(vid, state)

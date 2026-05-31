@@ -36,6 +36,8 @@ webapp/
     cards.py             Karten-Schemata + validate(typ, daten) (PROJ-33)
     tools.py             OpenAI-Function-Calling: specs() + dispatch() (PROJ-34)
     orchestrator.py      system_prefix() + run_turn() Tool-Call-Schleife (PROJ-35/36)
+    vision.py            Vision-Extraktion (Stufe 1) + PDF->Bild, im Chat-Flow via Tool (PROJ-31)
+    schema.py            Validierung/Normalisierung eines device-Objekts (Alt-Helfer)
     …                    weitere Fach-Module (siehe README „Projektstruktur")
   templates/
     index.html           SPA-Shell (enthält den HEAD-BLOCK unten 1:1)
@@ -105,6 +107,17 @@ trust = {
   Fehlerfall (nie hart scheitern): `{ "error": "…", "code": "…" }` mit HTTP-Status —
   `400` (leerer Text, `empty`), `404` (unbekannter Vorgang, `no_vorgang`),
   `503` (kein Key, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
+  **PROJ-31 (Vision, additiv):** Der `/api/chat`-Body darf zusätzlich `medienIds` (am Vorgang
+  gespeicherte Foto-/Dokument-Medien) enthalten; der Orchestrator wertet sie über das Tool
+  `extrahiere_aus_medien` (→ `repair/vision.py`) aus und speist die erkannten Felder als Kontext
+  in den Dialog. Ohne `medienIds` verhält sich der Endpunkt unverändert.
+- `POST /api/extrahieren`        → Body `{ "vorgangId?", "medienIds?", "text?", "lang?" }` (PROJ-31, Stufe 1)
+                                   Antwort **immer** HTTP 200 (scheitert nie hart):
+                                   `{ "felder": {kategorie, modell, schaeden[], kaufdatum, haendler, hinweise[]},
+                                      "source": "vision|no_vision_backend|vision_error|keine_medien",
+                                      "hinweis", "bildAnzahl", "nichtsErkannt" }`. Vision läuft über OpenAI
+                                   (Modell `VISION_MODEL` → sonst `OPENAI_MODEL`); PDFs werden serverseitig
+                                   in Seitenbilder gewandelt.
 
 > Die App bietet weitere Endpunkte (Vorgang-Persistenz `GET/PUT /api/vorgang/<id>`,
 > kuratierte Service-Daten, Wissensbasis, Lotse, Consent, Multimodal …) —
