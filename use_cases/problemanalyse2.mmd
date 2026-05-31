@@ -1,0 +1,99 @@
+%% Problemanalyse — Prozess (abgeleitet aus Whiteboard IMG_7536.jpg)
+%% Layout: zentrale vertikale Abfolge (oben -> unten); die Detail-/Entscheidungs-
+%% Knoten fächern je Schritt abwechselnd nach rechts und links auf (Fischgräte).
+flowchart TB
+
+    Start(("Start"))
+
+%% ── Schritt 1 — Details rechts ──
+    subgraph g1 [" "]
+        direction LR
+        S1["1. Typ d. Sache feststellen"]
+        S1 --- K1["Möbel"]
+        S1 --- K2["elektr. Gerät"]
+    end
+
+%% ── Schritt 2 — Details links ──
+    subgraph g2 [" "]
+        direction RL
+        S2["2. Wirkung / Zustand feststellen"]
+        S2 --- Z1["physisch kaputt"]
+        S2 --- Z2["Funktion beeinträchtigt oder kaputt"]
+        S2 --- Z3["verbraucht"]
+        S2 --- Z4["höheres Risiko"]
+        S2 --- Z5["Funktion i.O., aber im Fehlerzustand"]
+        Z4 --- R1["security"]
+        Z4 --- R2["elektr. / elektron. Sicherheit"]
+        Z4 --- R3["körperl. Schaden (Verletzung)"]
+    end
+
+%% ── Schritt 3 — Details rechts ──
+    subgraph g3 [" "]
+        direction LR
+        S3["3. Handlungsspielraum / Optionen betrachten"]
+        S3 --- H1["Garantie / Gewährleistung"]
+        S3 --- H2["Reset-Maßnahmen"]
+        S3 --- H3["reparieren"]
+        S3 --- H4["reparieren lassen"]
+        S3 --- H5["Workaround anwenden"]
+        S3 --- H6["Ersatz beschaffen"]
+        S3 --- H7["Entsorgen / Recycling"]
+        S3 --- H8["Wartung (kalibrieren, Reinigen, …)"]
+        S3 --- H9["Verbrauchsmaterial ersetzen / austauschen"]
+    end
+
+%% ── Schritt 4 — Details links ──
+    subgraph g4 [" "]
+        direction RL
+        S4["4. Option entscheiden / auswählen"]
+        S4 --- C1["Kosten / Wirtschaftlichkeit"]
+        S4 --- C2["Mobilität"]
+        S4 --- C3["Aufwand / Zeit"]
+        S4 --- C4["Wissen / Fähigkeiten / Expertise"]
+        S4 --- C5["ideeller Wert"]
+    end
+
+%% ── Schritt 5 — Details rechts ──
+    subgraph g5 [" "]
+        direction LR
+        S5["5. Lösung: Option benutzen"]
+        S5 --- V1["Wissen"]
+        S5 --- V2["Werkzeuge (Verleih)"]
+        S5 --- V3["Kenntnisse / Fähigkeiten vermitteln"]
+        S5 --- V4["Community-Angebot vermitteln"]
+        S5 --- V5["Dienstleister"]
+        S5 --- V6["Werkstatt"]
+        S5 --- V7["Produkte vermitteln"]
+    end
+
+%% ── Schritt 6 — Details links ──
+    subgraph g6 [" "]
+        direction RL
+        S6["6. Präventionsmaßnahme vermitteln"]
+        S6 --- P1["Wartung / Pflege empfehlen"]
+        S6 --- P2["alternative / 'bessere' / nachhaltigere Produkte"]
+        S6 --- P3["Benutzerhinweise z. korrekten Verwendung"]
+    end
+
+%% ── Vertikale Abfolge mit Stereotyp-Übergängen ──
+    Start -->|"&laquo;Kategorisieren&raquo;"| g1
+    g1 -->|"&laquo;Beschreiben&raquo;"| g2
+    g2 -->|"&laquo;Klassifizieren&raquo;"| g3
+    g3 -->|"&laquo;Bewerten&raquo;"| g4
+    g4 -->|"&laquo;Benutzen&raquo;"| g5
+    g5 --> g6
+
+%% ── Styling ──
+    classDef step   fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a,font-weight:bold;
+    classDef detail fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef risk   fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    class S1,S2,S3,S4,S5,S6 step;
+    class K1,K2,Z1,Z2,Z3,Z4,Z5,H1,H2,H3,H4,H5,H6,H7,H8,H9,C1,C2,C3,C4,C5,V1,V2,V3,V4,V5,V6,V7,P1,P2,P3 detail;
+    class R1,R2,R3 risk;
+    style Start fill:#1e3a8a,stroke:#1e3a8a,color:#ffffff;
+    style g1 fill:none,stroke:none;
+    style g2 fill:none,stroke:none;
+    style g3 fill:none,stroke:none;
+    style g4 fill:none,stroke:none;
+    style g5 fill:none,stroke:none;
+    style g6 fill:none,stroke:none;
