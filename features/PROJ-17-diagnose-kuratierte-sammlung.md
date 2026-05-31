@@ -1,6 +1,6 @@
 # PROJ-17: Diagnose auf Basis der kuratierten Fehlerzustand-Sammlung
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

@@ -1,9 +1,9 @@
 # PROJ-28: Anfrage-Protokoll als Markdown (Betreiber-/Debug-Log)
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-31
-**Zuletzt aktualisiert:** 2026-05-31
+**Zuletzt aktualisiert:** 2026-05-31 (umgesetzt)
 
 ## Abhängigkeiten
 
@@ -44,40 +44,40 @@ Daten-Schwungrad (PROJ-23) getrennt:
 
 ## Akzeptanzkriterien
 
-- [ ] Für jede Anfrage an die protokollierten **KI-/Fach-Endpunkte** wird ein Markdown-Eintrag
+- [x] Für jede Anfrage an die protokollierten **KI-/Fach-Endpunkte** wird ein Markdown-Eintrag
       geschrieben. Protokollierte Endpunkte: `POST /api/diagnose`, `POST /api/recherche`,
       `POST /api/wissensbasis/entwurf`, `POST /api/bewertung/gesamt`, `POST /api/lotse/route`,
       `POST /api/transkription`.
-- [ ] Statische/lesende Endpunkte erzeugen **kein** Protokoll (`GET /`, `/api/devices`,
+- [x] Statische/lesende Endpunkte erzeugen **kein** Protokoll (`GET /`, `/api/devices`,
       `/api/device/<id>`, `/media/<id>`, `/api/foerderung`, sämtliche `GET`-Listen-/Sicht-Routen).
-- [ ] Jeder Eintrag enthält **gesendete Daten**: HTTP-Methode, Pfad, Zeitstempel (Server-Zeit, ISO),
+- [x] Jeder Eintrag enthält **gesendete Daten**: HTTP-Methode, Pfad, Zeitstempel (Server-Zeit, ISO),
       sowie den vollständigen Request-Payload (JSON-Body bzw. Beschreibung bei multipart, z. B. Dateiname/MIME/Größe).
-- [ ] Jeder Eintrag enthält **empfangene Daten**: die an den Client zurückgegebene Antwort
+- [x] Jeder Eintrag enthält **empfangene Daten**: die an den Client zurückgegebene Antwort
       (JSON, gekürzt nur bei sehr großen Binär-Refs) inkl. HTTP-Status.
-- [ ] Jeder Eintrag enthält die **KI-Entscheidung** in lesbarer Form, mindestens: `source`
+- [x] Jeder Eintrag enthält die **KI-Entscheidung** in lesbarer Form, mindestens: `source`
       (`ai`/`fallback`/`kuratiert`), und — soweit vorhanden — empfohlener Pfad (`recommend`),
       Ampel-Stufen (`lights`/`accentPath`), Recherche-Herkunft/Konfidenz bzw. Lotse-`ereignis`+Zielrolle.
-- [ ] Jeder Eintrag nennt die **verwendete Rolle/Fach-Funktion** über ein festes
+- [x] Jeder Eintrag nennt die **verwendete Rolle/Fach-Funktion** über ein festes
       Endpunkt→Rolle-Mapping (z. B. `/api/diagnose` → `diagnose`, `/api/recherche` → `recherche`,
       `/api/lotse/route` → `lotse`).
-- [ ] Jeder Eintrag enthält eine **Token-Statistik**: bei echtem KI-Call die `usage`-Werte
+- [x] Jeder Eintrag enthält eine **Token-Statistik**: bei echtem KI-Call die `usage`-Werte
       (prompt_tokens, completion_tokens, total_tokens) aus der OpenAI-Antwort; bei Fallback ohne
       KI-Call explizit „kein KI-Call (0 Token)" und das verwendete Modell (`OPENAI_MODEL`) bzw. „—".
-- [ ] Alle Anfragen, die zu **derselben** `vid` (Vorgang) gehören, werden an **eine** Markdown-Datei
+- [x] Alle Anfragen, die zu **derselben** `vid` (Vorgang) gehören, werden an **eine** Markdown-Datei
       pro Vorgang **angehängt** (chronologisch, neuer Abschnitt je Anfrage). Die `vid` wird aus dem
       Request abgeleitet (Body-Feld `vorgangId`/`v`, Pfad-Parameter `<vid>` oder Query `?v=`).
-- [ ] Anfragen **ohne** zuordenbaren Vorgang werden an eine **Sammeldatei** (z. B. `_ohne-vorgang.md`)
+- [x] Anfragen **ohne** zuordenbaren Vorgang werden an eine **Sammeldatei** (z. B. `_ohne-vorgang.md`)
       angehängt — kein Eintrag geht verloren.
-- [ ] Am Kopf jeder Vorgangs-Datei (oder fortlaufend aktualisiert) steht eine **Aggregat-Statistik**:
+- [x] Am Kopf jeder Vorgangs-Datei (oder fortlaufend aktualisiert) steht eine **Aggregat-Statistik**:
       Anzahl Anfragen, Summe Total-Token, Anzahl `ai` vs. `fallback`.
-- [ ] Die Protokollierung ist über eine **Umgebungsvariable** (z. B. `PROTOKOLL_ENABLED`)
+- [x] Die Protokollierung ist über eine **Umgebungsvariable** (z. B. `PROTOKOLL_ENABLED`)
       steuerbar; **default ist „an"**. Bei `PROTOKOLL_ENABLED=0` wird nichts geschrieben.
-- [ ] Die Protokollierung ist **nicht-blockierend für die fachliche Antwort**: schlägt das Schreiben
+- [x] Die Protokollierung ist **nicht-blockierend für die fachliche Antwort**: schlägt das Schreiben
       fehl (z. B. Schreibrechte, Platte voll), liefert der Endpunkt trotzdem seine normale HTTP-200-Antwort
       (Fehler wird nur intern geloggt, nicht an den Client durchgereicht).
-- [ ] Die Protokoll-Dateien liegen in einem dedizierten Verzeichnis (z. B. `webapp/protokolle/`),
+- [x] Die Protokoll-Dateien liegen in einem dedizierten Verzeichnis (z. B. `webapp/protokolle/`),
       das per `.gitignore` von der Versionierung ausgeschlossen ist.
-- [ ] Das Schreiben verändert **keine** bestehende fachliche Logik oder API-Antwort (rein additive Beobachtung).
+- [x] Das Schreiben verändert **keine** bestehende fachliche Logik oder API-Antwort (rein additive Beobachtung).
 
 ## Edge Cases
 
@@ -119,11 +119,38 @@ Daten-Schwungrad (PROJ-23) getrennt:
 
 ## Tech Design (Solution Architect)
 
-_Wird von /architecture hinzugefügt_
+Umgesetzt als zentraler Querschnitt-Hook, fachliche Routen unverändert:
+
+- **`webapp/repair/protokoll_log.py`** — Kernmodul. Whitelist `ENDPOINT_ROLLE`
+  (Flask-View-Name → Rolle), `soll_protokollieren()`, `protokolliere()`.
+  Pro Vorgang eine `<vid>.md` (vid via `secrets.token_urlsafe`-Alphabet
+  validiert → sonst Sammeldatei `_ohne-vorgang.md`). Aggregat-Kopf wird bei
+  jedem Append neu aus dem Entries-Block berechnet; Schreiben unter
+  `threading.Lock` + `os.replace` (atomar, serialisiert). Best-effort:
+  jeder Fehler nur auf stderr, nie an den Client.
+- **`webapp/app.py`** — `before_request` leert den Token-Slot und erfasst die
+  Rohdaten (json/multipart-Metadaten/raw) **vor** dem View; `after_request`
+  liest Response-JSON + Status und ruft `protokolliere()`.
+- **`webapp/repair/ai.py`** — meldet `response.usage` des echten KI-Calls via
+  `protokoll_log.merke_usage()` (`contextvars`-Slot, request-lokal).
+- Steuerung: `PROTOKOLL_ENABLED` (default an). Verzeichnis `protokolle/`
+  gitignored, keine HTTP-Route, kein Export, nicht ins Schwungrad.
 
 ## QA Test Results
 
-_Wird von /qa hinzugefügt_
+Verifiziert mit Flask-Test-Client (ohne KI-Key → Fallback-Pfad):
+
+- ✅ `POST /api/diagnose` → Eintrag in `_ohne-vorgang.md` mit `source: fallback`,
+  KI-Entscheidung (source/recommend/accentPath/Ampel) und „kein KI-Call (0 Token)".
+- ✅ `POST /api/lotse/route` (gleiche `vorgangId`) → 2 Einträge in `<vid>.md`,
+  Aggregat-Kopf korrekt (2 Anfragen / 0 Token / 0 ai / 2 fallback).
+- ✅ `GET /api/devices` → **kein** Protokoll.
+- ✅ Path-Traversal-`vid` (`../../etc/evil`) → in Sammeldatei umgeleitet, keine
+  Datei außerhalb `protokolle/`.
+- ✅ `PROTOKOLL_ENABLED=0` → kein Verzeichnis, nichts geschrieben.
+- ✅ Nicht-JSON-Body an `/api/transkription` → `_nicht-JSON-Body (N Bytes)_`,
+  Endpunkt liefert normal HTTP 200.
+- ✅ Backend-Smoke-Test (CLAUDE.md) unverändert grün (`2` / `fallback`).
 
 ## Deployment
 

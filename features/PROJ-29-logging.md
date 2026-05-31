@@ -1,8 +1,12 @@
 # PROJ-29: Zentrales Logging (Datei + Konsole, tägliche Rotation)
 
-## Status: Planned
+## Status: Done
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
+**Umgesetzt:** 2026-05-31 — `repair/logconf.py` (`setup_logging()`), Verdrahtung in `app.py`
+(Setup, zentrales `after_request`-Access-Log, `got_request_exception`-Stacktrace-Logging),
+Instrumentierung in `ai.py`, `store.py`, `lotse.py`, `wissensbasis.py`, `recherche.py`,
+`multimodal.py`; Doku in `.env.example`, `.gitignore`, `README.md`, `CLAUDE.md`.
 
 ## Kontext
 Die Web-App (`webapp/`) erzeugt heute **keine** Logdatei. Laufzeit-Ausgaben gibt es nur
@@ -37,56 +41,56 @@ um aussagekräftige Log-Ausgaben.
 ## Akzeptanzkriterien
 
 ### Logging-Setup
-- [ ] Es gibt eine **zentrale** Initialisierungsstelle (z. B. `repair/logconf.py` mit
+- [x] Es gibt eine **zentrale** Initialisierungsstelle (z. B. `repair/logconf.py` mit
       `setup_logging()`), die in `app.py` **einmalig** vor App-Start aufgerufen wird.
-- [ ] Das Log-Level wird aus der Umgebungsvariable **`LOG_LEVEL`** gelesen (über `.env`,
+- [x] Das Log-Level wird aus der Umgebungsvariable **`LOG_LEVEL`** gelesen (über `.env`,
       konsistent zum bestehenden `OPENAI_*`-Muster via `python-dotenv`).
-- [ ] Ist `LOG_LEVEL` nicht gesetzt, gilt der **Default `DEBUG`**.
-- [ ] Ungültige `LOG_LEVEL`-Werte (Tippfehler) führen **nicht** zum Absturz, sondern fallen
+- [x] Ist `LOG_LEVEL` nicht gesetzt, gilt der **Default `DEBUG`**.
+- [x] Ungültige `LOG_LEVEL`-Werte (Tippfehler) führen **nicht** zum Absturz, sondern fallen
       auf `DEBUG` zurück und protokollieren eine Warnung.
-- [ ] Es ist **genau ein** Root-Logger konfiguriert; doppelte Handler bei Reload/Reimport
+- [x] Es ist **genau ein** Root-Logger konfiguriert; doppelte Handler bei Reload/Reimport
       werden vermieden (idempotentes Setup).
 
 ### Ausgabe-Senken (Datei + Konsole)
-- [ ] Jede Log-Zeile erscheint **gleichzeitig** in der Datei und auf der Konsole (stdout/stderr).
-- [ ] Die Logdatei liegt unter **`webapp/logs/repair.log`**; das Verzeichnis `logs/` wird beim
+- [x] Jede Log-Zeile erscheint **gleichzeitig** in der Datei und auf der Konsole (stdout/stderr).
+- [x] Die Logdatei liegt unter **`webapp/logs/repair.log`**; das Verzeichnis `logs/` wird beim
       Start automatisch angelegt, falls es fehlt.
-- [ ] Beide Senken nutzen dasselbe **Format** mit mindestens: Zeitstempel, Level, Logger-/
+- [x] Beide Senken nutzen dasselbe **Format** mit mindestens: Zeitstempel, Level, Logger-/
       Modulname, Nachricht (z. B. `2026-05-31 08:39:01 DEBUG repair.ai: …`).
 
 ### Rotation & Aufbewahrung
-- [ ] Die Datei rotiert **täglich** (Wechsel um Mitternacht, `when="midnight"`).
-- [ ] Es werden **14** rotierte Dateien vorgehalten (`backupCount=14`); ältere werden
+- [x] Die Datei rotiert **täglich** (Wechsel um Mitternacht, `when="midnight"`).
+- [x] Es werden **14** rotierte Dateien vorgehalten (`backupCount=14`); ältere werden
       automatisch gelöscht.
-- [ ] Rotierte Dateien sind am Datums-Suffix erkennbar (z. B. `repair.log.2026-05-30`).
+- [x] Rotierte Dateien sind am Datums-Suffix erkennbar (z. B. `repair.log.2026-05-30`).
 
 ### Werkzeug-Integration
-- [ ] Die HTTP-Zugriffslogs des Werkzeug-Dev-Servers laufen durch **dasselbe** Setup
+- [x] Die HTTP-Zugriffslogs des Werkzeug-Dev-Servers laufen durch **dasselbe** Setup
       (gleiche Datei + gleiches Format), statt separat nur auf der Konsole zu erscheinen.
 
 ### Quellcode-Instrumentierung
-- [ ] **Jeder API-Request** wird geloggt (Methode, Pfad, Status-Code; bei Fehlern auf
+- [x] **Jeder API-Request** wird geloggt (Methode, Pfad, Status-Code; bei Fehlern auf
       `WARNING`/`ERROR`). Realisierung zentral (z. B. `after_request`/`errorhandler`), nicht
       pro Route dupliziert.
-- [ ] **Schlüssel-Ereignisse der Fach-Module** werden auf passendem Level geloggt, u. a.:
+- [x] **Schlüssel-Ereignisse der Fach-Module** werden auf passendem Level geloggt, u. a.:
       `repair/ai.py` → Diagnose-Quelle (`ai` vs. `fallback`) und Modellname;
       `repair/lotse.py` → gewähltes Routing;
       `repair/store.py` → Vorgangs-CRUD (Anlegen/Lesen/Aktualisieren mit Vorgangs-ID);
       `repair/wissensbasis.py` → Entwurf/Freigabe/Zurückziehen;
       `repair/recherche.py`, `repair/multimodal.py` → Start/Quelle/Ergebnis.
-- [ ] **Jede unbehandelte Exception** wird mit **Stacktrace** (`logger.exception`) geloggt und
+- [x] **Jede unbehandelte Exception** wird mit **Stacktrace** (`logger.exception`) geloggt und
       führt weiterhin zu einer sauberen HTTP-Antwort (kein verändertes Fehlerverhalten der API).
-- [ ] Bestehendes API-Verhalten bleibt unverändert: `POST /api/diagnose` liefert weiterhin
+- [x] Bestehendes API-Verhalten bleibt unverändert: `POST /api/diagnose` liefert weiterhin
       immer HTTP 200, JSON weiterhin mit `ensure_ascii=False`.
 
 ### Repo-Hygiene & Doku
-- [ ] `webapp/logs/` (bzw. `*.log`) wird in `webapp/.gitignore` aufgenommen — keine Logs im Repo.
-- [ ] `webapp/.env.example` dokumentiert `LOG_LEVEL` mit Default-Hinweis.
-- [ ] `webapp/README.md` (und ggf. `CLAUDE.md`) beschreiben kurz: Speicherort, Rotation,
+- [x] `webapp/logs/` (bzw. `*.log`) wird in `webapp/.gitignore` aufgenommen — keine Logs im Repo.
+- [x] `webapp/.env.example` dokumentiert `LOG_LEVEL` mit Default-Hinweis.
+- [x] `webapp/README.md` (und ggf. `CLAUDE.md`) beschreiben kurz: Speicherort, Rotation,
       Level-Konfiguration **und** den PII-Hinweis (s. u.).
 
 ### Datenschutz-Hinweis (PII)
-- [ ] Es ist **dokumentiert** (README + Kommentar am Setup), dass auf `DEBUG` auch
+- [x] Es ist **dokumentiert** (README + Kommentar am Setup), dass auf `DEBUG` auch
       **Klartext-Nutzereingaben** (Freitext-Symptome, Standort, ggf. Medien-Metadaten) im Log
       landen können und das Logging in dieser Tiefe **nur für die lokale Dev-Umgebung** gedacht
       ist, nicht für Produktion.
@@ -125,7 +129,27 @@ um aussagekräftige Log-Ausgaben.
 _Wird von /architecture hinzugefügt_
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+Smoke-/Edge-Case-Tests gegen die Akzeptanzkriterien (alle ✅):
+
+- **Datei + Konsole gleichzeitig:** `logs/repair.log` wird beim Start angelegt; identische
+  Zeilen erscheinen in Datei und auf stdout, Format `YYYY-MM-DD HH:MM:SS LEVEL name: msg`.
+- **LOG_LEVEL-Fallback:** `LOG_LEVEL=verbose` → kein Crash, Root-Level bleibt DEBUG, Warnung
+  „Ungültiges LOG_LEVEL='VERBOSE' — Fallback auf DEBUG." geloggt.
+- **Idempotenz:** zweimaliger `setup_logging()`-Aufruf → Handler-Zahl bleibt 2 (keine Dopplung).
+- **Rotation:** Handler-Inspektion → `when=MIDNIGHT`, `backupCount=14`, `suffix=%Y-%m-%d`
+  (→ `repair.log.2026-05-30`).
+- **Werkzeug-Integration:** Live-Server (`FLASK_DEBUG=0`) → Werkzeug-Access-Zeilen
+  (`INFO werkzeug: … "GET … " 200`) landen in derselben Datei.
+- **Request-Logging zentral:** `GET /api/devices` → INFO, `GET /api/device/unbekannt` → WARNING
+  (404), via `after_request` (nicht pro Route).
+- **Unbehandelte Exception:** `/boom` (RuntimeError) → `ERROR repair.app: Unbehandelte Exception
+  …` **mit vollständigem Stacktrace**, HTTP-Antwort weiterhin sauberer 500 (`text/html`).
+- **API-Verhalten unverändert:** `POST /api/diagnose` → HTTP 200, `source=fallback`,
+  JSON mit echten Umlauten (`ensure_ascii=False`).
+- **Fach-Instrumentierung:** `repair.ai` loggt Diagnose-Quelle + Modell; `repair.store`,
+  `repair.lotse`, `repair.wissensbasis`, `repair.recherche`, `repair.multimodal` (nur
+  Metadaten, keine Rohbytes) loggen ihre Schlüssel-Ereignisse.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

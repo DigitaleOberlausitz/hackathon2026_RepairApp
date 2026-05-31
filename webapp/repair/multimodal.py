@@ -7,19 +7,24 @@ Speichert Fotos, Videos, Audio in webapp/media/ (gitignored).
     get_medium(id)              → (bytes, content_type) | None
     transkribiere(audio_bytes)  → {text, source:"whisper|hinweis", hinweis?}
 
-Typ/Größen-Limit: 10 MB. Scheitert nie hart.
+Typ/Größen-Limit: konfigurierbar über ``MAX_UPLOAD_BYTES`` (Default 10 MB).
+Scheitert nie hart.
 """
 
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import secrets
 
-# Medien-Verzeichnis: webapp/media/ (eine Ebene über repair/)
-MEDIA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media"))
+from . import config
 
-MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+log = logging.getLogger(__name__)
+
+# Medien-Verzeichnis: webapp/media/ (eine Ebene über repair/) — layout-abgeleitet,
+# bewusst keine .env-Konfiguration (PROJ-30).
+MEDIA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "media"))
 
 _MIME_TO_EXT: dict[str, str] = {
     "image/jpeg": ".jpg",
@@ -77,9 +82,11 @@ def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
     else:
         return {"id": "", "art": art, "ref": "", "hinweis": "Kein Medium übergeben."}
 
-    # Größen-Check
-    if len(raw_bytes) > MAX_BYTES:
-        return {"id": "", "art": art, "ref": "", "hinweis": "Medium zu groß (max. 10 MB)."}
+    # Größen-Check — Limit aus .env (MAX_UPLOAD_BYTES), Default 10 MB (PROJ-30)
+    max_bytes = config.max_upload_bytes()
+    if len(raw_bytes) > max_bytes:
+        mb = max_bytes / (1024 * 1024)
+        return {"id": "", "art": art, "ref": "", "hinweis": f"Medium zu groß (max. {mb:.0f} MB)."}
 
     if not raw_bytes:
         return {"id": "", "art": art, "ref": "", "hinweis": "Medium ist leer."}
@@ -94,8 +101,12 @@ def save_medium(data: bytes | str | None, art: str = "foto") -> dict:
         with open(filepath, "wb") as f:
             f.write(raw_bytes)
     except Exception as exc:
+        log.warning("Medium-Speichern fehlgeschlagen (art=%s, %d Bytes): %s", art, len(raw_bytes), exc)
         return {"id": "", "art": art, "ref": "", "hinweis": f"Speichern fehlgeschlagen: {exc}"}
 
+    # Nur Metadaten loggen — niemals die rohen Datei-Bytes.
+    log.info("Medium gespeichert: id=%s art=%s typ=%s größe=%d Bytes",
+             mid, art, content_type, len(raw_bytes))
     return {
         "id": mid,
         "art": art,
@@ -165,10 +176,11 @@ def transkribiere(audio_bytes: bytes | None = None) -> dict:
         try:
             with open(tmp_path, "rb") as f:
                 result = client.audio.transcriptions.create(
-                    model="whisper-1",
+                    model=config.whisper_model(),
                     file=f,
                     language="de",
                 )
+            log.info("Transkription erfolgreich: source=whisper (%d Bytes Audio)", len(audio_bytes))
             return {"text": result.text or "", "source": "whisper"}
         finally:
             try:
@@ -176,6 +188,7 @@ def transkribiere(audio_bytes: bytes | None = None) -> dict:
             except Exception:
                 pass
     except Exception as exc:
+        log.warning("Transkription fehlgeschlagen: %s", exc)
         return {
             "text": "",
             "source": "hinweis",

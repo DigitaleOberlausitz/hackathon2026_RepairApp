@@ -1,6 +1,6 @@
 # PROJ-16: Recherche-Dienst — kuratiert zuerst, KI-Fallback gekennzeichnet, online
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

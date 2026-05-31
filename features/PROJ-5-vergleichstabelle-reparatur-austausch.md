@@ -1,6 +1,6 @@
 # PROJ-5: Reparatur-vs-Austausch-Vergleich für alle Fälle
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

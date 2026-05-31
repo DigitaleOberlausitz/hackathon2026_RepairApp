@@ -1,6 +1,6 @@
 # PROJ-2: Echte Freitext-Antwort in der Triage erfassen
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

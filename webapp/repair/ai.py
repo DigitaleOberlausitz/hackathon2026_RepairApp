@@ -23,14 +23,29 @@ gescheitert (kein Crash), aber auch nichts erfunden.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 
+from . import config
 from .schema import DeviceValidationError, normalize_device
+
+log = logging.getLogger(__name__)
+
+# Freitext fürs Log kürzen, damit sehr lange Eingaben das Log nicht fluten.
+_LOG_TEXT_MAX = 200
+
+
+def _kurz(text: str) -> str:
+    text = (text or "").replace("\n", " ")
+    if len(text) > _LOG_TEXT_MAX:
+        return text[:_LOG_TEXT_MAX] + f"… [+{len(text) - _LOG_TEXT_MAX} Zeichen]"
+    return text
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_OLLAMA_MODEL = "qwen3:8b"
-DEFAULT_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
+# Der LLM-Timeout (LLM_TIMEOUT) wird zentral in repair/config.py verwaltet
+# (config.DEFAULT_LLM_TIMEOUT) — kein zweiter Default hier (PROJ-30).
 
 # Reasoning-Modelle (z. B. Qwen3) liefern teils <think>…</think>-Blöcke vor
 # dem JSON. Die schneiden wir defensiv heraus, bevor wir parsen.
@@ -320,22 +335,24 @@ def diagnose(
     Signatur additiv erweitert: bestehende Aufrufe ``diagnose(text)`` bleiben gültig.
     """
     text = (text or "").strip()
+    log.debug("Diagnose-Anfrage: kategorie=%r lang=%s text=%r", kategorie, lang, _kurz(text))
     if not text:
+        log.info("Diagnose ohne Freitext → Fehler (empty).")
         return _error("Bitte beschreibe zuerst, was kaputt ist.", "empty")
 
     client, model, is_local = _resolve_backend()
     if client is None:
+        log.info("Kein KI-Backend konfiguriert/verfügbar → Fehler (no_backend).")
         return _error(
             "Es ist kein KI-Backend konfiguriert (lokales Ollama via "
             "OLLAMA_BASE_URL oder OpenAI via OPENAI_API_KEY) — die Diagnose "
             "ist deshalb nicht verfügbar.",
             "no_backend",
         )
+    log.debug("KI-Backend gewählt: %s, Modell=%s", "Ollama (lokal)" if is_local else "OpenAI-Cloud", model)
 
-    try:
-        timeout = float(os.environ.get("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
-    except (TypeError, ValueError):
-        timeout = DEFAULT_TIMEOUT
+    # PROJ-30: Timeout aus .env (LLM_TIMEOUT), zentral validiert; Default 180 s.
+    timeout = config.llm_timeout()
 
     # Qwen3 & Co. erzeugen sonst lange <think>-Ketten vor dem JSON — auf der CPU
     # zu teuer. "/no_think" schaltet das für lokale Modelle ab (harmlos für
@@ -358,6 +375,12 @@ def diagnose(
                 {"role": "user", "content": f"Problembeschreibung: {text}"},
             ],
         )
+        # PROJ-28: Token-Usage des echten KI-Calls fürs Anfrage-Protokoll melden.
+        try:
+            from . import protokoll_log
+            protokoll_log.merke_usage(model, getattr(response, "usage", None))
+        except Exception:
+            pass
         content = response.choices[0].message.content
         if not content:
             return _error("Die KI hat keine Antwort geliefert. Bitte versuch es noch einmal.", "ai_error")
@@ -378,6 +401,11 @@ def diagnose(
                 content2 = response2.choices[0].message.content
                 if content2:
                     content = content2
+                    try:
+                        from . import protokoll_log
+                        protokoll_log.merke_usage(model, getattr(response2, "usage", None))
+                    except Exception:
+                        pass
             except Exception:
                 pass  # Ersten Versuch behalten
 
@@ -385,11 +413,15 @@ def diagnose(
         device = normalize_device(raw)
         diagnosis = _build_diagnosis(device, "ai")
         diagnosis = _add_kuratierte_felder(diagnosis, text, kategorie, answers, lang)
+        log.info("Diagnose-Quelle=ai — Modell=%s, Gerät=%r, gefährlich=%s.",
+                 model, (device or {}).get("id"), _is_dangerous(device))
         return {"device": device, "source": "ai", "diagnosis": diagnosis}
-    except (json.JSONDecodeError, DeviceValidationError):
+    except (json.JSONDecodeError, DeviceValidationError) as exc:
+        log.warning("KI-Antwort unbrauchbar (%s: %s) → Fehler (ai_error).", type(exc).__name__, exc)
         return _error("Die KI-Antwort war unbrauchbar. Bitte versuch es noch einmal.", "ai_error")
-    except Exception:
+    except Exception as exc:
         # Netzwerk, API-Fehler, alles andere — kein Crash, aber ehrlicher Fehler.
+        log.warning("KI-Call fehlgeschlagen (%s: %s) → Fehler (ai_error).", type(exc).__name__, exc)
         return _error("Die Diagnose ist fehlgeschlagen. Bitte versuch es später noch einmal.", "ai_error")
 
 

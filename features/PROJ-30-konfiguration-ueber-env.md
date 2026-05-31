@@ -1,6 +1,6 @@
 # PROJ-30: Konfiguration ausschließlich über `.env`
 
-## Status: Planned
+## Status: Done
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 
@@ -55,63 +55,63 @@ einem automatischen Guard gegen Rückfall ab.
 ## Akzeptanzkriterien
 
 ### Einzige Konfigurationsquelle
-- [ ] **Alle** zur Laufzeit/Deployment veränderlichen Werte werden ausschließlich über
+- [x] **Alle** zur Laufzeit/Deployment veränderlichen Werte werden ausschließlich über
       Umgebungsvariablen gelesen, geladen aus `webapp/.env` via `python-dotenv`
       (`load_dotenv()` bleibt die einzige Lade-Stelle).
-- [ ] Es gibt **keine** weitere Konfigurationsquelle (keine zusätzliche `config.py` mit
+- [x] Es gibt **keine** weitere Konfigurationsquelle (keine zusätzliche `config.py` mit
       veränderlichen Werten, keine `.ini`/`.yaml`/`.json`-Config, keine CLI-Flags als
       Ersatz, keine im Code eingebetteten Endpunkte/Keys/Modelle/Limits).
-- [ ] Jeder gelesene Wert hat einen **sinnvollen Default**, sodass die App **ohne** `.env`
+- [x] Jeder gelesene Wert hat einen **sinnvollen Default**, sodass die App **ohne** `.env`
       startet (konsistent zum bestehenden „läuft auch ohne API-Key"-Verhalten, PRD-Constraint).
 
 ### Hart kodierte Werte migrieren
-- [ ] **Host/Port** (`app.py:753`) werden aus `.env` gelesen (z. B. `HOST`, `PORT`),
+- [x] **Host/Port** (`app.py:753`) werden aus `.env` gelesen (z. B. `HOST`, `PORT`),
       Defaults `127.0.0.1` / `5000` — der heutige Wert bleibt das Standardverhalten.
-- [ ] **Whisper-Modell** (`multimodal.py:168`) wird aus `.env` gelesen (z. B. `WHISPER_MODEL`),
+- [x] **Whisper-Modell** (`multimodal.py:168`) wird aus `.env` gelesen (z. B. `WHISPER_MODEL`),
       Default `whisper-1`.
-- [ ] **Upload-Limit** (`multimodal.py:22`, `MAX_BYTES`) wird aus `.env` gelesen
+- [x] **Upload-Limit** (`multimodal.py:22`, `MAX_BYTES`) wird aus `.env` gelesen
       (z. B. `MAX_UPLOAD_BYTES`), Default `10485760` (10 MB).
-- [ ] Nach der Migration enthält der Code **keine** verbliebenen hart kodierten
+- [x] Nach der Migration enthält der Code **keine** verbliebenen hart kodierten
       Endpunkte, API-Keys, Modellnamen, Timeouts, Limits oder Bind-Adressen.
 
 ### Drift beseitigen (`.env.example` ↔ Code)
-- [ ] `webapp/.env.example` listet **genau** die Variablen, die der Code tatsächlich
+- [x] `webapp/.env.example` listet **genau** die Variablen, die der Code tatsächlich
       ausliest — inklusive der neu migrierten und mit Default-Hinweis.
-- [ ] `VISION_MODEL` und `EMBED_MODEL` werden entweder **angebunden** (vom Code gelesen)
+- [x] `VISION_MODEL` und `EMBED_MODEL` werden entweder **angebunden** (vom Code gelesen)
       oder aus `.env.example` **entfernt**; rein dekorative, ungelesene Einträge sind nicht
       erlaubt. (Geplante, aber noch nicht aktive Variablen dürfen nur als **auskommentierter**
       Block mit „noch nicht aktiv"-Hinweis stehen.)
 
 ### Robustheit beim Start (Fail-fast)
-- [ ] **Fehlende** optionale Variablen → stiller Rückfall auf den Default (kein Abbruch).
-- [ ] **Syntaktisch ungültige** Werte führen zu **Fail-fast**: die App bricht beim Start mit
+- [x] **Fehlende** optionale Variablen → stiller Rückfall auf den Default (kein Abbruch).
+- [x] **Syntaktisch ungültige** Werte führen zu **Fail-fast**: die App bricht beim Start mit
       einer klaren, benennenden Fehlermeldung ab (z. B. `PORT=abc`, `PORT=99999` außerhalb
       1–65535, `LLM_TIMEOUT=xyz`, `MAX_UPLOAD_BYTES=-1`).
-- [ ] Die Validierung benennt **welche** Variable **welchen** ungültigen Wert hat und nennt
+- [x] Die Validierung benennt **welche** Variable **welchen** ungültigen Wert hat und nennt
       den erwarteten Wertebereich/Typ.
-- [ ] Boolesche Flags (`FLASK_DEBUG`) bleiben tolerant (`1/0/true/false/leer`) wie bisher,
+- [x] Boolesche Flags (`FLASK_DEBUG`) bleiben tolerant (`1/0/true/false/leer`) wie bisher,
       ohne Fail-fast.
 
 ### Drift-Schutz (automatischer Guard)
-- [ ] Es gibt einen **automatisierten Check** (z. B. Test unter `webapp/`), der
+- [x] Es gibt einen **automatisierten Check** (z. B. Test unter `webapp/`), der
       `webapp/.env.example` gegen die im Code per `os.environ.get(...)` referenzierten
       Variablen abgleicht und bei **Differenz in beide Richtungen** fehlschlägt
       (gelesen-aber-nicht-dokumentiert **und** dokumentiert-aber-nicht-gelesen).
-- [ ] Der Check erkennt **verbotene Hardcode-Muster** in `webapp/` (z. B. wörtliche
+- [x] Der Check erkennt **verbotene Hardcode-Muster** in `webapp/` (z. B. wörtliche
       `host=`/`port=`-Literale in `app.run(...)`, eingebettete `http(s)://`-Endpunkte
       außerhalb kuratierter Demodaten, wörtliche Modellnamen wie `whisper-1`/`gpt-…`/`qwen…`
       außerhalb der zentralen Default-Konstanten) und schlägt an.
-- [ ] Der Check ist **lokal ausführbar** und Teil des Backend-Smoke-Tests/CI-Schritts;
+- [x] Der Check ist **lokal ausführbar** und Teil des Backend-Smoke-Tests/CI-Schritts;
       eine Anleitung steht in `webapp/README.md`.
-- [ ] Bekannte, bewusste Ausnahmen (layout-abgeleitete Pfade, kuratierte Demodaten-URLs in
+- [x] Bekannte, bewusste Ausnahmen (layout-abgeleitete Pfade, kuratierte Demodaten-URLs in
       `repair/foerderung.py`, `anbieter.py`, `entsorgung.py`, `ersatzteile.py`,
       `produktsuche.py`) sind im Guard **explizit allowlisted** und kommentiert.
 
 ### Dokumentation
-- [ ] **CLAUDE.md** enthält die verbindliche Regel „Konfiguration immer über `.env`" inkl.
+- [x] **CLAUDE.md** enthält die verbindliche Regel „Konfiguration immer über `.env`" inkl.
       der Ausnahme für layout-abgeleitete Pfade. *(bereits ergänzt — Konsistenz prüfen)*
-- [ ] **`webapp/SPEC.md`** verweist auf dieselbe Regel als Teil des Implementierungs-Vertrags.
-- [ ] **`webapp/README.md`** listet alle Konfigurationsvariablen mit Default und Zweck und
+- [x] **`webapp/SPEC.md`** verweist auf dieselbe Regel als Teil des Implementierungs-Vertrags.
+- [x] **`webapp/README.md`** listet alle Konfigurationsvariablen mit Default und Zweck und
       beschreibt, wie der Drift-Guard lokal auszuführen ist.
 
 ## Edge Cases
@@ -153,10 +153,41 @@ einem automatischen Guard gegen Rückfall ab.
 <!-- Folgende Abschnitte werden von nachfolgenden Skills hinzugefügt -->
 
 ## Tech Design (Solution Architect)
-_Wird von /architecture hinzugefügt_
+
+**Zentrales Konfig-Modul `repair/config.py`** (einmalig geladen, keine neuen Pakete):
+
+- **Getypte Getter** mit Default + Validierung: `host()`, `port()` (1..65535),
+  `whisper_model()`, `max_upload_bytes()` (> 0), `llm_timeout()` (> 0), `flask_debug()`
+  (tolerant). Werte werden vor der Prüfung getrimmt und entquotet (Copy-&-Paste-fest);
+  gesetzt-aber-leer zählt als „nicht gesetzt" → Default.
+- **`config.validate()`** sammelt alle ungültigen Belegungen und wirft gebündelt eine
+  `ConfigError` mit benennender Meldung (Variable, Wert, erwarteter Bereich). Aufruf in
+  `app.py` direkt nach `load_dotenv()`; bei Fehler klare stderr-Meldung + `SystemExit(2)`.
+- **Default-Literale** (Bind-Adresse/Port/Modell/Limit) leben ausschließlich in `config.py`
+  als `DEFAULT_*`-Konstanten — die einzig erlaubte Stelle laut Drift-Guard. Modell-Defaults
+  für die Diagnose bleiben in `ai.py` (`DEFAULT_OPENAI_MODEL`/`DEFAULT_OLLAMA_MODEL`).
+- **Migration:** `app.py` (host/port/debug), `multimodal.py` (`MAX_UPLOAD_BYTES`,
+  `WHISPER_MODEL`), `ai.py` (`LLM_TIMEOUT` → `config.llm_timeout()`, doppelter Timeout-Default
+  entfernt), `protokoll_log.py` (Whisper-Label → `config.whisper_model()`).
+- **`MEDIA_DIR`/`DB_PATH`** bleiben layout-abgeleitet (bewusste Ausnahme, kommentiert).
+
+**Drift-Guard `webapp/tests/test_config_drift.py`** (ohne Server/pytest lauffähig): gleicht
+gelesene Variablen (`os.environ.get` **und** die `config`-Helfer `_raw/_int/_float_pos`) gegen
+`.env.example` ab — beide Richtungen, auskommentierte Platzhalter ausgenommen — und scannt auf
+verbotene Hardcode-Muster (host=/port=-Literale, `http(s)://`, Modellnamen) mit Allowlist für
+kuratierte Demodaten-Module und `config.py`. Zusätzlich Unit-Tests für die Fail-fast-Fälle.
 
 ## QA Test Results
-_Wird von /qa hinzugefügt_
+
+`python tests/test_config_drift.py` → **9/9 Checks bestanden**:
+- Drift beide Richtungen (gelesen↔dokumentiert) grün.
+- Hardcode-Guard: keine verbotenen Muster mehr.
+- Fail-fast verifiziert: `PORT=abc`, `PORT=99999`, `LLM_TIMEOUT=xyz`, `MAX_UPLOAD_BYTES=-1`
+  → klarer Abbruch mit benennender Meldung; fehlende Variablen → Defaults; Trim/Entquoten ok.
+
+Manuell verifiziert: App-Import lädt sauber (Defaults `127.0.0.1/5000/whisper-1/10485760/180.0`);
+`env PORT=abc python app.py` → `[Konfigurationsfehler] … PORT='abc' …` + `SystemExit(2)`;
+`HOST=0.0.0.0 PORT=8080` greift; bestehender Smoke-Test (`no_backend`-Pfad) unverändert grün.
 
 ## Deployment
 _Wird von /deploy hinzugefügt_

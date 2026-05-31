@@ -5,3 +5,6 @@ __pycache__/
 vorgaenge.db
 wissensbasis.db
 media/
+protokolle/
+logs/
+*.log

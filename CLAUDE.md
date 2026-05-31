@@ -49,13 +49,22 @@ startet der Server zwar**, aber `POST /api/diagnose` liefert einen sauberen Fehl
 `load_dotenv()` in `app.py`). Keine separate Config-Datei, keine hartcodierten Endpunkte,
 Keys, Modelle oder Limits im Code.
 
-- Neue Konfigurationswerte: per `os.environ.get("NAME")` lesen **und** in `webapp/.env.example`
-  (inkl. Default-Hinweis) dokumentieren. `.env` selbst ist gitignored — nie einchecken.
+- Neue Konfigurationswerte: per `os.environ.get("NAME")` (bzw. einen Getter in
+  `repair/config.py`) lesen **und** in `webapp/.env.example` (inkl. Default-Hinweis)
+  dokumentieren. `.env` selbst ist gitignored — nie einchecken.
 - Jeder gelesene Wert braucht einen sinnvollen Default, damit die App ohne `.env` startet.
 - `.env.example` und tatsächlich gelesene Variablen synchron halten (kein Drift: nur
-  dokumentieren, was der Code auch ausliest).
+  dokumentieren, was der Code auch ausliest). Der **Drift-Guard**
+  `webapp/tests/test_config_drift.py` erzwingt das in beide Richtungen und schlägt bei
+  verbotenen Hardcode-Mustern an (lokal: `python tests/test_config_drift.py`).
+- **Zentral & Fail-fast (PROJ-30):** getypte/validierte Werte bündelt `repair/config.py`;
+  `config.validate()` läuft beim Start in `app.py` und bricht bei syntaktisch ungültigen
+  Werten (z. B. `PORT=abc`) mit klarer, benennender Meldung ab. Default-Literale für
+  Bind-Adresse/Port/Modelle/Limits stehen **nur** dort (bzw. `ai.py` `DEFAULT_*_MODEL`).
 - Aktuell ausgewertet: `OLLAMA_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `OLLAMA_MODEL`,
-  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `SEARXNG_URL`, `FLASK_DEBUG`.
+  `DIAGNOSE_MODEL`, `LLM_TIMEOUT`, `WHISPER_MODEL`, `MAX_UPLOAD_BYTES`, `SEARXNG_URL`,
+  `PROTOKOLL_ENABLED`, `LOG_LEVEL`, `FLASK_DEBUG`, `HOST`, `PORT`. Geplant/noch nicht aktiv
+  (auskommentiert in `.env.example`): `VISION_MODEL`, `EMBED_MODEL`.
 - Ausnahme (kein `.env` nötig): paket-relative Pfade, die aus dem Dateilayout abgeleitet
   werden (`store.py`/`wissensbasis.py` → `DB_PATH`, `multimodal.py` → `MEDIA_DIR`) — das ist
   Layout, keine Deployment-Konfiguration.
@@ -70,8 +79,11 @@ Theme-Tokens stehen verbindlich in **`webapp/SPEC.md`** — vor Änderungen dort
 webapp/
   app.py               Flask-App + Routen (GET /, POST /api/diagnose, Stufe-2/3-Dienste)
   repair/
+    config.py          zentrale .env-Konfiguration: getypte Getter + Fail-fast-Validierung (PROJ-30)
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
     ai.py              diagnose() — reine LLM-Diagnose; ohne Backend/Fehler → Fehler-Objekt
+    logconf.py         setup_logging() — zentrales Logging (Datei+Konsole, tägl. Rotation, PROJ-29)
+    protokoll_log.py   protokolliere() — Anfrage-Protokoll als Markdown pro Vorgang (PROJ-28)
   templates/index.html SPA-Shell
   static/js/           ui.js · screens.js · app.js (Statemachine, Theme-Switcher)
   static/css/repair.css Komponenten-Styling + 3 Themes (Default: Werkstatt)
@@ -84,6 +96,11 @@ webapp/
   `/api/wissensbasis` …) liefern weiterhin **kuratierte** Daten — das ist kein Demo-Gerät-Seed.
 - Gefährliche Geräte (Hochspannung/Gas/Strom) → in der KI-Antwort `accentPath="stop"`,
   `recommend="pro"`, `lights.Sicherheit.level="stop"`.
+- **Logging (PROJ-29):** `repair/logconf.py` → `setup_logging()` wird in `app.py` einmalig
+  vor App-Start aufgerufen. Schreibt gleichzeitig nach `webapp/logs/repair.log` (täglich
+  rotiert, 14 Tage, gitignored) und auf die Konsole. Level über `LOG_LEVEL` (Default `DEBUG`).
+  Fach-Module loggen über `logging.getLogger(__name__)` (`repair.<modul>`). ⚠ Auf `DEBUG`
+  landen Klartext-Nutzereingaben (PII) — nur lokal/Dev, produktiv mind. `INFO`.
 
 ## Konzept-PDF bauen
 

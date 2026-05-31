@@ -81,6 +81,18 @@ Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Vari
   Fehlerfall (nie hart scheitern): `{ "error": "…", "code": "…" }` mit HTTP-Status —
   `400` (leerer Text, `empty`), `503` (kein Backend, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
 
+## Konfiguration — ausschließlich über `.env` (verbindlich, PROJ-30)
+
+Jede zur Laufzeit/Deployment veränderliche Einstellung wird **nur** über Umgebungsvariablen
+gesteuert (geladen aus `webapp/.env` via `python-dotenv`; `load_dotenv()` in `app.py` ist die
+einzige Lade-Stelle). **Keine** zweite Konfigurationsquelle, **keine** hartkodierten Endpunkte,
+Keys, Modelle, Limits oder Bind-Adressen im Code. Getypte/validierte Werte bündelt
+`repair/config.py`; jeder Wert hat einen sinnvollen Default (App startet auch ohne `.env`).
+Ungültige Werte → **Fail-fast** beim Start (`config.validate()`). Neue Konfig: per
+`os.environ.get(...)`/`config`-Getter lesen **und** in `.env.example` dokumentieren — der
+Drift-Guard `tests/test_config_drift.py` erzwingt beides (lauffähig ohne Server). Ausnahme:
+layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`). Vollständige Variablentabelle: `README.md`.
+
 ## ChatGPT-Integration (AGENT-A, `repair/ai.py`)
 
 - Lib: `openai` (>=1.0). Key aus `OPENAI_API_KEY` (via `python-dotenv`). Modell aus `OPENAI_MODEL` (Default `gpt-4o-mini`).

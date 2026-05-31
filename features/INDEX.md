@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-31
+**Next Available ID:** PROJ-32
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -38,25 +38,36 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-15 | Kuratierte Fehlerzustand-Sammlung | `wissensbasis` | D13/D5 | Planned | — |
-| PROJ-16 | Recherche-Dienst (kuratiert→Fallback→online) | `recherche` | D2 | Planned | PROJ-15 |
-| PROJ-17 | Diagnose auf kuratierter Sammlung | `diagnose` | D4 | Planned | PROJ-15, PROJ-16 |
-| PROJ-18 | Rollen-/Agenten-Architektur | `lotse` | D19 | Planned | PROJ-9 |
-| PROJ-19 | Rückruf / Sicherheitsmangel | Edge-Case | D22 | Planned | PROJ-15 |
-| PROJ-20 | Datenlöschung vor Fremdabgabe | Edge-Case | D23 | Planned | PROJ-1, PROJ-10 |
-| PROJ-21 | Mehrfachdefekte mit Gesamt-Fazit | `bewertung` | D24 | Planned | PROJ-9 |
-| PROJ-22 | Consent-Gate (Einwilligung) | `lotse` | D10 | Planned | — |
-| PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Planned | PROJ-9, PROJ-22 |
-| PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Planned | — |
-| PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Planned | — |
+| PROJ-15 | Kuratierte Fehlerzustand-Sammlung | `wissensbasis` | D13/D5 | Done | — |
+| PROJ-16 | Recherche-Dienst (kuratiert→Fallback→online) | `recherche` | D2 | Done | PROJ-15 |
+| PROJ-17 | Diagnose auf kuratierter Sammlung | `diagnose` | D4 | Done | PROJ-15, PROJ-16 |
+| PROJ-18 | Rollen-/Agenten-Architektur | `lotse` | D19 | Done | PROJ-9 |
+| PROJ-19 | Rückruf / Sicherheitsmangel | Edge-Case | D22 | Done | PROJ-15 |
+| PROJ-20 | Datenlöschung vor Fremdabgabe | Edge-Case | D23 | Done | PROJ-1, PROJ-10 |
+| PROJ-21 | Mehrfachdefekte mit Gesamt-Fazit | `bewertung` | D24 | Done | PROJ-9 |
+| PROJ-22 | Consent-Gate (Einwilligung) | `lotse` | D10 | Done | — |
+| PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Done | PROJ-9, PROJ-22 |
+| PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Done | — |
+| PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Done | — |
+| PROJ-31 | Vision-Diagnose aus Foto & Dokument | `aufnahme`/`diagnose` | D9 | Planned | PROJ-27, PROJ-9 |
 
 ## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Planned | PROJ-9 |
-| PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Planned | — |
-| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Planned | (Bezug: PROJ-29) |
+| PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Done | PROJ-9 |
+| PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Done | — |
+| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Done | (Bezug: PROJ-29) |
+
+> **Offene Punkte (Stand 2026-05-31):** **PROJ-31** (Vision-Diagnose aus Foto & Dokument)
+> ist neu spezifiziert und `Planned` — baut auf PROJ-27/PROJ-9 auf. Alle übrigen Feature-IDs
+> (PROJ-1…30) sind auf `Done`.
+> PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
+> Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,
+> Level über `LOG_LEVEL` (Default DEBUG), Werkzeug-Integration, zentrales Request-Logging
+> und Stacktrace bei unbehandelten Exceptions. PROJ-28 (Anfrage-Protokoll,
+> `repair/protokoll_log.py`) und PROJ-30 (`.env`-Konfiguration, kein Drift) sind ebenfalls
+> abgeschlossen.
 
 ## Empfohlene Build-Reihenfolge
 

@@ -1,6 +1,6 @@
 # PROJ-24: Mehrsprachigkeit — Englisch zum Start
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30
