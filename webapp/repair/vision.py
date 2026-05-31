@@ -15,10 +15,9 @@ Zweistufig (siehe ``features/PROJ-31``):
   (Data-URLs) für den multimodalen Diagnose-Call. Die eigentliche Diagnose bleibt
   in :mod:`repair.ai` (Schema unverändert).
 
-Backend-Wahl ist konsistent zu :func:`repair.ai._resolve_backend` (lokales Ollama
-vor OpenAI). Das Vision-Modell kommt aus ``VISION_MODEL`` (``.env``); ohne Override
-gilt für Ollama ``config.DEFAULT_VISION_MODEL`` und für OpenAI das Cloud-Modell
-(das ebenfalls Vision kann).
+Backend ist durchgehend OpenAI (konsistent zu :func:`repair.ai._resolve_backend`).
+Das Vision-Modell kommt aus ``VISION_MODEL`` (``.env``); ohne Override gilt das
+Cloud-Diagnose-Modell (``OPENAI_MODEL`` / ``gpt-4o-…``, das ebenfalls Vision kann).
 
 **Scheitert nie hart** (D15 „warnen statt sperren"): ohne Vision-Backend, bei
 Timeout, ungültiger Antwort oder fehlgeschlagener PDF-Konvertierung gibt es ein
@@ -41,32 +40,24 @@ log = logging.getLogger(__name__)
 
 
 def _resolve_vision_backend():
-    """Liefert ``(client, model, is_local)`` für die Vision-Auswertung — oder
-    ``(None, None, False)``, wenn kein LLM-Backend konfiguriert/verfügbar ist.
+    """Liefert ``(client, model)`` für die Vision-Auswertung — oder ``(None, None)``,
+    wenn kein OpenAI-Backend konfiguriert/verfügbar ist.
 
-    Reihenfolge wie bei der Text-Diagnose: lokaler Ollama vor OpenAI-Cloud. Das
-    Modell wird aber auf das Vision-Modell umgestellt:
-      * ``VISION_MODEL`` (Override aus ``.env``) hat immer Vorrang,
-      * sonst lokal → ``config.DEFAULT_VISION_MODEL`` (qwen-VL),
-      * sonst Cloud → das Diagnose-/Cloud-Modell (gpt-4o-… kann Vision).
+    Backend wie bei der Text-Diagnose (OpenAI-Cloud). Das Modell wird auf das
+    Vision-Modell umgestellt: ``VISION_MODEL`` (Override aus ``.env``) hat Vorrang,
+    sonst gilt das Cloud-Diagnose-Modell (``OPENAI_MODEL`` / ``gpt-4o-…``, das
+    ebenfalls Vision kann).
     """
-    client, diag_model, is_local = ai._resolve_backend()
+    client, diag_model = ai._resolve_backend()
     if client is None:
-        return None, None, False
-
-    override = config.vision_model()
-    if override:
-        model = override
-    elif is_local:
-        model = config.DEFAULT_VISION_MODEL
-    else:
-        model = diag_model
-    return client, model, is_local
+        return None, None
+    model = config.vision_model() or diag_model
+    return client, model
 
 
 def vision_verfuegbar() -> bool:
     """True, wenn ein Vision-Backend konfiguriert/erreichbar ist."""
-    client, _, _ = _resolve_vision_backend()
+    client, _ = _resolve_vision_backend()
     return client is not None
 
 
@@ -299,7 +290,7 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
             "nichtsErkannt": True,
         }
 
-    client, model, is_local = _resolve_vision_backend()
+    client, model = _resolve_vision_backend()
     if client is None:
         log.info("Vision-Extraktion: kein Vision-Backend → Degradation auf Text-Diagnose.")
         return {
@@ -314,8 +305,6 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
 
     timeout = config.llm_timeout()
     system_prompt = EXTRAKT_SYSTEM_PROMPT
-    if is_local:
-        system_prompt += "\n\n/no_think"
 
     user_text = "Werte die beigefügten Bilder/Dokumente aus."
     if (text or "").strip():

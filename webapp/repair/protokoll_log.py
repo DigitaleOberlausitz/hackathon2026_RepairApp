@@ -125,12 +125,7 @@ def _attr(obj, name):
 
 def _konfiguriertes_modell() -> str:
     """Konfiguriertes Diagnose-Modell (für die Fallback-Token-Zeile)."""
-    return (
-        os.environ.get("DIAGNOSE_MODEL")
-        or os.environ.get("OPENAI_MODEL")
-        or os.environ.get("OLLAMA_MODEL")
-        or "—"
-    )
+    return os.environ.get("OPENAI_MODEL") or "—"
 
 
 # ─── Schreiben ────────────────────────────────────────────────────────────────

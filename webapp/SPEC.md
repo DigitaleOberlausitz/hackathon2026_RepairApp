@@ -1,4 +1,4 @@
-# Reparatur-Helfer — Implementierungs-Vertrag (verbindlich für alle Agenten)
+# Reparatur-Helfer — Implementierungs-Vertrag (verbindlich)
 
 Wir bauen den Claude-Design-Prototyp `ReparaturApp.html` als echte Web-App nach.
 Quelle / Design-of-truth: `../docs/design-handoff/project/` (HTML/CSS/JSX-Prototyp).
@@ -7,32 +7,40 @@ Quelle / Design-of-truth: `../docs/design-handoff/project/` (HTML/CSS/JSX-Protot
 Stack: **Python (Flask)** Backend + **Vanilla-JS**-Statemachine im Frontend + **Tailwind CSS**.
 Zusätzlich: **OpenAI ChatGPT-API** für echte Live-Diagnose aus Freitext.
 
-## Verzeichnis & Dateieigentum (DISJUNKT — kein Agent fasst fremde Dateien an)
+> Dieses Dokument ist der **lebende Vertrag** der Web-App: Datenschema, API,
+> Klassennamen-Kopplung (JS↔CSS) und Theme-Tokens. Bei jeder Änderung an
+> `ai.py`, dem Frontend oder dem CSS hier zuerst nachsehen. (Die historischen
+> Stufen-Baupläne STUFE1–3 wurden nach Umsetzung entfernt — die PROJ-Historie
+> steht in `../features/INDEX.md` und in Git.)
+
+## Verzeichnis
 
 ```
 webapp/
-  app.py                 [AGENT-A]  Flask-App, Routen
-  requirements.txt       [AGENT-A]
-  .env.example           [AGENT-A]
-  README.md              [AGENT-A]  Setup/Run/Test-Anleitung
+  app.py                 Flask-App, Routen
+  requirements.txt
+  .env.example
+  README.md              Setup/Run/Test-Anleitung
   repair/
-    __init__.py          [AGENT-A]
-    (data.py entfällt — keine Demo-/Seed-Geräte mehr; Diagnose nur via LLM)
-    ai.py                [AGENT-A]  LLM-Diagnose -> device-Objekt (Text + opt. Bild-Evidenz, PROJ-31)
-    vision.py            [AGENT-A]  Vision-Extraktion (Stufe 1) + PDF->Bild + Diagnose-Kontext (PROJ-31)
-    schema.py            [AGENT-A]  Validierung/Normalisierung eines device-Objekts
+    __init__.py
+    config.py            zentrale .env-Konfiguration (getypte Getter + Fail-fast, PROJ-30)
+    ai.py                OpenAI-ChatGPT-Diagnose -> device-Objekt (Text + opt. Bild-Evidenz, PROJ-31)
+    vision.py            Vision-Extraktion (Stufe 1) + PDF->Bild + Diagnose-Kontext (PROJ-31)
+    schema.py            Validierung/Normalisierung eines device-Objekts
+    …                    weitere Fach-Module (siehe README „Projektstruktur")
   templates/
-    index.html           [AGENT-B]  SPA-Shell (enthält den HEAD-BLOCK unten 1:1)
+    index.html           SPA-Shell (enthält den HEAD-BLOCK unten 1:1)
   static/
     js/
-      ui.js              [AGENT-B]  Bausteine (PhoneFrame, Screen, AppBar, Buttons, Ampel, Sheet)
-      screens.js         [AGENT-B]  Screen-Renderer (Start, Triage, Ampel, Decision, Repair, Result, Path, Protocol)
-      app.js             [AGENT-B]  Statemachine + Fetch der Geräte + Live-Diagnose + Theme-Switcher
+      ui.js              Bausteine (PhoneFrame, Screen, AppBar, Buttons, Ampel, Sheet)
+      screens.js         Screen-Renderer (Start, Triage, Ampel, Decision, Repair, Result, Path, Protocol)
+      app.js             Statemachine + Live-Diagnose + Theme-Switcher
     css/
-      repair.css         [AGENT-C]  Komponenten-Styling + Themes (Port von repair.css + repair-themes.js)
+      repair.css         Komponenten-Styling + Themes (Port von repair.css + repair-themes.js)
 ```
 
-Gemeinsame Verträge (Schema, Klassennamen, HEAD-Block) stehen unten — daran halten sich alle.
+Es gibt **keine** Demo-/Seed-Geräte; die Diagnose läuft ausschließlich über OpenAI.
+Die gemeinsamen Verträge (Schema, Klassennamen, HEAD-Block) stehen unten.
 
 ## Datenvertrag: das `device`-Objekt (Backend liefert, Frontend rendert)
 
@@ -72,15 +80,14 @@ JSON-Schlüssel exakt so (Port von `repair-data.js`):
 
 Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Variablen `--gut|--mittel|--stop` (+ `-bg`,`-ink`).
 
-## API-Endpunkte (AGENT-A implementiert, AGENT-B konsumiert)
+## API-Endpunkte
 
 - `GET  /`                      → rendert `index.html`
 - `POST /api/diagnose`          → Body `{ "text": "Mein Toaster wirft nicht mehr aus" }`
                                    Erfolg: `{ "device": {device…}, "source": "ai", "diagnosis": {…} }` (HTTP 200).
-                                   Nutzt ein echtes LLM-Backend (lokales Ollama oder OpenAI). Es gibt keine
-                                   hinterlegten Demo-/Seed-Geräte mehr.
+                                   Nutzt die OpenAI-Cloud. Es gibt keine hinterlegten Demo-/Seed-Geräte.
   Fehlerfall (nie hart scheitern): `{ "error": "…", "code": "…" }` mit HTTP-Status —
-  `400` (leerer Text, `empty`), `503` (kein Backend, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
+  `400` (leerer Text, `empty`), `503` (kein Key, `no_backend`), `502` (KI-/Upstream-Fehler, `ai_error`).
   **PROJ-31 (additiv):** Body darf zusätzlich `extraktion` (bestätigte Felder) und `medienIds`
   (Bild-Evidenz) enthalten; dann fließt Bildmaterial in die Diagnose ein und `diagnosis.vision`
   vermerkt das. Ohne beides verhält sich der Endpunkt **exakt wie zuvor** (Schema unverändert).
@@ -88,8 +95,14 @@ Levels: `gut`/`mittel`/`stop` → Ampelpunkt 🟢/🟡/🔴, Farben via CSS-Vari
                                    Antwort **immer** HTTP 200 (scheitert nie hart):
                                    `{ "felder": {kategorie, modell, schaeden[], kaufdatum, haendler, hinweise[]},
                                       "source": "vision|no_vision_backend|vision_error|keine_medien",
-                                      "hinweis", "bildAnzahl", "nichtsErkannt" }`. Vision-Backend-Wahl wie `ai.py`
-                                   (Ollama vor OpenAI); PDFs werden serverseitig in Seitenbilder gewandelt.
+                                      "hinweis", "bildAnzahl", "nichtsErkannt" }`. Vision läuft über OpenAI
+                                   (Modell `VISION_MODEL` → sonst `OPENAI_MODEL`); PDFs werden serverseitig
+                                   in Seitenbilder gewandelt.
+
+> Die App bietet weitere Endpunkte (Persistenz, kuratierte Service-Daten,
+> Wissensbasis, Lotse, Consent, Multimodal …) — vollständige Liste in `app.py`
+> bzw. README. Maßgeblich für *neue* Arbeit ist der Vertragskern hier:
+> `device`-Schema, das `/api/diagnose`-Fehlerschema, Klassennamen und Themes.
 
 ## Konfiguration — ausschließlich über `.env` (verbindlich, PROJ-30)
 
@@ -103,7 +116,7 @@ Ungültige Werte → **Fail-fast** beim Start (`config.validate()`). Neue Konfig
 Drift-Guard `tests/test_config_drift.py` erzwingt beides (lauffähig ohne Server). Ausnahme:
 layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`). Vollständige Variablentabelle: `README.md`.
 
-## ChatGPT-Integration (AGENT-A, `repair/ai.py`)
+## ChatGPT-Integration (`repair/ai.py`)
 
 - Lib: `openai` (>=1.0). Key aus `OPENAI_API_KEY` (via `python-dotenv`). Modell aus `OPENAI_MODEL` (Default `gpt-4o-mini`).
 - System-Prompt: deutscher „ruhiger, ehrlicher Reparatur-Freund" (Ton siehe app-beschreibung im Chat-Transkript).
@@ -111,7 +124,7 @@ layout-abgeleitete Pfade (`DB_PATH`, `MEDIA_DIR`). Vollständige Variablentabell
   Sicherheits-Leitplanke: gefährliche Geräte (Mikrowelle, alles mit Hochspannung/Gas/Strom im Inneren) → `lights.Sicherheit.level="stop"`, `accentPath="stop"`, `recommend="pro"`.
 - `schema.py` validiert/normalisiert das KI-JSON (fehlende Felder ergänzen, Level auf gut/mittel/stop zwingen, genau 4 lights); schlägt das fehl, liefert `diagnose` ein Fehler-Objekt (`code:"ai_error"`).
 
-## HEAD-BLOCK (AGENT-B fügt diesen Block 1:1 in `<head>` von index.html ein)
+## HEAD-BLOCK (1:1 in `<head>` von index.html)
 
 ```html
 <meta charset="UTF-8" />
@@ -135,7 +148,7 @@ JS am Body-Ende, in dieser Reihenfolge:
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 ```
 
-## Frontend-Verhalten (AGENT-B, Port von repair-app.jsx + repair-screens.jsx + repair-ui.jsx)
+## Frontend-Verhalten (Port von repair-app.jsx + repair-screens.jsx + repair-ui.jsx)
 
 - Genau **eine** Phone-Instanz, mittig, 384×812, im Phone-Frame (`.rk-phone`), auf neutralem Body-BG.
 - Theme-Switcher (oben, außerhalb des Phones): Solide / Werkstatt / Mutig → setzt CSS-Variablen am `.rk-phone`-Root + Klasse `rk-theme-<id>` und `rk-case-<upper|none>` am `.rk-app`. **Default: Werkstatt.**
@@ -167,17 +180,17 @@ rk-proto-owner rk-proto-share rk-share-btn
 rk-sheet-scrim rk-sheet rk-sheet-grip rk-sheet-title rk-sheet-note rk-sheet-fine rk-sheet-hr rk-sheet-level
 rk-theme-solide rk-theme-werkstatt rk-theme-mutig rk-case-upper rk-case-none`
 
-## Theme-Tokens (AGENT-C, Port von repair-themes.js — alle drei Themes als CSS-Variablen-Sets)
+## Theme-Tokens (Port von repair-themes.js — alle drei Themes als CSS-Variablen-Sets)
 
 Werte 1:1 aus `../docs/design-handoff/project/repair-themes.js`. Default-Theme **Werkstatt** (Orange `--accent:#ff5a1f`, Indigo `--accent2:#2a2575`, harte Schatten `4px 4px 0 #16140f`, Space Grotesk).
 CSS muss ohne Tweaks funktionieren: setze sinnvolle `--font-size:16px`, `--motion:.22s`, `--pad`, `--gap` als Defaults am `.rk-phone`.
-Theme-Switch erfolgt per JS (setzt die Variablen am `.rk-phone`-Element) — CSS liefert die drei Token-Sets als JS-lesbare Konstante ODER AGENT-B hält die Token-Tabelle (siehe repair-themes.js) selbst. **Vereinbarung:** AGENT-B portiert die drei Token-Sets nach `app.js` (aus repair-themes.js) und setzt sie aufs Root; AGENT-C liefert die regelbasierte Komponenten-CSS + die `--*`-Defaults + theme-spezifische Overrides (`.rk-theme-werkstatt …`, `.rk-theme-mutig …`).
+Theme-Switch erfolgt per JS (setzt die Variablen am `.rk-phone`-Element): `app.js` hält die drei Token-Sets (Port aus repair-themes.js) und setzt sie aufs Root; `repair.css` liefert die regelbasierte Komponenten-CSS + die `--*`-Defaults + theme-spezifische Overrides (`.rk-theme-werkstatt …`, `.rk-theme-mutig …`).
 
 ## Lauf-/Testkriterien (Definition of Done)
 
 1. `pip install -r requirements.txt` && `flask --app app run` (oder `python app.py`) startet auf :5000.
 2. `/` zeigt das Phone mit Startscreen im Werkstatt-Theme; Theme-Switcher wechselt live.
-3. Freitext im Startfeld + konfiguriertes LLM-Backend (Ollama oder OpenAI) → `/api/diagnose` liefert ein KI-Gerät; Flow Start → Triage → Ampel → Decision → Repair → Result | Path.
+3. Freitext im Startfeld + gesetzter `OPENAI_API_KEY` → `/api/diagnose` liefert ein KI-Gerät; Flow Start → Triage → Ampel → Decision → Repair → Result | Path.
 4. Bei `accentPath:"stop"` (gefährliches Gerät): rote Ampel → Decision mit Vergleichstabelle + Empfehlung „Profi" → Selbst-Pfad endet im Stopp/Handoff zur Werkstatt.
 5. Protokoll-Sheet füllt sich live mit den getippten Antworten.
-6. Ohne LLM-Backend (oder bei API-Fehler): `/api/diagnose` antwortet mit Fehler-Objekt (`no_backend`/`ai_error`), der Startscreen zeigt den Hinweis — kein Crash.
+6. Ohne `OPENAI_API_KEY` (oder bei API-Fehler): `/api/diagnose` antwortet mit Fehler-Objekt (`no_backend`/`ai_error`), der Startscreen zeigt den Hinweis — kein Crash.

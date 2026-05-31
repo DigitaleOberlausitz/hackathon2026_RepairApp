@@ -4,7 +4,7 @@
 > §2 Edge-Cases, §3 Architektur-Lücken, §5 priorisierte Roadmap), fachlich verankert in
 > `docs/konzept.adoc` (Decision-Log) und `docs/runtime-roles/`.
 
-**Next Available ID:** PROJ-32
+**Next Available ID:** PROJ-38
 
 **Status-Legende:** Planned · In Progress · In Review · Done
 
@@ -73,6 +73,27 @@
 > `repair/protokoll_log.py`) und PROJ-30 (`.env`-Konfiguration, kein Drift) sind ebenfalls
 > abgeschlossen.
 
+## Stufe 4 — LLM-Orchestrierung über runtime-roles (Architektur-Umbau)
+
+> Re-Architektur des Produkts zu einem LLM-orchestrierten Chat-Flow (Progressive Disclosure
+> der Rollen, wie Claude Code). **OpenAI-only** in dieser Phase. Quelle:
+> `docs/superpowers/specs/2026-05-31-llm-orchestrierung-runtime-roles-design.md` +
+> `docs/superpowers/plans/2026-05-31-llm-orchestrierung-runtime-roles.md` (3-Agenten-reviewt).
+
+| ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
+|---|---|---|---|---|---|
+| PROJ-32 | Rollen-Registry & Progressive Disclosure | `lotse`/alle | D19 | Planned | — |
+| PROJ-33 | Karten-Decomposition & `zeige_karte` | alle Journey | D1/D3/D20/D24/D25 | Planned | — |
+| PROJ-34 | Daten-Tools für Function-Calling | Querschnitt | D2/D3/D8 | Planned | PROJ-32, 33 |
+| PROJ-35 | LLM-Orchestrator-Schleife | `lotse` | D19/D17/D7 | Planned | PROJ-32, 33, 34, 9 |
+| PROJ-36 | Nicht-sperrender Sicherheits-Backstop | Querschnitt | D1/D3/D14/D15/D23 | Planned | PROJ-35, 33 |
+| PROJ-37 | Chat-Flow: API & Frontend-Umstellung (harter Schnitt) | `lotse` | D6/D7/D19 | Planned | PROJ-35, 36, 9 |
+
+> **Hinweis:** Diese Stufe 4 ist ein **harter Schnitt** — sie ersetzt den Single-Shot
+> `POST /api/diagnose` + `device`-Monolith. Die fachlichen Edge-Cases (D20–D25) und D17
+> sind bereits in PROJ-4/7/8/19/20/21/24 spezifiziert; Stufe 4 operationalisiert sie im
+> Orchestrierungs-Kontext (Rollen-Specs + Backstop), statt sie zu duplizieren.
+
 ## Empfohlene Build-Reihenfolge
 
 1. **PROJ-9** (Persistenz) zuerst — Fundament für Export, Tagebuch, Schwungrad, Mehrfachdefekte.
@@ -80,3 +101,5 @@
 3. **Stufe 2** (PROJ-11–14, 25, 26) — Querschnittsdienste & Vertrauens-Indikator.
 4. **Stufe 3** Datengrundlage zuerst: PROJ-15 → 16 → 17, dann Architektur PROJ-18,
    Edge-Cases (19, 20, 21), Datenschutz (22→23), zuletzt Mehrsprachigkeit (24) & Multimodalität (27).
+5. **Stufe 4** (Orchestrierungs-Umbau): PROJ-32 & PROJ-33 parallel (Fundament) →
+   PROJ-34 → PROJ-35 (Kern) → PROJ-36 (Backstop) → PROJ-37 (API/Frontend, harter Schnitt).

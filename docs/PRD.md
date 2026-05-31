@@ -69,6 +69,16 @@ Priorität spiegelt die Stufen aus `docs/funktionsabgleich.md` §5 wider:
 | P2 | [PROJ-29 Zentrales Logging (Datei + Konsole, tägl. Rotation)](../features/PROJ-29-logging.md) | Betrieb/Querschnitt | Planned |
 | P2 | [PROJ-30 Konfiguration ausschließlich über `.env`](../features/PROJ-30-konfiguration-ueber-env.md) | Betrieb/Querschnitt | Planned |
 | P1 | [PROJ-31 Vision-Diagnose aus Foto & Dokument](../features/PROJ-31-vision-diagnose-foto-dokument.md) | `aufnahme`/`diagnose` · D9 | Planned |
+| P3 | [PROJ-32 Rollen-Registry & Progressive Disclosure](../features/PROJ-32-rollen-registry-progressive-disclosure.md) | `lotse`/alle · D19 | Planned |
+| P3 | [PROJ-33 Karten-Decomposition & `zeige_karte`](../features/PROJ-33-karten-decomposition-zeige-karte.md) | Journey · D1/D3 | Planned |
+| P3 | [PROJ-34 Daten-Tools für Function-Calling](../features/PROJ-34-daten-tools-function-calling.md) | Querschnitt · D2/D8 | Planned |
+| P3 | [PROJ-35 LLM-Orchestrator-Schleife](../features/PROJ-35-llm-orchestrator-schleife.md) | `lotse` · D19/D17 | Planned |
+| P3 | [PROJ-36 Nicht-sperrender Sicherheits-Backstop](../features/PROJ-36-nicht-sperrender-sicherheits-backstop.md) | Querschnitt · D15/D3 | Planned |
+| P3 | [PROJ-37 Chat-Flow: API & Frontend (harter Schnitt)](../features/PROJ-37-chat-flow-api-frontend.md) | `lotse` · D6/D19 | Planned |
+
+> **P3 = Stufe 4 (Architektur-Umbau):** LLM-Orchestrierung über `runtime-roles`
+> (OpenAI-only). Ersetzt den Single-Shot-Diagnosepfad durch einen orchestrierten Chat-Flow.
+> Specs/Plan unter `docs/superpowers/`.
 
 ## Erfolgsmetriken
 

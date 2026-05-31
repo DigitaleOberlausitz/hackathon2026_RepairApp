@@ -10,19 +10,18 @@ Kategorisierung des betroffenen Gegenstands:
 
 ---
 
-## 2. Widmung / Zustand feststellen
+## 2. Wirkung / Zustand feststellen
 
 ### Mögliche Zustände
 
 * Physisch kaputt
 * Funktion beeinträchtigt oder kaputt
-* Verbraucht
+* verbraucht (Ressourcen wie Batterien)
 * Höheres Risiko
-
   * Security-Risiko
   * Elektrische / technische Sicherheitsrisiken
   * Risiko körperlicher Schäden oder Verletzungen
-* Funktion grundsätzlich in Ordnung, aber außerhalb der Toleranz
+* Funktion grundsätzlich in Ordnung, aber im Fehlerzustand
 
 ---
 
@@ -30,29 +29,15 @@ Kategorisierung des betroffenen Gegenstands:
 
 ### Technische Maßnahmen
 
-* Garantie / Gewährleistung nutzen
-* Reset-Maßnahmen durchführen
-* Reparieren
-* Reparieren lassen
-* Workaround anwenden
-* Ersatz beschaffen
-* Entsorgen / Recycling
-* Wartung durchführen
-
-  * Kalibrieren
-  * Reinigen
-  * Justieren
-* Verbrauchsmaterial ersetzen oder austauschen
-
-### Unterstützung und Vermittlung
-
-* Wissende Personen hinzuziehen
-* Werkzeuge bereitstellen
-* Kenntnisse und Fähigkeiten vermitteln
-* Community-Angebote vermitteln
-* Dienstleister vermitteln
-* Verkäufer vermitteln
-* Produktinformationen bereitstellen
+1. Reset-Maßnahmen durchführen
+2. Wartung durchführen (Kalibrieren, Reinigen, Justieren)
+3. Verbrauchsmaterial ersetzen oder austauschen
+4. Garantie / Gewährleistung nutzen
+5. Workaround anwenden
+6. Reparieren
+7. Reparieren lassen (Dienstleistung)
+8. Entsorgen / Recycling
+9. Ersatz beschaffen
 
 ---
 
@@ -72,6 +57,16 @@ Kategorisierung des betroffenen Gegenstands:
 
 Die ausgewählte Option wird durchgeführt.
 
+
+### Unterstützung und Vermittlung
+
+* Wissende Personen
+* Werkzeuge erhalten
+* Produktinformationen bereitstellen
+* Kenntnisse und Fähigkeiten aneignen
+* Community-Angebote finden
+* Dienstleister finden
+* Verkäufer / Anbieter von Ersatzteilen, Werkzeugen oder Produkten und Dienstleistungen finden
 ---
 
 ## 6. Präventionsmaßnahmen vermitteln

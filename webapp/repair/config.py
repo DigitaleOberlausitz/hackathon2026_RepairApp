@@ -35,7 +35,6 @@ class ConfigError(Exception):
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 5000
 DEFAULT_WHISPER_MODEL = "whisper-1"
-DEFAULT_VISION_MODEL = "qwen2.5vl:7b"  # lokales Ollama-Vision-Modell (PROJ-31)
 DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 DEFAULT_LLM_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
 DEFAULT_MAX_MEDIEN_PRO_ANFRAGE = 6  # max. Medien je Diagnose-Anfrage (PROJ-31)
@@ -120,10 +119,9 @@ def max_upload_bytes() -> int:
 def vision_model() -> str | None:
     """Vision-Modell-Override für die Bild-/Dokument-Auswertung (PROJ-31).
 
-    ``None`` (ungesetzt) → ``vision.py`` wählt den backend-spezifischen Default
-    (lokales Ollama: ``DEFAULT_VISION_MODEL``; OpenAI: das Cloud-Diagnose-Modell,
-    das ebenfalls Vision kann). Bewusst kein Default-Literal hier, weil die Wahl
-    vom gewählten Backend abhängt.
+    ``None`` (ungesetzt) → ``vision.py`` nutzt das Cloud-Diagnose-Modell
+    (``OPENAI_MODEL`` / ``gpt-4o-…``, das ebenfalls Vision kann). Bewusst kein
+    Default-Literal hier — der Default ist das ohnehin konfigurierte OpenAI-Modell.
     """
     return _raw("VISION_MODEL")
 

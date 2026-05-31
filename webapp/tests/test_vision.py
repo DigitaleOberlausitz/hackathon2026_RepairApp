@@ -107,7 +107,8 @@ def _patch_backend(monkeypatchish_sink):
     client = _FakeClient(monkeypatchish_sink)
 
     def fake_resolve():
-        return client, "fake-model", True
+        # OpenAI-only: _resolve_backend liefert (client, model) — 2-Tupel.
+        return client, "fake-model"
 
     ai._resolve_backend = fake_resolve
     return lambda: setattr(ai, "_resolve_backend", orig_resolve)
