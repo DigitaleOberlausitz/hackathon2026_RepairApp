@@ -49,6 +49,7 @@ ENDPOINT_ROLLE: dict[str, str] = {
     "api_bewertung_gesamt": "bewertung",   # POST /api/bewertung/gesamt  (PROJ-21)
     "api_lotse_route_post": "lotse",       # POST /api/lotse/route       (PROJ-18)
     "api_transkription": "transkription",  # POST /api/transkription     (PROJ-27)
+    "api_chat": "lotse",                   # POST /api/chat (Orchestrator) (PROJ-35, R4)
 }
 
 # Erlaubtes vid-Alphabet = secrets.token_urlsafe (Path-Traversal-Schutz).
