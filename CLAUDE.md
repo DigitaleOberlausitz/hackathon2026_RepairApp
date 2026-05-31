@@ -69,7 +69,7 @@ webapp/
 ./gradlew asciidoctorPdf
 ```
 
-Erzeugt `build/docs/asciidocPdf/konzept.pdf` (inkl. der Mermaid-Diagramme). Wrapper ist auf Gradle 8.10.2 gepinnt (Asciidoctor-Plugin 4.0.4 ist noch nicht für Gradle 9 freigegeben). Voraussetzung fürs Diagramm-Rendering: `mmdc` (Mermaid-CLI, via `npm i -g @mermaid-js/mermaid-cli`) auf dem `PATH`. Diagramme werden offline als PNG gerendert (`mermaid-format = png`); die `--no-sandbox`-Flags für Chromium stehen in `docs/.puppeteer-config.json`.
+Erzeugt `build/docs/asciidocPdf/konzept.pdf` (inkl. der Mermaid-Diagramme). Wrapper läuft auf **Gradle 9.3.0**; das Asciidoctor-PDF-Plugin 4.0.4 baut darauf fehlerfrei (die intern genutzte Klasse `CopySpecInternal` ist zur Laufzeit weiterhin im Gradle-Classpath, nur nicht mehr in der `gradle-api`-Compile-Fassade — daher kein Laufzeitfehler). Voraussetzung fürs Diagramm-Rendering: `mmdc` (Mermaid-CLI, via `npm i -g @mermaid-js/mermaid-cli`) auf dem `PATH`. Diagramme werden offline als PNG gerendert (`mermaid-format = png`); die `--no-sandbox`-Flags für Chromium stehen in `docs/.puppeteer-config.json`.
 
 ## Ziel der App
 
