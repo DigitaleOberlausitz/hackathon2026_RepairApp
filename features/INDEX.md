@@ -59,9 +59,12 @@
 | PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Done | — |
 | PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Done | (Bezug: PROJ-29) |
 
-> **Offene Punkte (Stand 2026-05-31):** **PROJ-31** (Vision-Diagnose aus Foto & Dokument)
-> ist neu spezifiziert und `Planned` — baut auf PROJ-27/PROJ-9 auf. Alle übrigen Feature-IDs
-> (PROJ-1…30) sind auf `Done`.
+> **Offene Punkte (Stand 2026-05-31):** Die **Stufe-4-Orchestrierung (PROJ-32…37)** ist
+> umgesetzt — der Single-Shot `POST /api/diagnose` + `device`-Monolith wurde durch den
+> LLM-orchestrierten Chat-Flow (`POST /api/vorgang` + `POST /api/chat`, Rollen-Registry,
+> Karten, Function-Calling, nicht-sperrender Backstop) ersetzt. Damit ist **nur noch
+> PROJ-31** (Vision-Diagnose aus Foto & Dokument) offen (`Planned`, baut auf PROJ-27/PROJ-9 auf).
+> Alle übrigen Feature-IDs (PROJ-1…30, 32…37) sind auf `Done`.
 > PROJ-29 (zentrales Logging, `repair/logconf.py` → `setup_logging()`) ist umgesetzt:
 > Datei (`webapp/logs/repair.log`) + Konsole, tägliche Rotation, 14 Tage Aufbewahrung,
 > Level über `LOG_LEVEL` (Default DEBUG), Werkzeug-Integration, zentrales Request-Logging
@@ -78,15 +81,16 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-32 | Rollen-Registry & Progressive Disclosure | `lotse`/alle | D19 | Planned | — |
-| PROJ-33 | Karten-Decomposition & `zeige_karte` | alle Journey | D1/D3/D20/D24/D25 | Planned | — |
-| PROJ-34 | Daten-Tools für Function-Calling | Querschnitt | D2/D3/D8 | Planned | PROJ-32, 33 |
-| PROJ-35 | LLM-Orchestrator-Schleife | `lotse` | D19/D17/D7 | Planned | PROJ-32, 33, 34, 9 |
-| PROJ-36 | Nicht-sperrender Sicherheits-Backstop | Querschnitt | D1/D3/D14/D15/D23 | Planned | PROJ-35, 33 |
-| PROJ-37 | Chat-Flow: API & Frontend-Umstellung (harter Schnitt) | `lotse` | D6/D7/D19 | Planned | PROJ-35, 36, 9 |
+| PROJ-32 | Rollen-Registry & Progressive Disclosure | `lotse`/alle | D19 | Done | — |
+| PROJ-33 | Karten-Decomposition & `zeige_karte` | alle Journey | D1/D3/D20/D24/D25 | Done | — |
+| PROJ-34 | Daten-Tools für Function-Calling | Querschnitt | D2/D3/D8 | Done | PROJ-32, 33 |
+| PROJ-35 | LLM-Orchestrator-Schleife | `lotse` | D19/D17/D7 | Done | PROJ-32, 33, 34, 9 |
+| PROJ-36 | Nicht-sperrender Sicherheits-Backstop | Querschnitt | D1/D3/D14/D15/D23 | Done | PROJ-35, 33 |
+| PROJ-37 | Chat-Flow: API & Frontend-Umstellung (harter Schnitt) | `lotse` | D6/D7/D19 | Done | PROJ-35, 36, 9 |
 
-> **Hinweis:** Diese Stufe 4 ist ein **harter Schnitt** — sie ersetzt den Single-Shot
-> `POST /api/diagnose` + `device`-Monolith. Die fachlichen Edge-Cases (D20–D25) und D17
+> **Hinweis:** Diese Stufe 4 ist ein **harter Schnitt** und **umgesetzt** — sie ersetzt den
+> Single-Shot `POST /api/diagnose` + `device`-Monolith durch `POST /api/vorgang` +
+> `POST /api/chat`. Die fachlichen Edge-Cases (D20–D25) und D17
 > sind bereits in PROJ-4/7/8/19/20/21/24 spezifiziert; Stufe 4 operationalisiert sie im
 > Orchestrierungs-Kontext (Rollen-Specs + Backstop), statt sie zu duplizieren.
 
