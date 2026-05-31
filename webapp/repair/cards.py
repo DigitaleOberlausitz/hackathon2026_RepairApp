@@ -117,6 +117,20 @@ SCHEMAS: dict[str, dict] = {
             "schwere": {"enum": ["info", "warnung", "kritisch"]},
         },
     },
+    "frage": {
+        # EINE Rückfrage an den Nutzer (nie eine Liste). Optional mit vorausgewählten
+        # Antwort-Optionen (Chips), Freitext und Bild-Anhang je Frage.
+        "type": "object",
+        "required": ["frage"],
+        "properties": {
+            "frage": {"type": "string"},                 # die eine, konkrete Frage
+            "feld": {"type": "string"},                  # Zielfeld (z.B. symptom, seit_wann)
+            "optionen": {"type": "array", "items": {"type": "string"}},  # auswählbare Antworten
+            "mehrfachauswahl": {"type": "boolean"},      # mehrere Optionen wählbar
+            "freitext_erlaubt": {"type": "boolean"},     # eigene Antwort zulässig (Default: ja)
+            "bild_erlaubt": {"type": "boolean"},         # Foto/Dokument zu DIESER Frage anhängbar
+        },
+    },
     "anbieter": {
         "type": "object",
         "required": ["eintraege"],

@@ -39,3 +39,21 @@ def test_diagnose_unklar_pfad():
                        "konfidenz": "niedrig", "hinweis": "KI kann Fehler machen."}}
     karte = cards.validate("diagnose", daten)
     assert karte["daten"]["unklar"] is True
+
+def test_frage_typ_vorhanden_und_valide():
+    assert "frage" in cards.TYPEN
+    daten = {
+        "frage": "Leuchtet beim Einschalten eine LED?",
+        "feld": "symptom",
+        "optionen": ["Ja, grün", "Ja, blinkt rot", "Nein, nichts"],
+        "mehrfachauswahl": False,
+        "freitext_erlaubt": True,
+        "bild_erlaubt": True,
+    }
+    karte = cards.validate("frage", daten)
+    assert karte["typ"] == "frage"
+    assert karte["daten"]["optionen"][1] == "Ja, blinkt rot"
+
+def test_frage_braucht_fragetext():
+    with pytest.raises(cards.CardValidationError):
+        cards.validate("frage", {"optionen": ["a", "b"]})  # 'frage' fehlt → ungültig

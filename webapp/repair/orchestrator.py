@@ -44,12 +44,22 @@ befolge sie dann genau.
 finde_foerderung, finde_entsorgung, recherche).
 4. Strukturierte Ergebnisse gibst du über zeige_karte(typ, daten) aus.
 5. Dazwischen sprichst du in einfachem Deutsch mit dem Nutzer und stellst Rückfragen.
-"""
+
+RÜCKFRAGEN (verbindlich):
+- Stelle Rückfragen IMMER EINZELN über zeige_karte(typ="frage", …) — eine Karte = \
+GENAU EINE Frage. Schreibe NIEMALS mehrere Fragen als nummerierte Liste in den Fließtext.
+- Brauchst du mehrere Angaben, stelle die wichtigste zuerst und warte die Antwort des \
+Nutzers ab, bevor du die nächste frage-Karte schickst.
+- Biete in `optionen` ein paar sinnvolle, vorausgewählte Antworten an, wenn die Frage \
+das zulässt (der Nutzer kann zusätzlich frei antworten — `freitext_erlaubt` ist standardmäßig an).
+- Setze `bild_erlaubt:true`, wenn ein Foto/Dokument zur Beantwortung hilft (z. B. \
+Typenschild, Schaden, Fehlercode)."""
 
 _WERKZEUG_HINWEIS = """\
-Karten-Typen für zeige_karte: aufnahme, diagnose, ampel, vergleich, schritte, \
-hinweis, anbieter, ersatzteil, erfolg. Bei Mehrfachdefekten: pro Defekt eine \
-ampel-Karte plus ein Gesamt-Fazit nach dem schwächsten Glied."""
+Karten-Typen für zeige_karte: frage, aufnahme, diagnose, ampel, vergleich, schritte, \
+hinweis, anbieter, ersatzteil, erfolg. Rückfragen IMMER als einzelne frage-Karte (nie \
+als Liste im Text). Bei Mehrfachdefekten: pro Defekt eine ampel-Karte plus ein \
+Gesamt-Fazit nach dem schwächsten Glied."""
 
 # Sprachdirektive (D17) — ans Ende des Präfix gehängt. Default: de.
 _SPRACHDIREKTIVE = {
