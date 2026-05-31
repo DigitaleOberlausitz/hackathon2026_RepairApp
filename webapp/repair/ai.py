@@ -1,19 +1,16 @@
-"""Live-Diagnose aus Freitext via lokales LLM (Ollama) oder OpenAI ChatGPT.
+"""Live-Diagnose aus Freitext via OpenAI ChatGPT.
 
 ``diagnose(text)`` versucht, aus einer freien Problembeschreibung ein
 vollständiges ``device``-Objekt zu erzeugen. Die Diagnose funktioniert
-**ausschließlich** mit einem echten LLM-Backend — es gibt keine hinterlegten
+**ausschließlich** mit der OpenAI-Cloud — es gibt keine hinterlegten
 Demo-/Seed-Geräte und keinen Keyword-Fallback mehr.
 
-Backend-Auswahl (in dieser Prioritätsreihenfolge, über Umgebungsvariablen):
+Backend (über Umgebungsvariablen):
 
-  1. **Lokaler Ollama** — wenn ``OLLAMA_BASE_URL`` gesetzt ist
-     (OpenAI-kompatibel, z. B. ``http://localhost:11434/v1``).
-     Modell aus ``DIAGNOSE_MODEL`` → ``OLLAMA_MODEL`` → ``qwen3:8b``.
-  2. **OpenAI-Cloud** — wenn ``OPENAI_API_KEY`` gesetzt ist.
-     Modell aus ``DIAGNOSE_MODEL`` → ``OPENAI_MODEL`` → ``gpt-4o-mini``.
+  - **OpenAI-Cloud** — wenn ``OPENAI_API_KEY`` gesetzt ist.
+    Modell aus ``OPENAI_MODEL`` → Default ``gpt-4o-mini``.
 
-Ohne konfiguriertes Backend oder bei einem Fehler (Netzwerk, ungültiges JSON,
+Ohne gesetzten Key oder bei einem Fehler (Netzwerk, ungültiges JSON,
 Exception, leeres Ergebnis) liefert ``diagnose`` ein Fehler-Objekt
 (``{"error": ..., "code": ...}``); ``app.py`` übersetzt das in einen passenden
 HTTP-Status und das Frontend zeigt einen sauberen Hinweis. Es wird nie hart
@@ -43,12 +40,11 @@ def _kurz(text: str) -> str:
     return text
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
-DEFAULT_OLLAMA_MODEL = "qwen3:8b"
 # Der LLM-Timeout (LLM_TIMEOUT) wird zentral in repair/config.py verwaltet
 # (config.DEFAULT_LLM_TIMEOUT) — kein zweiter Default hier (PROJ-30).
 
-# Reasoning-Modelle (z. B. Qwen3) liefern teils <think>…</think>-Blöcke vor
-# dem JSON. Die schneiden wir defensiv heraus, bevor wir parsen.
+# Manche Modelle stellen dem JSON <think>…</think>-Blöcke voran. Die schneiden
+# wir defensiv heraus, bevor wir parsen.
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
 
@@ -159,9 +155,7 @@ def _is_dangerous(device: dict) -> bool:
 def _build_trust(source: str, score: float, device: dict | None = None) -> dict:
     """Vertrauens-Indikator (PROJ-25 / D3) — {level, source, reason}.
 
-    Reproduzierbares Mapping (STUFE2.md §2):
-      source == "fallback"        → level="niedrig", source="KI-Fallback"
-      source in {"seed","kuratiert"} → level="hoch", source="kuratiert"
+    Reproduzierbares Mapping:
       source == "tech_error"      → level="niedrig", source="KI-Fallback"
       KI-Antwort, score >= 0.8    → "hoch"
       KI-Antwort, 0.5 <= score    → "mittel"
@@ -170,19 +164,7 @@ def _build_trust(source: str, score: float, device: dict | None = None) -> dict:
     """
     s = (source or "").strip().lower()
 
-    if s == "fallback":
-        trust = {
-            "level": "niedrig",
-            "source": "KI-Fallback",
-            "reason": "Kein KI-Backend erreichbar — passendstes Beispielgerät als Näherung. Bitte selbst prüfen.",
-        }
-    elif s in ("seed", "kuratiert"):
-        trust = {
-            "level": "hoch",
-            "source": "kuratiert",
-            "reason": "Kuratierte, geprüfte Beispieldaten.",
-        }
-    elif s == "tech_error":
+    if s == "tech_error":
         trust = {
             "level": "niedrig",
             "source": "KI-Fallback",
@@ -269,54 +251,30 @@ def _clean_json_text(content: str) -> str:
 
 
 def _resolve_backend():
-    """Liefert ``(client, model, is_local)`` — oder ``(None, None, False)``.
+    """Liefert ``(client, model)`` — oder ``(None, None)``.
 
-    Reihenfolge: lokaler Ollama (``OLLAMA_BASE_URL``) vor OpenAI-Cloud
-    (``OPENAI_API_KEY``). ``is_local`` ist True für Ollama (→ Thinking aus).
-    Gibt ``(None, None, False)`` zurück, wenn weder Backend konfiguriert ist
-    noch die ``openai``-Lib verfügbar ist → Fallback.
+    OpenAI-Cloud via ``OPENAI_API_KEY``; Modell aus ``OPENAI_MODEL`` (Default
+    ``gpt-4o-mini``). Gibt ``(None, None)`` zurück, wenn kein Key gesetzt ist
+    oder die ``openai``-Lib fehlt → Fehler-Objekt (``no_backend``).
 
-    ``max_retries=0``: Auf der langsamen CPU darf ein Timeout sich nicht durch
-    SDK-Retries verdreifachen — lieber einmal sauber scheitern → Fallback.
+    ``max_retries=0``: Ein Timeout soll sich nicht durch SDK-Retries
+    vervielfachen — lieber einmal sauber scheitern.
     """
     try:
         from openai import OpenAI
     except Exception:
-        return None, None, False
+        return None, None
 
-    base_url = (os.environ.get("OLLAMA_BASE_URL") or "").strip()
     api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return None, None
 
-    # 1. Lokaler Ollama (OpenAI-kompatibel) — kein echter Key nötig
-    if base_url:
-        model = (
-            os.environ.get("DIAGNOSE_MODEL")
-            or os.environ.get("OLLAMA_MODEL")
-            or DEFAULT_OLLAMA_MODEL
-        )
-        try:
-            client = OpenAI(
-                base_url=base_url, api_key=api_key or "ollama", max_retries=0
-            )
-            return client, model, True
-        except Exception:
-            return None, None, False
-
-    # 2. OpenAI-Cloud
-    if api_key:
-        model = (
-            os.environ.get("DIAGNOSE_MODEL")
-            or os.environ.get("OPENAI_MODEL")
-            or DEFAULT_OPENAI_MODEL
-        )
-        try:
-            client = OpenAI(api_key=api_key, max_retries=0)
-            return client, model, False
-        except Exception:
-            return None, None, False
-
-    # 3. Kein Backend
-    return None, None, False
+    model = os.environ.get("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
+    try:
+        client = OpenAI(api_key=api_key, max_retries=0)
+        return client, model
+    except Exception:
+        return None, None
 
 
 def diagnose(
@@ -340,29 +298,23 @@ def diagnose(
         log.info("Diagnose ohne Freitext → Fehler (empty).")
         return _error("Bitte beschreibe zuerst, was kaputt ist.", "empty")
 
-    client, model, is_local = _resolve_backend()
+    client, model = _resolve_backend()
     if client is None:
-        log.info("Kein KI-Backend konfiguriert/verfügbar → Fehler (no_backend).")
+        log.info("Kein OpenAI-Key konfiguriert/verfügbar → Fehler (no_backend).")
         return _error(
-            "Es ist kein KI-Backend konfiguriert (lokales Ollama via "
-            "OLLAMA_BASE_URL oder OpenAI via OPENAI_API_KEY) — die Diagnose "
-            "ist deshalb nicht verfügbar.",
+            "Es ist kein OpenAI-Key konfiguriert (OPENAI_API_KEY) — die "
+            "Diagnose ist deshalb nicht verfügbar.",
             "no_backend",
         )
-    log.debug("KI-Backend gewählt: %s, Modell=%s", "Ollama (lokal)" if is_local else "OpenAI-Cloud", model)
+    log.debug("KI-Backend: OpenAI-Cloud, Modell=%s", model)
 
     # PROJ-30: Timeout aus .env (LLM_TIMEOUT), zentral validiert; Default 180 s.
     timeout = config.llm_timeout()
 
-    # Qwen3 & Co. erzeugen sonst lange <think>-Ketten vor dem JSON — auf der CPU
-    # zu teuer. "/no_think" schaltet das für lokale Modelle ab (harmlos für
-    # andere); für die Cloud bleibt der Prompt unverändert.
     # Sprachdirektive (PROJ-24): KI antwortet in der gewählten Sprache.
     from .i18n import lang_directive, ist_falsche_sprache
     lang_hint = lang_directive(lang)
     system_prompt = SYSTEM_PROMPT + f"\n\n{lang_hint}"
-    if is_local:
-        system_prompt += "\n\n/no_think"
 
     try:
         response = client.chat.completions.create(
