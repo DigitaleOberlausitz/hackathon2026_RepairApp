@@ -43,7 +43,7 @@ webapp/
     index.html           SPA-Shell (enthält den HEAD-BLOCK unten 1:1)
   static/
     js/
-      ui.js              Bausteine (PhoneFrame, Screen, AppBar, Buttons, Ampel, Sheet)
+      ui.js              Bausteine (Screen, AppBar, Buttons, Ampel, Sheet)
       screens.js         Screen-Renderer (Start, Triage, Ampel, Decision, Repair, Result, Path, Protocol)
       app.js             Statemachine + Live-Diagnose + Theme-Switcher
     css/
@@ -180,8 +180,14 @@ JS am Body-Ende, in dieser Reihenfolge:
 
 ## Frontend-Verhalten (Port von repair-app.jsx + repair-screens.jsx + repair-ui.jsx)
 
-- Genau **eine** Phone-Instanz, mittig, 384×812, im Phone-Frame (`.rk-phone`), auf neutralem Body-BG.
-- Theme-Switcher (oben, außerhalb des Phones): Solide / Werkstatt / Mutig → setzt CSS-Variablen am `.rk-phone`-Root + Klasse `rk-theme-<id>` und `rk-case-<upper|none>` am `.rk-app`. **Default: Werkstatt.**
+- **Responsive Website (PROJ-38), keine Smartphone-Attrappe:** Die App rendert in eine
+  **App-Spalte** (`.rk-app`) — mobil-first volle Breite, auf breiten Screens als zentrierte
+  Lesespalte (`max-width: var(--app-max)`, Default 640px) auf neutraler Bühne (`--page-bg`).
+  Geräterahmen, gefälschte Statusleiste und Home-Indikator entfallen ersatzlos; natürliches
+  Seiten-Scrolling, AppBar/Footer sind `position: sticky`.
+- Theme-Switcher (im Seitenkopf `.rk-pagehead`, über der Spalte): Solide / Werkstatt / Mutig →
+  setzt CSS-Variablen **direkt am `.rk-app`-Element** (per inline-style) + Klasse `rk-theme-<id>`
+  und `rk-case-<upper|none>` ebenfalls am `.rk-app`. **Default: Werkstatt.**
 - Startscreen-Eingabefeld: Freitext startet den Chat — beim ersten Senden legt das Frontend per
   `POST /api/vorgang` einen Vorgang an und schickt den Text dann an `POST /api/chat`. Es gibt keine
   Geräteliste/Beispiele mehr; Freitext (+ Multimodal) ist der einzige Einstieg. Antwortet die API mit
@@ -193,7 +199,7 @@ JS am Body-Ende, in dieser Reihenfolge:
 
 ## Klassennamen-Vertrag (JS erzeugt sie, CSS stylt sie — exakt diese Namen)
 
-`rk-phone rk-statusbar rk-time rk-status-right rk-bars rk-batt rk-screen rk-home
+`rk-page rk-pagehead rk-topbar
 rk-app rk-screenwrap rk-body rk-footer rk-appbar rk-appbar-side rk-right rk-appbar-title
 rk-bar-device rk-bar-step rk-iconbtn rk-eyebrow rk-q rk-q-tight rk-q-hint
 rk-brand rk-brand-mark rk-brand-name rk-hero rk-hero-sub rk-input rk-input-ph rk-input-mic
@@ -218,8 +224,8 @@ rk-theme-solide rk-theme-werkstatt rk-theme-mutig rk-case-upper rk-case-none`
 ## Theme-Tokens (Port von repair-themes.js — alle drei Themes als CSS-Variablen-Sets)
 
 Werte 1:1 aus `../docs/design-handoff/project/repair-themes.js`. Default-Theme **Werkstatt** (Orange `--accent:#ff5a1f`, Indigo `--accent2:#2a2575`, harte Schatten `4px 4px 0 #16140f`, Space Grotesk).
-CSS muss ohne Tweaks funktionieren: setze sinnvolle `--font-size:16px`, `--motion:.22s`, `--pad`, `--gap` als Defaults am `.rk-phone`.
-Theme-Switch erfolgt per JS (setzt die Variablen am `.rk-phone`-Element): `app.js` hält die drei Token-Sets (Port aus repair-themes.js) und setzt sie aufs Root; `repair.css` liefert die regelbasierte Komponenten-CSS + die `--*`-Defaults + theme-spezifische Overrides (`.rk-theme-werkstatt …`, `.rk-theme-mutig …`).
+CSS muss ohne Tweaks funktionieren: setze sinnvolle `--font-size:16px`, `--motion:.22s`, `--pad`, `--gap` als Defaults am `.rk-app`.
+Theme-Switch erfolgt per JS (setzt die Variablen am `.rk-app`-Element): `app.js` hält die drei Token-Sets (Port aus repair-themes.js) und setzt sie auf die App-Spalte; `repair.css` liefert die regelbasierte Komponenten-CSS + die `--*`-Defaults + theme-spezifische Overrides (`.rk-theme-werkstatt …`, `.rk-theme-mutig …`). Die Layout-Tokens `--page-bg` und `--app-max` (Lesespalten-Breite) stehen am `:root`.
 
 ## Lauf-/Testkriterien (Definition of Done)
 

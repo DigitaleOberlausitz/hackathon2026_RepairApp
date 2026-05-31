@@ -61,46 +61,7 @@
     }
   }
 
-  /* ---- Neutrales, markenloses Smartphone ---- */
-  function PhoneFrame(opts) {
-    opts = opts || {};
-    var light = opts.chrome !== 'dark';
-    var icon = light ? '#16140f' : '#f7f3ee';
-
-    var statusbar = h('div', { class: 'rk-statusbar', style: { color: icon } },
-      h('span', { class: 'rk-time' }, '9:41'),
-      h('span', { class: 'rk-status-right' },
-        h('span', { class: 'rk-bars', 'aria-hidden': 'true' },
-          h('i', { style: { height: '5px' } }),
-          h('i', { style: { height: '7px' } }),
-          h('i', { style: { height: '9px' } }),
-          h('i', { style: { height: '11px' } })
-        ),
-        h('svg', { width: '17', height: '12', viewBox: '0 0 17 12', fill: 'none' },
-          h('path', { d: 'M8.5 2.6c2 0 3.9.8 5.3 2.1M8.5 6.3c1 0 2 .4 2.7 1.1M2.9 4.7A8 8 0 0 1 8.5 2.6M5.7 7.4A4 4 0 0 1 8.5 6.3', stroke: icon, 'stroke-width': '1.3', 'stroke-linecap': 'round' }),
-          h('circle', { cx: '8.5', cy: '9.7', r: '1.1', fill: icon })
-        ),
-        h('span', { class: 'rk-batt', style: { borderColor: icon } }, h('i', { style: { background: icon } }))
-      )
-    );
-
-    var screen = h('div', { class: 'rk-screen' });
-    appendChildren(screen, [opts.children]);
-
-    var home = h('div', { class: 'rk-home', style: { background: light ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.4)' } });
-
-    var phone = h('div', { class: 'rk-phone' }, statusbar, screen, home);
-    if (opts.vars) {
-      for (var v in opts.vars) {
-        if (Object.prototype.hasOwnProperty.call(opts.vars, v)) phone.style.setProperty(v, opts.vars[v]);
-      }
-    }
-    // Referenz auf den Screen-Slot, damit app.js Screens nachladen kann.
-    phone._screenSlot = screen;
-    return phone;
-  }
-
-  /* ---- Standard-Screen: Kopfzeile (sticky) · Body (scroll) · Fußleiste (sticky) ---- */
+  /* ---- Standard-Screen: Kopfzeile (sticky) · Body · Fußleiste (sticky) ---- */
   function Screen(opts) {
     opts = opts || {};
     var pad = opts.pad !== false;
@@ -538,7 +499,7 @@
 
   Object.assign(window, {
     h: h,
-    PhoneFrame: PhoneFrame, Screen: Screen, AppBar: AppBar, IconBtn: IconBtn,
+    Screen: Screen, AppBar: AppBar, IconBtn: IconBtn,
     BigButton: BigButton, GhostButton: GhostButton, AnswerChip: AnswerChip,
     ProgressDots: ProgressDots, levelMeta: levelMeta, LightRow: LightRow,
     Slot: Slot, Sheet: Sheet, TrustBadge: TrustBadge, toast: toast,

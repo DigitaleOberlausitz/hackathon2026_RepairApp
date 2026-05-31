@@ -8,7 +8,7 @@
   'use strict';
 
   var h = window.h;
-  var PhoneFrame = window.PhoneFrame, Screen = window.Screen, Sheet = window.Sheet;
+  var Screen = window.Screen, Sheet = window.Sheet;
   var toast = window.toast || function () {};
 
   /* ===================== I18N (PROJ-24) ===================== */
@@ -1008,7 +1008,6 @@
     error: null,        // letzter Fehler ({error, code}) — als Bubble gerendert
     abgebrochen: false, // Vorgang vom Lotsen beendet
     appEl: null,
-    phoneEl: null,
     // PROJ-27/31: Medien + bestätigte Vision-Extraktion am Vorgang (Chat-Attach)
     medienConsent: false,
     medien: [],
@@ -1248,12 +1247,13 @@
       class: 'rk-app rk-theme-' + theme.id + ' rk-case-' + theme.flags.labelCase,
       style: { fontSize: 'var(--font-size)' },
     });
+    // Theme-Variablen direkt auf die App-Spalte setzen (vorher am .rk-phone).
+    for (var v in vars) {
+      if (Object.prototype.hasOwnProperty.call(vars, v)) app.style.setProperty(v, vars[v]);
+    }
     State.appEl = app;
-    var phone = PhoneFrame({ vars: vars, chrome: theme.flags.chrome, children: app });
-    State.phoneEl = phone;
-    var canvas = h('div', { class: 'rk-canvas' }, phone);
     var root = document.getElementById('phone-root');
-    root.replaceChildren(canvas);
+    root.replaceChildren(app);
     render();
   }
 

@@ -1,30 +1,40 @@
-/* repair.css — Styling der Repair-App. Alles über CSS-Variablen, die das
-   Phone-Root je Richtung (Theme) setzt. Eine Regelbasis, drei Charaktere.
+/* repair.css — Styling der Repair-App. Alles über CSS-Variablen, die die
+   App-Spalte je Richtung (Theme) setzt. Eine Regelbasis, drei Charaktere.
 
    Port des Design-Prototyps (docs/design-handoff/project/repair.css) +
    Theme-Tokens (repair-themes.js). Tailwind läuft mit preflight:false, daher
    bringt diese Datei den nötigen Minimal-Reset (box-sizing, button) selbst mit.
-   Die .rk-phone-Defaults unten setzen das WERKSTATT-Theme als Startzustand;
+   Die .rk-app-Defaults unten setzen das WERKSTATT-Theme als Startzustand;
    das Frontend-JS überschreibt diese Variablen beim Theme-Wechsel per
-   inline-style am .rk-phone-Element (inline gewinnt — daher kein !important). */
+   inline-style am .rk-app-Element (inline gewinnt — daher kein !important).
+
+   PROJ-38: echte responsive Website (mobil-first, auf breiten Screens eine
+   zentrierte Lesespalte) — keine Smartphone-Attrappe mehr. */
 
 * { box-sizing: border-box; }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: none; padding: 0; }
-:root { --motion: .22s; }
+:root {
+  --motion: .22s;
+  --page-bg: #e9e7e1;   /* neutrale Bühne hinter der Lesespalte (Desktop) */
+  --app-max: 640px;     /* max. Breite der zentrierten Lesespalte */
+}
 
-/* ---------- Canvas / Body-Rahmen ---------- */
+/* ---------- Seitenhülle (responsiv) ---------- */
 body {
   margin: 0; min-height: 100vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; padding: 24px;
-  background: #e9e7e1;
+  background: var(--page-bg);
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
-.rk-canvas {
-  width: 384px; height: 812px; flex: none;
+.rk-page { display: flex; flex-direction: column; min-height: 100vh; }
+.rk-pagehead {
+  display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+  gap: 12px; padding: 14px 16px;
 }
+.rk-topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+#phone-root { flex: 1; display: flex; flex-direction: column; }
 
-/* ---------- Theme-Switcher (außerhalb des Phones) ---------- */
+/* ---------- Theme-Switcher (über der Lesespalte) ---------- */
 .rk-themebar {
   display: inline-flex; align-items: center; gap: 4px;
   background: #ffffff; border: 1px solid #d8d3ca; border-radius: 10px;
@@ -40,8 +50,8 @@ body {
 .rk-themebar button:hover { color: #16140f; }
 .rk-themebar button.on { background: #16140f; color: #ffffff; }
 
-/* ---------- Phone ---------- */
-.rk-phone {
+/* ---------- App-Spalte (Lesespalte) ---------- */
+.rk-app {
   /* WERKSTATT-Defaults (Start-Theme) — JS überschreibt per inline-style */
   --bg: #ecebe6;
   --surface: #ffffff;
@@ -73,37 +83,25 @@ body {
   --font-size: 16px;
   --motion: .22s;
 
-  position: relative; width: 100%; height: 100%;
-  border-radius: 46px; background: var(--bg);
-  border: 13px solid #100f13;
-  box-shadow: inset 0 0 0 2px #2b2933, 0 26px 60px rgba(0,0,0,.32);
-  overflow: hidden; display: flex; flex-direction: column;
-  font-family: var(--font-body); color: var(--ink);
-  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  /* Lesespalte: mobil volle Breite, auf breiten Screens zentriert begrenzt. */
+  flex: 1; width: 100%; max-width: var(--app-max); margin: 0 auto;
+  position: relative; display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body);
 }
-.rk-statusbar {
-  height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 26px 0 30px; font-size: 13px; font-weight: 600; font-family: var(--font-body);
+/* Auf breiten Screens hebt sich die Spalte mit dünnen Rändern von der Bühne ab. */
+@media (min-width: 700px) {
+  .rk-app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }
-.rk-time { letter-spacing: .02em; }
-.rk-status-right { display: flex; align-items: center; gap: 6px; }
-.rk-bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 11px; }
-.rk-bars i { width: 3px; border-radius: 1px; background: currentColor; display: block; }
-.rk-batt { width: 17px; height: 10px; border: 1.3px solid currentColor; border-radius: 3px; position: relative; display: inline-block; }
-.rk-batt i { position: absolute; inset: 1.5px; width: 60%; border-radius: 1px; }
-.rk-batt::after { content: ''; position: absolute; right: -3px; top: 3px; width: 1.6px; height: 4px; border-radius: 2px; background: currentColor; }
-.rk-screen { flex: 1; min-height: 0; display: flex; }
-.rk-home { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); width: 124px; height: 5px; border-radius: 3px; z-index: 60; }
 
-.rk-app { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; position: relative; }
 .rk-screenwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: rkFade var(--motion) ease; }
 @keyframes rkFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-.rk-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-.rk-body::-webkit-scrollbar { width: 0; }
-.rk-footer { flex: none; padding: 12px var(--pad) 22px; border-top: 1px solid var(--line); background: var(--surface); }
+/* Natürliches Seiten-Scrolling — kein simulierter Innen-Scrollbereich (PROJ-38). */
+.rk-body { flex: 1 0 auto; min-height: 0; }
+.rk-footer { position: sticky; bottom: 0; z-index: 30; flex: none; padding: 12px var(--pad) 22px; border-top: 1px solid var(--line); background: var(--surface); }
 
 /* ---------- AppBar ---------- */
-.rk-appbar { flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.rk-appbar { position: sticky; top: 0; z-index: 40; flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
 .rk-appbar-side { width: 42px; display: flex; align-items: center; }
 .rk-appbar-side.rk-right { justify-content: flex-end; }
 .rk-appbar-title { flex: 1; text-align: center; font-size: 13.5px; font-weight: 600; color: var(--ink); }
@@ -268,9 +266,9 @@ body {
 .rk-share-btn:active { border-color: var(--accent); }
 
 /* ---------- Sheet ---------- */
-.rk-sheet-scrim { position: absolute; inset: 0; background: rgba(8,6,12,.42); display: flex; align-items: flex-end; z-index: 80; animation: rkScrim var(--motion) ease both; }
+.rk-sheet-scrim { position: fixed; inset: 0; background: rgba(8,6,12,.42); display: flex; align-items: flex-end; justify-content: center; z-index: 80; animation: rkScrim var(--motion) ease both; }
 @keyframes rkScrim { from { opacity: 0; } to { opacity: 1; } }
-.rk-sheet { width: 100%; max-height: 86%; overflow-y: auto; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 0 18px 24px; box-shadow: 0 -14px 40px rgba(0,0,0,.28); animation: rkSheetUp var(--motion) cubic-bezier(.2,.7,.3,1) both; }
+.rk-sheet { width: 100%; max-width: var(--app-max); max-height: 86vh; overflow-y: auto; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 0 18px 24px; box-shadow: 0 -14px 40px rgba(0,0,0,.28); animation: rkSheetUp var(--motion) cubic-bezier(.2,.7,.3,1) both; }
 .rk-sheet::-webkit-scrollbar { width: 0; }
 @keyframes rkSheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
 .rk-sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 10px auto 4px; }
@@ -438,10 +436,10 @@ body {
 
 /* ---------- Toast (PROJ-9/10) ---------- */
 .rk-toast,
-.rk-share-toast { position: absolute; bottom: 74px; left: var(--pad); right: var(--pad); border-radius: var(--radius-sm); padding: 11px 14px; font-size: 13px; font-weight: 500; line-height: 1.4; z-index: 90; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity var(--motion), transform var(--motion); }
-.rk-toast { background: var(--ink); color: var(--bg); box-shadow: var(--shadow); }
-.rk-share-toast { background: var(--gut-ink); color: var(--gut-bg); z-index: 91; }
-.rk-toast-show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.rk-share-toast { position: fixed; bottom: 84px; left: 50%; width: min(calc(100% - 32px), var(--app-max)); border-radius: 8px; padding: 11px 14px; font-size: 13px; font-weight: 500; line-height: 1.4; z-index: 90; opacity: 0; transform: translate(-50%, 10px); pointer-events: none; transition: opacity var(--motion), transform var(--motion); }
+.rk-toast { background: var(--ink, #16140f); color: var(--bg, #fff); box-shadow: 4px 4px 0 rgba(0,0,0,.3); }
+.rk-share-toast { background: var(--gut-ink, #0f5a30); color: var(--gut-bg, #e7f4ec); z-index: 91; }
+.rk-toast-show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 
 /* ---------- Link teilen (PROJ-10) ---------- */
 .rk-link-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 13px; display: flex; flex-direction: column; gap: 5px; }
@@ -745,7 +743,7 @@ body {
    ========================================================================== */
 
 /* ---------- Sprach-Switcher (PROJ-24) ----------
-   Body-Level-Leiste analog .rk-themebar (außerhalb .rk-phone). */
+   Leiste im Seitenkopf analog .rk-themebar (über der Lesespalte). */
 .rk-langswitch {
   display: inline-flex; align-items: center; gap: 4px;
   background: #ffffff; border: 1px solid #d8d3ca; border-radius: 10px;
@@ -1485,4 +1483,25 @@ body {
 }
 .rk-extract-actions {
   display: flex; flex-direction: column; gap: 8px; margin-top: 18px;
+}
+
+/* ==========================================================================
+   PROJ-38 — Desktop-Feinschliff: sichtbarer Fokus + Hover für Maus/Tastatur.
+   Hover nur auf Zeigegeräten (kein Sticky-Hover auf Touch); Touch-:active
+   bleibt unberührt. Fokus-Ring durchgängig für Tastatur-Navigation.
+   ========================================================================== */
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent, #ff5a1f);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm, 8px);
+}
+@media (hover: hover) {
+  .rk-big:hover,
+  .rk-method:hover,
+  .rk-device:hover,
+  .rk-input:hover,
+  .rk-answer:hover,
+  .rk-share-btn:hover { border-color: var(--accent); }
+  .rk-ghost:hover { color: var(--accent); }
+  .rk-iconbtn:hover { background: var(--surface-2); }
 }
