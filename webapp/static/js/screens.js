@@ -53,21 +53,8 @@
     return IconBtn({ onClick: onClick, label: t('common.protokoll'), children: DocIcon() });
   }
 
-  function deviceRow(d, onClick, sheet) {
-    return h('button', { class: 'rk-device' + (sheet ? ' rk-device-sheet' : ''), onClick: onClick },
-      h('span', { class: 'rk-device-e' }, d.emoji),
-      h('span', { class: 'rk-device-main' },
-        h('span', { class: 'rk-device-name' }, d.name),
-        h('span', { class: 'rk-device-sub' }, d.blurb)
-      ),
-      h('span', { class: 'rk-device-go' }, '→')
-    );
-  }
-
   /* ===================== START ===================== */
   function StartScreen(props) {
-    var devices = props.devices || {};
-    var deviceList = Object.keys(devices).map(function (k) { return devices[k]; });
     var lang = props.lang || 'de';
 
     // PROJ-27: Voice-Ergebnis in Freitext einfügen
@@ -78,23 +65,18 @@
       if (inp) { inp.value = transcript; }
     }
 
-    var input = h('button', { class: 'rk-input', onClick: function () { props.setChooser(true); } },
-      h('span', { class: 'rk-input-ph' }, '„Mein Toaster wirft das Brot nicht mehr aus …”'),
-      h('span', { class: 'rk-input-mic' }, '🎙️')
+    // Freitext-Eingabe für die Live-Diagnose (POST /api/diagnose) — einziger Einstieg.
+    var input = h('div', { class: 'rk-input' },
+      h('input', {
+        class: 'rk-input-ph', type: 'text',
+        placeholder: t('start.placeholder'),
+        value: props.draft || '',
+        style: { flex: '1', minWidth: '0', border: '0', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit' },
+        onInput: function (e) { props.setDraft(e.target.value); },
+        onKeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); props.onDiagnose(); } }
+      }),
+      h('span', { class: 'rk-input-mic', onClick: function () { props.onDiagnose(); } }, '🎙️')
     );
-    if (props.onDiagnose) {
-      input = h('div', { class: 'rk-input' },
-        h('input', {
-          class: 'rk-input-ph', type: 'text',
-          placeholder: t('start.placeholder'),
-          value: props.draft || '',
-          style: { flex: '1', minWidth: '0', border: '0', background: 'transparent', outline: 'none', font: 'inherit', color: 'inherit' },
-          onInput: function (e) { props.setDraft(e.target.value); },
-          onKeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); props.onDiagnose(); } }
-        }),
-        h('span', { class: 'rk-input-mic', onClick: function () { props.onDiagnose(); } }, '🎙️')
-      );
-    }
 
     // PROJ-27: echte Modalitäts-Buttons (MediaPanel)
     var mediaPanel = window.MediaPanel ? window.MediaPanel({
@@ -133,21 +115,10 @@
         : h('h1', { class: 'rk-hero' }, heroFull),
       h('p', { class: 'rk-hero-sub' }, t('start.heroSub')),
       input,
-      mediaPanel,
-      h('div', { class: 'rk-mine' },
-        h('div', { class: 'rk-mine-head' }, t('start.meineGeraete')),
-        deviceList.map(function (d) { return deviceRow(d, function () { props.onPick(d.id); }, false); })
-      ),
-      Sheet({
-        open: props.chooser, onClose: function () { props.setChooser(false); },
-        title: t('start.chooser.title'),
-        children: [
-          h('p', { class: 'rk-sheet-note' }, t('start.chooser.hinweis')),
-          deviceList.map(function (d) {
-            return deviceRow(d, function () { props.setChooser(false); props.onPick(d.id); }, true);
-          })
-        ]
-      })
+      props.error
+        ? h('p', { class: 'rk-q-hint', role: 'alert', style: { color: 'var(--stop)' } }, props.error)
+        : null,
+      mediaPanel
     ];
 
     return Screen({ bar: null, children: children });

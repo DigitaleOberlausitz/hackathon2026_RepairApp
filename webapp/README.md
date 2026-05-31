@@ -1,8 +1,9 @@
 # Reparatur-Helfer — Web-App
 
 Echte Web-App-Nachbildung des Claude-Design-Prototyps `ReparaturApp.html`.
-**Python (Flask)**-Backend + Vanilla-JS-Frontend + Tailwind CSS, mit optionaler
-**OpenAI-ChatGPT-Live-Diagnose** aus Freitext.
+**Python (Flask)**-Backend + Vanilla-JS-Frontend + Tailwind CSS. Die Diagnose
+läuft **ausschließlich** über ein echtes LLM-Backend (lokales Ollama oder
+OpenAI) aus Freitext — es gibt keine hinterlegten Demo-/Seed-Geräte mehr.
 
 Verbindlicher Vertrag (Schema, Endpunkte, Dateieigentum): [`SPEC.md`](SPEC.md).
 
@@ -18,7 +19,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 # 2. Abhängigkeiten installieren
 pip install -r requirements.txt
 
-# 3. Konfiguration anlegen (optional, s. u.)
+# 3. Konfiguration anlegen — LLM-Backend ist Pflicht (s. u.)
 cp .env.example .env
 
 # 4. starten
@@ -31,16 +32,16 @@ Die App läuft auf **Port 5000**.
 
 ## Diagnose-Backend wählen
 
-Die Live-Diagnose (`POST /api/diagnose` aus Freitext) kennt drei Betriebsarten,
-die `ai.py` automatisch in dieser Reihenfolge wählt:
+Die Live-Diagnose (`POST /api/diagnose` aus Freitext) braucht ein echtes
+LLM-Backend; `ai.py` wählt automatisch in dieser Reihenfolge:
 
 1. **Lokaler Ollama** — sobald `OLLAMA_BASE_URL` gesetzt ist (offline, empfohlen).
 2. **OpenAI-Cloud** — wenn nur `OPENAI_API_KEY` gesetzt ist.
-3. **Fallback** — ohne beides: passendstes Seed-Gerät (`"source": "fallback"`).
 
-**Ohne jedes Backend läuft die App trotzdem** — es wird nie hart gescheitert
-(auch bei Netzwerk-, API- oder JSON-Fehlern fällt der Endpunkt sauber auf ein
-Seed-Gerät zurück, `"source": "fallback"`).
+**Ohne ein konfiguriertes Backend** antwortet `POST /api/diagnose` mit einem
+sauberen Fehler (`HTTP 503`, `"code": "no_backend"`) und das Frontend zeigt
+einen Hinweis auf dem Startscreen — es wird nie hart gescheitert, aber es gibt
+auch keinen Demo-Modus mehr (keine hinterlegten Seed-Geräte).
 
 ### Variante A — Lokales LLM via Docker (CPU-only)
 
@@ -81,12 +82,12 @@ bei Bedarf). Steuerung über `.env` (`DIAGNOSE_MODEL`/`OLLAMA_MODEL`,
 | Methode + Pfad            | Antwort                                                        |
 |---------------------------|----------------------------------------------------------------|
 | `GET  /`                  | rendert `templates/index.html` (SPA-Shell)                     |
-| `GET  /api/devices`       | `{ "toaster": {device…}, "mikrowelle": {device…} }`            |
-| `GET  /api/device/<id>`   | einzelnes `device`-Objekt (404 wenn unbekannt)                 |
-| `POST /api/diagnose`      | Body `{"text": "…"}` → `{"device": {device…}, "source": …, "diagnosis": {status, score, reason, trust}}` |
+| `POST /api/diagnose`      | Body `{"text": "…"}` → Erfolg `{"device": {device…}, "source": "ai", "diagnosis": {status, score, reason, trust}}` |
 
-`source` ist `"ai"` (KI-Antwort) oder `"fallback"` (Seed-Gerät).
-`diagnosis.trust` (PROJ-25) trägt `{level, source, reason}` — `fallback` ⇒ niedrig/„KI-Fallback".
+Bei Erfolg ist `source` immer `"ai"`. Im Fehlerfall liefert der Endpunkt ein
+Objekt `{"error": "…", "code": "…"}` mit passendem HTTP-Status: `400` (leerer
+Text, `empty`), `503` (kein LLM-Backend, `no_backend`), `502` (KI-/Upstream-Fehler,
+`ai_error`). `diagnosis.trust` (PROJ-25) trägt `{level, source, reason}`.
 Alle JSON-Antworten sind UTF-8 mit echten Emojis/Umlauten (kein ASCII-Escaping).
 
 ### Stufe-2-Service-Endpunkte (PROJ-11/12/13/14/26)
@@ -114,9 +115,8 @@ webapp/
   .env.example         Vorlage für die Konfiguration
   repair/
     __init__.py
-    data.py            Seed-Geräte (Port von repair-data.js): Toaster 🟢, Mikrowelle 🔴
     schema.py          normalize_device() — Validierung/Reparatur eines device-Objekts
-    ai.py              diagnose() — KI-Diagnose mit Seed-Fallback + Vertrauens-Indikator (PROJ-25)
+    ai.py              diagnose() — reine LLM-Diagnose (ohne Backend/Fehler → Fehler-Objekt) + Vertrauens-Indikator (PROJ-25)
     foerderung.py      kuratierte Reparatur-Förderungen (PROJ-6)
     store.py           Vorgang-Persistenz (sqlite3, PROJ-9)
     export.py          Protokoll-Renderer txt + Lese-Ansicht HTML (PROJ-10, +Stufe-2-Abschnitte)
@@ -131,29 +131,29 @@ webapp/
 
 ## Tests (Definition of Done aus SPEC.md)
 
-Backend-Smoke-Test (läuft ohne Key, nutzt Fallback):
+Backend-Smoke-Test (ohne Backend → sauberer Fehler statt Crash):
 
 ```bash
 cd webapp
-python -c "import app; from repair import data, ai, schema; \
-print(len(data.seed_devices())); \
-print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['source'])"
+python -c "import os; [os.environ.pop(k, None) for k in ('OPENAI_API_KEY','OLLAMA_BASE_URL')]; \
+import app; from repair import ai, schema; \
+print(ai.diagnose('Mein Toaster wirft nicht mehr aus')['code'])"
 # erwartet:
-#   2
-#   fallback
+#   no_backend
 ```
 
 Endpunkte manuell prüfen (Server läuft auf :5000):
 
 ```bash
-curl -s http://127.0.0.1:5000/api/devices | head -c 200
-curl -s http://127.0.0.1:5000/api/device/toaster | head -c 200
-curl -s http://127.0.0.1:5000/api/device/unbekannt -o /dev/null -w "%{http_code}\n"   # 404
-curl -s -X POST http://127.0.0.1:5000/api/diagnose \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Meine Mikrowelle brummt laut"}'
+# entfernte Demo-Routen sind jetzt 404
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/devices            # 404
+# Diagnose: 503 ohne Backend, 200 mit Ollama/OpenAI
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:5000/api/diagnose \
+  -H "Content-Type: application/json" -d '{"text":"Meine Mikrowelle brummt laut"}'
+# Stufe-2/3-Dienste (kuratierte Daten) bleiben verfügbar
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/anbieter           # 200
 ```
 
-Voller UI-Flow (sobald Frontend von AGENT-B/C vorliegt): siehe `SPEC.md`
-„Lauf-/Testkriterien" — Toaster-🟢-Pfad, Mikrowelle-🔴-Pfad, Protokoll-Sheet,
-Theme-Switcher, Freitext-Diagnose.
+Voller UI-Flow (mit gesetztem LLM-Backend): siehe `SPEC.md`
+„Lauf-/Testkriterien" — Freitext-Diagnose → KI-Gerät durch den Flow,
+Protokoll-Sheet, Theme-Switcher.
