@@ -1,6 +1,6 @@
 # PROJ-11: Vermittlung von Reparatur-Anbietern & Standorten
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

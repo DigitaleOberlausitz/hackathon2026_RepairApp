@@ -38,17 +38,17 @@
 
 | ID | Feature | Rolle | D-Anker | Status | Abhängigkeiten |
 |---|---|---|---|---|---|
-| PROJ-15 | Kuratierte Fehlerzustand-Sammlung | `wissensbasis` | D13/D5 | Planned | — |
-| PROJ-16 | Recherche-Dienst (kuratiert→Fallback→online) | `recherche` | D2 | Planned | PROJ-15 |
-| PROJ-17 | Diagnose auf kuratierter Sammlung | `diagnose` | D4 | Planned | PROJ-15, PROJ-16 |
-| PROJ-18 | Rollen-/Agenten-Architektur | `lotse` | D19 | Planned | PROJ-9 |
-| PROJ-19 | Rückruf / Sicherheitsmangel | Edge-Case | D22 | Planned | PROJ-15 |
-| PROJ-20 | Datenlöschung vor Fremdabgabe | Edge-Case | D23 | Planned | PROJ-1, PROJ-10 |
-| PROJ-21 | Mehrfachdefekte mit Gesamt-Fazit | `bewertung` | D24 | Planned | PROJ-9 |
-| PROJ-22 | Consent-Gate (Einwilligung) | `lotse` | D10 | Planned | — |
-| PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Planned | PROJ-9, PROJ-22 |
-| PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Planned | — |
-| PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Planned | — |
+| PROJ-15 | Kuratierte Fehlerzustand-Sammlung | `wissensbasis` | D13/D5 | Done | — |
+| PROJ-16 | Recherche-Dienst (kuratiert→Fallback→online) | `recherche` | D2 | Done | PROJ-15 |
+| PROJ-17 | Diagnose auf kuratierter Sammlung | `diagnose` | D4 | Done | PROJ-15, PROJ-16 |
+| PROJ-18 | Rollen-/Agenten-Architektur | `lotse` | D19 | Done | PROJ-9 |
+| PROJ-19 | Rückruf / Sicherheitsmangel | Edge-Case | D22 | Done | PROJ-15 |
+| PROJ-20 | Datenlöschung vor Fremdabgabe | Edge-Case | D23 | Done | PROJ-1, PROJ-10 |
+| PROJ-21 | Mehrfachdefekte mit Gesamt-Fazit | `bewertung` | D24 | Done | PROJ-9 |
+| PROJ-22 | Consent-Gate (Einwilligung) | `lotse` | D10 | Done | — |
+| PROJ-23 | Anonymisierung & Daten-Schwungrad | `protokoll`/`wissensbasis` | D10/D7 | Done | PROJ-9, PROJ-22 |
+| PROJ-24 | Mehrsprachigkeit (Englisch) | Querschnitt | D17 | Done | — |
+| PROJ-27 | Multimodale Eingabe (Foto/Voice/Barcode) | `aufnahme` | D9 | Done | — |
 
 ## Betrieb & Beobachtbarkeit (Querschnitt, betreiberseitig)
 
@@ -56,7 +56,12 @@
 |---|---|---|---|---|---|
 | PROJ-28 | Anfrage-Protokoll als Markdown (Rohdaten-Debug-Log) | Betrieb/Querschnitt | — | Planned | PROJ-9 |
 | PROJ-29 | Zentrales Logging (Datei + Konsole, tägl. Rotation, 14 Tage) | Betrieb/Querschnitt | — | Planned | — |
-| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | Planned | (Bezug: PROJ-29) |
+| PROJ-30 | Konfiguration ausschließlich über `.env` (kein Hardcode, kein Drift) | Betrieb/Querschnitt | — | In Progress | (Bezug: PROJ-29) |
+
+> **Offene Punkte (Stand 2026-05-31):** PROJ-28 und PROJ-29 sind im Code noch nicht
+> vorhanden (kein Anfrage-Protokoll, kein zentrales Logging). PROJ-30 ist teilweise
+> umgesetzt: Der Code liest 8 Variablen, aber `SEARXNG_URL` fehlt noch in `.env.example`
+> (genau der Drift, den dieses Feature ausschließen soll).
 
 ## Empfohlene Build-Reihenfolge
 

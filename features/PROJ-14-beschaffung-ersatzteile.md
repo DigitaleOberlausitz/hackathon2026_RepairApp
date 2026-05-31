@@ -1,6 +1,6 @@
 # PROJ-14: Beschaffung von Ersatzteilen mit integrierter Bestellung
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

@@ -1,6 +1,6 @@
 # PROJ-4: Unklar-Pfad bei Diagnose-Sackgasse
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

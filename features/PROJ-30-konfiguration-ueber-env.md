@@ -1,6 +1,6 @@
 # PROJ-30: Konfiguration ausschließlich über `.env`
 
-## Status: Planned
+## Status: In Progress
 **Erstellt:** 2026-05-31
 **Zuletzt aktualisiert:** 2026-05-31
 

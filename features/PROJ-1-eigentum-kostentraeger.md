@@ -1,6 +1,6 @@
 # PROJ-1: Eigentum & Kostenträger in der Aufnahme erfragen
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

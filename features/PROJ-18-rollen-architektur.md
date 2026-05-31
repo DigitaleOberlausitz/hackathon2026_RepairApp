@@ -1,6 +1,6 @@
 # PROJ-18: Rollen-/Agenten-Architektur mit Orchestrierung durch den Lotsen
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

@@ -1,6 +1,6 @@
 # PROJ-3: Fähigkeits-Rückfrage „Traust du dir das zu?"
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

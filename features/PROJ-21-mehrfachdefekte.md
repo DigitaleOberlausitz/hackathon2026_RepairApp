@@ -1,6 +1,6 @@
 # PROJ-21: Mehrfachdefekte mit Gesamt-Fazit nach schwächstem Glied
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30

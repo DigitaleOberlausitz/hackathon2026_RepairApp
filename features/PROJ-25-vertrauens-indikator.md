@@ -1,6 +1,6 @@
 # PROJ-25: Vertrauens-Indikator durchgängig bei jeder KI-Aussage
 
-## Status: Planned
+## Status: Done
 
 **Erstellt:** 2026-05-30
 **Zuletzt aktualisiert:** 2026-05-30
