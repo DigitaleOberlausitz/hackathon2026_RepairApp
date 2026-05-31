@@ -314,7 +314,7 @@ def extrahiere(medien, text: str = "", lang: str = "de") -> dict:
     for url in bilder:
         user_content.append({"type": "image_url", "image_url": {"url": url}})
 
-    log.info("Vision-Extraktion: Modell=%s, Bilder=%d, lokal=%s", model, len(bilder), is_local)
+    log.info("Vision-Extraktion: Modell=%s, Bilder=%d", model, len(bilder))
     try:
         response = client.chat.completions.create(
             model=model,

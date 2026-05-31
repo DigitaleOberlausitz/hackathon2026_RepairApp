@@ -241,7 +241,7 @@ def test_endpoint_medien_pdf_dokument() -> None:
         print("  (übersprungen: PyMuPDF nicht installiert)")
         return
     c = app.app.test_client()
-    vid = c.post("/api/vorgang", json={}).get_json()["id"]
+    vid = c.post("/api/vorgang", json={}).get_json()["vorgang_id"]
     r = c.post(
         f"/api/vorgang/{vid}/medien",
         data={"file": (io.BytesIO(pdf), "rechnung.pdf", "application/pdf"), "art": "dokument"},
