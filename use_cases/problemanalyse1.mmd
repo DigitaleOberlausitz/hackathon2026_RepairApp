@@ -1,0 +1,66 @@
+%% Problemanalyse — Prozess (abgeleitet aus Whiteboard IMG_7536.jpg)
+flowchart TD
+    Start(("Start")) -->|"&laquo;Kategorisieren&raquo;"| S1["1. Typ d. Sache feststellen"]
+
+%% Schritt 1 — Kategorie
+    S1 --- K1["Möbel"]
+    S1 --- K2["elektr. Gerät"]
+
+    S1 -->|"&laquo;Beschreiben&raquo;"| S2["2. Wirkung / Zustand feststellen"]
+
+%% Schritt 2 — Zustände
+    S2 --- Z1["physisch kaputt"]
+    S2 --- Z2["Funktion beeinträchtigt oder kaputt"]
+    S2 --- Z3["verbraucht"]
+    S2 --- Z4["höheres Risiko"]
+    S2 --- Z5["Funktion in Ordnung, aber in Fehlerzustand"]
+
+    Z4 --- R1["security"]
+    Z4 --- R2["elektrische / elektron. Sicherheit"]
+    Z4 --- R3["körperl. Schaden (Verletzung)"]
+
+    S2 -->|"&laquo;Klassifizieren&raquo;"| S3["3. Handlungsspielraum / Optionen betrachten"]
+
+%% Schritt 3 — Handlungsoptionen
+    S3 --- H1["Garantie / Gewährleistung"]
+    S3 --- H2["Reset-Maßnahmen"]
+    S3 --- H3["reparieren"]
+    S3 --- H4["reparieren lassen"]
+    S3 --- H5["Workaround anwenden"]
+    S3 --- H6["Ersatz beschaffen"]
+    S3 --- H7["Entsorgen / Recycling"]
+    S3 --- H8["Wartung (kalibrieren, Reinigen, …)"]
+    S3 --- H9["Verbrauchsmaterial ersetzen / austauschen"]
+
+    S3 -->|"&laquo;Bewerten&raquo;"| S4["4. Option entscheiden / auswählen"]
+
+%% Schritt 4 — Kriterien
+    S4 --- C1["Kosten / Wirtschaftlichkeit"]
+    S4 --- C2["Mobilität"]
+    S4 --- C3["Aufwand / Zeit"]
+    S4 --- C4["Wissen / Fähigkeiten / Expertise"]
+    S4 --- C5["ideeller Wert"]
+
+    S4 -->|"&laquo;Benutzen&raquo;"| S5["5. Lösung: Option benutzen"]
+
+%% Schritt 5 — Vermittlung
+    S5 --- V1["Wissen"]
+    S5 --- V2["Werkzeuge (Verleih)"]
+    S5 --- V3["Kenntnisse / Fähigkeiten vermitteln"]
+    S5 --- V4["Community-Angebot vermitteln"]
+    S5 --- V5["Dienstleister"]
+    S5 --- V6["Werkstatt"]
+    S5 --- V7["Produkte vermitteln"]
+
+    S5 --> S6["6. Präventionsmaßnahme vermitteln"]
+
+%% Schritt 6 — Prävention
+    S6 --- P1["Wartung / Pflege empfehlen"]
+    S6 --- P2["alternative / 'bessere' / nachhaltigere Produkte"]
+    S6 --- P3["Benutzerhinweise z. korrekten Verwendung"]
+
+%% Styling der Prozessschritte
+    classDef step fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
+    classDef detail fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    class S1,S2,S3,S4,S5,S6 step;
+    class K1,K2,Z1,Z2,Z3,Z4,Z5,R1,R2,R3,H1,H2,H3,H4,H5,H6,H7,H8,H9,C1,C2,C3,C4,C5,V1,V2,V3,V4,V5,V6,V7,P1,P2,P3 detail;

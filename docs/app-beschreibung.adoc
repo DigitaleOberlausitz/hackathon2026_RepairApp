@@ -1,0 +1,256 @@
+= Die Repair-App: So sieht sie aus, so fühlt sie sich an
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+[IMPORTANT]
+====
+Dieses Dokument beschreibt die App *erlebbar und nicht-technisch* — Bildschirm für
+Bildschirm, Schritt für Schritt. Es ergänzt das fachliche `konzept.adoc` (das „Was und
+Warum") um das „Wie sieht es aus und wie bedient man es". Zielgruppe: zum Vorstellen im
+Freundeskreis *und* als Vorlage für die echte Umsetzung. Wo ein Detail im Konzept
+verankert ist, steht ein Hinweis wie „(Konzept D6)".
+====
+
+== In einem Satz
+
+Die App ist wie ein *ruhiger, ehrlicher Freund, der sich mit Reparaturen auskennt*:
+Du zeigst ihm dein kaputtes Gerät, er stellt dir ein paar kluge Fragen, sagt dir
+ehrlich, ob sich eine Reparatur lohnt und ob du sie dir selbst zutrauen kannst — und
+wenn ja, führt er dich Schritt für Schritt hindurch. Wenn nicht, sagt er dir das
+genauso klar und hilft dir, den richtigen Profi zu finden.
+
+== Der erste Eindruck (der Startbildschirm)
+
+Du öffnest die App und siehst *keine Werbung, keine Anmeldepflicht, keine
+Bedienungsanleitung*. Stattdessen eine einzige große, einladende Frage:
+
+[quote]
+____
+*„Was ist kaputt?"*
+____
+
+Darunter ein großes Eingabefeld und drei offensichtliche Knöpfe, mit denen du dein
+Problem schildern kannst:
+
+* 📝 *Tippen oder einsprechen* — „Mein Toaster wirft das Brot nicht mehr aus."
+* 📷 *Foto machen* — vom Gerät, vom Defekt oder vom Typenschild.
+* 🔖 *Etikett scannen* — Barcode oder Typenschild, damit das genaue Modell erkannt wird.
+
+Du musst dich für nichts entscheiden — du fängst einfach an zu reden, als würdest du
+einem Bekannten von deinem Problem erzählen. Unten klein und unaufdringlich: deine
+zuletzt aufgenommenen Geräte („Meine Geräte"), falls du schon mal etwas erfasst hast.
+
+NOTE: Vier Eingabewege sind bewusst gleichwertig — Text, Foto/Video, Sprache und
+Scan (Konzept D9). Sprache ist besonders während des Schraubens praktisch, wenn die
+Hände schmutzig sind.
+
+== Wie ein Vorgang abläuft (die Reise von vorne bis hinten)
+
+Die App führt dich immer durch dieselbe, ruhige Abfolge. Du wirst nie mit allem auf
+einmal konfrontiert — es geht Schritt für Schritt, und du kannst *jederzeit aussteigen
+oder die Richtung wechseln*.
+
+[mermaid]
+....
+flowchart LR
+  A["1 · Problem<br/>schildern"] --> B["2 · Nachfragen<br/>(Triage)"]
+  B --> C["3 · Einschätzung<br/>(Ampel)"]
+  C --> D["4 · Entscheidung"]
+  D --> E["5 · Begleitung"]
+  E --> F["6 · Ergebnis &<br/>Rückblick"]
+....
+
+=== Schritt 1 — Du schilderst das Problem
+
+Du erzählst frei, was los ist. Die App hört zu (egal ob getippt, gesprochen oder per
+Foto) und versteht den Kern: „Aha, ein Toaster, der nicht mehr auswirft."
+
+=== Schritt 2 — Die App stellt kluge Nachfragen
+
+Jetzt kommt das Herzstück des ersten Teils: Die App fragt *nicht wahllos*, sondern wie
+ein erfahrener Diagnostiker — ein paar gezielte Fragen, eine nach der anderen, in
+einfacher Sprache:
+
+* „Was genau passiert — bleibt der Hebel oben oder fällt er sofort runter?"
+* „Wird der Toaster überhaupt warm?"
+* „Seit wann ist das so? Ist vorher etwas passiert?"
+* „Hast du schon irgendetwas ausprobiert?"
+
+Jede Frage hat *vorgeschlagene Antworten zum Antippen* (damit du nicht tippen musst),
+aber du kannst immer auch frei antworten. Die App fragt nur so viel, wie sie wirklich
+braucht — sie *verhört dich nicht*.
+
+[TIP]
+====
+Diese geführte Aufnahme funktioniert für *jedes* Gerät — vom Toaster bis zum Auto.
+Fragen zu stellen ist immer sicher und immer möglich (Konzept: „Schicht A — Triage",
+D6). Das Ergebnis dieser Phase ist ein sauberes *Problem-Protokoll* (siehe unten).
+====
+
+=== Schritt 3 — Die Einschätzung: die Warn-Ampel
+
+Jetzt zeigt dir die App das, was sie einzigartig macht: eine *Ampel-Karte*, die auf
+einen Blick zusammenfasst, worauf du dich einlässt. Vier kleine Ampeln nebeneinander,
+jede mit einem klaren Symbol und einem Satz:
+
+[cols="1,1,4"]
+|===
+| Was | Ampel | Bedeutet
+
+| 🛡️ *Sicherheit* | 🟢 / 🟡 / 🔴 | „Kann ich mich dabei verletzen?"
+| 🔧 *Aufwand* | 🟢 / 🟡 / 🔴 | „Wie schwierig ist das — Werkzeug, Zeit, Können?"
+| 💶 *Kosten* | 🟢 / 🟡 / 🔴 | „Lohnt sich die Reparatur gegenüber Neukauf?"
+| 📦 *Machbarkeit* | 🟢 / 🟡 / 🔴 | „Gibt es überhaupt Ersatzteile?"
+|===
+
+Beim Toaster sieht das vielleicht so aus: Sicherheit 🟢, Aufwand 🟢, Kosten 🟢 — und
+darunter steht in normalem Deutsch:
+
+[quote]
+____
+*„Das kannst du wahrscheinlich selbst reparieren."* Der Auswurf-Hebel klemmt häufig
+durch Krümel oder eine ausgehängte Feder. Kein Strom-Risiko, solange der Stecker
+gezogen ist. Geschätzte Kosten: 0–5 €.
+____
+
+Bei einer Mikrowelle dagegen würde die Sicherheits-Ampel 🔴 leuchten, mit einer
+deutlichen Warnung („Im Inneren kann auch nach dem Ausstecken lebensgefährliche
+Spannung gespeichert sein"). Die App *verbietet dir nichts* — aber je gefährlicher,
+desto deutlicher und unübersehbarer die Warnung (Konzept: „warnen statt sperren", D1/D15).
+
+Neben jeder Einschätzung gibt es ein kleines *Vertrauens-Zeichen*: Du kannst antippen
+und sehen, *woher* die App ihr Wissen hat („aus geprüfter Reparatur-Anleitung" vs.
+„von der KI selbst eingeschätzt — bitte mit Vorsicht behandeln") und *wie sicher* sie
+sich ist. Der Hinweis „die KI kann sich irren" ist immer da — und wird umso
+deutlicher, je riskanter die Sache ist (Konzept D3).
+
+=== Schritt 4 — Du entscheidest
+
+Unter der Ampel bietet dir die App klare Wege an — als große Knöpfe:
+
+* 🛠️ *„Ich mach's selbst"* — du wirst Schritt für Schritt begleitet.
+* 🤝 *„Hilfe vor Ort finden"* — Repair Cafés und Werkstätten in deiner Nähe.
+* 🏪 *„Profi beauftragen"* — mit dem fertigen Protokoll für die Werkstatt.
+* ♻️ *„Doch ersetzen / entsorgen"* — inkl. fachgerechtem Entsorgungsweg.
+
+Wichtig: Die App *empfiehlt* zwar einen Weg (mit Begründung), aber *du entscheidest*.
+Wenn ein Neukauf wirtschaftlich klüger wäre, sagt sie auch das ehrlich — und zeigt dir
+transparent die Unterschiede in *Geld, Zeit und Umwelt* nebeneinander, sodass du selbst
+abwägen kannst, was dir wichtiger ist (Konzept D18).
+
+=== Schritt 5 — Die Begleitung (nur wenn du selbst reparierst)
+
+Sagst du „Ich mach's selbst", verwandelt sich die App in eine *geduldige
+Schritt-für-Schritt-Anleitung*:
+
+* Eine Aktion pro Bildschirm, mit Bild und einem kurzen Satz.
+* Große „Weiter"- und „Zurück"-Knöpfe; per Sprache vorlesen lassen möglich.
+* Vor jedem riskanten Schritt ein deutlicher Sicherheits-Hinweis („Zuerst den Stecker
+  ziehen!").
+* Du kannst die *Erklärtiefe* umstellen: „Anfänger" (mehr Erklärung, mehr
+  Sicherheitshinweise) oder „Geübt" (knapp und schnell) — Konzept D11.
+* Brauchst du ein Ersatzteil, zeigt die App, *welches* — und wo du es bekommst, samt
+  passender Förderprogramme deiner Region („Reparatur-Bonus").
+
+An jeder Stelle ist ein Notausgang sichtbar: *„Das wird mir zu heikel — Profi finden."*
+Dann wechselt die App nahtlos zum Profi-Weg und nimmt dein bereits gesammeltes Protokoll
+mit. Nichts geht verloren, nichts war umsonst.
+
+=== Schritt 6 — Das Ergebnis und der Rückblick
+
+Am Ende fragt die App schlicht: *„Hat's geklappt?"*
+
+* *Geklappt:* Glückwunsch — und ein kleiner Wirkungs-Rückblick: „Du hast ein Gerät
+  gerettet, ~45 € gespart und ~12 kg CO₂ vermieden."
+* *Nicht geklappt:* Kein Vorwurf. Die App rahmt es ermutigend („Du hast das Problem
+  systematisch eingegrenzt — das war goldrichtig") und zeigt dir den sicheren Weg zum
+  Profi, der jetzt dank deines Protokolls schneller helfen kann.
+
+In *beiden* Fällen hast du etwas gewonnen: ein repariertes Gerät oder ein gelöstes
+Problem *und* ein Stück Selbstvertrauen (Konzept: „Selbstwirksamkeit auch ohne Erfolg").
+
+== Das Protokoll — dein „Reparatur-Steckbrief"
+
+Während du durch die Fragen gehst, schreibt die App im Hintergrund still einen
+*Steckbrief des Problems* mit. Den kannst du dir jederzeit ansehen und *teilen* —
+als Nachricht, PDF oder Link. Er enthält:
+
+* das Gerät und das Symptom,
+* was schon getestet wurde (und was dabei herauskam),
+* die wahrscheinliche Ursache und die Ampel-Einschätzung,
+* und — auf Wunsch — *warum die App das so einschätzt* (ihren Gedankengang und ihre Quellen).
+
+Wozu das gut ist, ist im Alltag sofort einleuchtend:
+
+* Du gibst es in der *Werkstatt* ab → der Mechaniker muss nicht bei null anfangen, das
+  spart Zeit und Geld.
+* Du schickst es ins *Repair Café* oder *Forum* → andere verstehen dein Problem sofort.
+* Du *behältst* es beim Gerät → wenn der Fehler in zwei Jahren wiederkommt, weißt du:
+  „Den hatten wir schon mal, damals half X." (Reparatur-Tagebuch)
+* Gehört das Gerät jemand anderem (z. B. den Eltern), hält das Protokoll fest, *wem*
+  es gehört und *wer die Kosten trägt* (Konzept D14).
+
+== Wie sich die App anfühlt (Ton & Haltung)
+
+Das ist kein Deko-Punkt, sondern der Charakter der App — und sollte sich in jedem Satz
+zeigen:
+
+* *Ruhig und aufgeräumt.* Eine Frage, eine Entscheidung pro Bildschirm. Nie überladen.
+* *Ehrlich statt schönfärberisch.* Die App sagt klar „lohnt sich nicht" oder „nicht
+  selbst machen", wenn es so ist. Genau das schafft Vertrauen (Konzept: „Vertrauen
+  entsteht durch Abraten").
+* *Ermutigend, aber nicht überfordernd.* Sie hält dich vom *zu frühen* Aufgeben ab,
+  drängt dich aber nie in etwas, das dir zu heikel ist. Im Zweifel fragt sie lieber
+  einmal mehr: *„Traust du dir das zu?"*
+* *Einfache Sprache.* Kein Fachchinesisch. Zum Start Deutsch und Englisch, mit
+  Vorlesefunktion (Konzept D17).
+
+== Was die App (anfangs bewusst) NICHT ist
+
+Damit das Bild ehrlich bleibt — auch fürs Erzählen im Freundeskreis:
+
+* *Kein Verkaufsportal.* Es gibt zwar eine Bestellmöglichkeit für Ersatzteile, aber die
+  Empfehlung folgt *immer* der besten Lösung für dich — die Bestelloption kommt erst
+  danach und ist klar als solche gekennzeichnet (Konzept D8).
+* *Kein Allwissender.* Wo die App nichts Gesichertes weiß, sagt sie das offen, statt zu
+  raten und es als Wahrheit zu verkaufen.
+* *Kein Ersatz für den Fachmann bei Gefahr.* Bei riskanten Geräten ist sie ein
+  *Vermittler* zum Profi, kein Anstifter zum Selbstversuch.
+* *Übernimmt keine Haftung.* Sie gibt Hilfestellung; die Verantwortung für das, was du
+  tust, bleibt bei dir (Konzept D16). Das wird vor dem ersten Eingriff klar gesagt
+  (auch der Hinweis auf Garantie/Gewährleistung).
+
+== Ein Beispiel zum Vorlesen (Toaster)
+
+[example]
+====
+Lena öffnet die App. *„Was ist kaputt?"* — sie spricht: „Mein Toaster bleibt nicht
+mehr unten." +
+Die App fragt: „Fällt der Hebel sofort hoch, oder bleibt er kurz und springt dann?"
+→ „Sofort." +
+„Wird er überhaupt warm?" → „Nein." +
+Die App zeigt die *Ampel*: Sicherheit 🟢, Aufwand 🟢, Kosten 🟢. Text: „Wahrscheinlich
+hält der Magnet den Hebel nicht mehr — oft nur Krümel oder eine lose Feder. Gut selbst
+machbar, Materialkosten fast null." +
+Lena tippt *„Ich mach's selbst"*. Die App führt sie in fünf Schritten durch:
+ausstecken, Krümelschublade leeren, Boden öffnen, Feder einhängen, testen. +
+Am Ende: *„Hat's geklappt?"* → „Ja!" → „Du hast ein Gerät gerettet und ~30 € gespart." +
+Lena hat nicht nur einen Toaster repariert — sie traut sich jetzt das nächste Mal mehr zu.
+====
+
+== Worauf es bei der Umsetzung zuerst ankommt
+
+Wenn dieses Erlebnis gebaut werden soll, ist die Reihenfolge entscheidend — die App
+steht und fällt mit *zwei* Dingen:
+
+. *Der geführten Problemaufnahme* (Schritt 2) — sie funktioniert für jedes Gerät und
+  ist immer sicher. Das ist der breite, immer nutzbare Boden.
+. *Der Warn-Ampel* (Schritt 3) — sie ist das, was die App von einer simplen
+  Suchmaschine oder einem Chatbot unterscheidet.
+
+Alles andere (Bestellfunktion, Förder-Datenbank, Community, Mehrsprachigkeit über
+Deutsch/Englisch hinaus) kann darauf aufbauen. Erstes Ziel ist nicht Vollständigkeit,
+sondern zu zeigen, dass dieses Erlebnis *machbar ist und Menschen es annehmen*
+(Konzept: Priorität dieser Phase).

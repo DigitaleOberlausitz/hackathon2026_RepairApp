@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reparatur-Helfer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Tailwind nur fürs Layout/Canvas-Scaffold; Komponenten-Look kommt aus repair.css (Theme-Variablen).
+  tailwind.config = { corePlugins: { preflight: false } };
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/repair.css') }}" />
+<style>
+  /* Nur die App-Bühne (Zentrierung). .rk-canvas + .rk-themebar liefert Agent-C (repair.css). */
+  html, body { margin: 0; min-height: 100%; background: #e9e7e1; }
+  .rk-stage { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    gap: 20px; padding: 28px 16px 48px; box-sizing: border-box; }
+  .rk-topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+  <div class="rk-stage">
+    <div class="rk-topbar">
+      <div class="rk-themebar" id="theme-switch" role="tablist" aria-label="Theme wählen"></div>
+      <div class="rk-langswitch" id="lang-switch" role="tablist" aria-label="Sprache wählen"></div>
+    </div>
+    <div id="phone-root"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/screens.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

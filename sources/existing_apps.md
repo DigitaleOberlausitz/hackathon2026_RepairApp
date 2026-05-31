@@ -1,11 +1,14 @@
 ## Existing apps
 * [FabChatty](https://github.com/mehrabmn/FabChatty)
+* [Baumbart](https://github.com/busaltmarius/LeipzigTreeChat) -> only as reference for an AI chat bot, that uses geo data: answers questions with geo references (e.g. how many trees have been in a certain city district)
 
 ## Existing data sources
 * Open Repair Allicance
   * [Open Repair Data](https://github.com/openrepair/data)
   * [Open Repair Alliance dataset of open repair data](https://openrepair.org/open-data/downloads/)
 * [iFixit - Das kostenlose Reparaturhandbuch - für alles, geschrieben von allen](https://de.ifixit.com)
+  * [iFixit API](https://www.ifixit.com/api/2.0/doc/)
+  * [iFixit Bot](https://www.ifixit.com/go/fixbot)
 * Designs of Prusa under [Open Community License (OCL)](https://blog.prusa3d.com/de/open-sourcing-von-core-one-cad-dateien-unter-der-neuen-open-community-lizenz-ocl_127290/)
 
 ## Existing software
@@ -29,6 +32,8 @@
 * where can I get manuals / construction plan?
   * Open Access manuals
   * [Repair Wiki](https://repair.wiki/w/Main_Page#gsc.tab=0)
+  * Forum entries
+  * Link to YouTube-Step-by-Step-Tutorials
 
 ## Existing funding programs
 * Sachsen [Reparaturbonus](https://www.sab.sachsen.de/reparaturbonus)
