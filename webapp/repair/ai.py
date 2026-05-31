@@ -1,9 +1,9 @@
 """Live-Diagnose aus Freitext via lokales LLM (Ollama) oder OpenAI ChatGPT.
 
 ``diagnose(text)`` versucht, aus einer freien Problembeschreibung ein
-vollständiges ``device``-Objekt zu erzeugen. Es gilt strikt:
-
-    NIE hart scheitern — die Demo muss laufen.
+vollständiges ``device``-Objekt zu erzeugen. Die Diagnose funktioniert
+**ausschließlich** mit einem echten LLM-Backend — es gibt keine hinterlegten
+Demo-/Seed-Geräte und keinen Keyword-Fallback mehr.
 
 Backend-Auswahl (in dieser Prioritätsreihenfolge, über Umgebungsvariablen):
 
@@ -12,11 +12,12 @@ Backend-Auswahl (in dieser Prioritätsreihenfolge, über Umgebungsvariablen):
      Modell aus ``DIAGNOSE_MODEL`` → ``OLLAMA_MODEL`` → ``qwen3:8b``.
   2. **OpenAI-Cloud** — wenn ``OPENAI_API_KEY`` gesetzt ist.
      Modell aus ``DIAGNOSE_MODEL`` → ``OPENAI_MODEL`` → ``gpt-4o-mini``.
-  3. **Kein Backend** — sauberer Seed-Fallback.
 
-Ohne Backend oder bei *jedem* Fehler (Netzwerk, ungültiges JSON, Exception,
-leeres Ergebnis) gibt es den Fallback: das passendste Seed-Gerät per einfacher
-Keyword-Heuristik, mit ``source: "fallback"``.
+Ohne konfiguriertes Backend oder bei einem Fehler (Netzwerk, ungültiges JSON,
+Exception, leeres Ergebnis) liefert ``diagnose`` ein Fehler-Objekt
+(``{"error": ..., "code": ...}``); ``app.py`` übersetzt das in einen passenden
+HTTP-Status und das Frontend zeigt einen sauberen Hinweis. Es wird nie hart
+gescheitert (kein Crash), aber auch nichts erfunden.
 """
 
 from __future__ import annotations
@@ -25,7 +26,6 @@ import json
 import os
 import re
 
-from . import data
 from .schema import DeviceValidationError, normalize_device
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
@@ -36,12 +36,6 @@ DEFAULT_TIMEOUT = 180.0  # s — CPU-Inferenz braucht länger als die Cloud
 # dem JSON. Die schneiden wir defensiv heraus, bevor wir parsen.
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _FENCE_RE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
-
-# Wörter, die auf eine Mikrowelle (gefährlich) hindeuten
-_MIKROWELLE_HINTS = (
-    "mikrowelle", "mikro", "microwave", "magnetron", "hochspannung",
-    "kondensator", "drehteller", "glasteller", "watt",
-)
 
 # Konfidenz-Score-Mapping (PROJ-4, STUFE1.md §2)
 # "unklar" → 0.1 liegt bewusst unter der unclear-Schwelle (< 0.3),
@@ -247,26 +241,9 @@ def _build_diagnosis(device: dict, source: str, is_tech_error: bool = False) -> 
     }
 
 
-def seed_diagnosis(device: dict) -> dict:
-    """Diagnosis-Objekt für ein direkt gewähltes Seed-Gerät (kuratiert).
-
-    Setzt ``trust`` über den Seed-Zweig (level="hoch", source="kuratiert").
-    Status/Score folgen der hinterlegten ``device.confidence`` wie sonst auch.
-    Damit ist ein direkt geöffnetes Seed-Gerät backend-seitig korrekt als
-    hoch/kuratiert markiert (PROJ-25 / DoD-4).
-    """
-    return _build_diagnosis(device, "seed")
-
-
-def _fallback(text: str) -> dict:
-    """Bestes Seed-Gerät per Keyword-Heuristik + diagnosis-Objekt."""
-    low = (text or "").lower()
-    if any(h in low for h in _MIKROWELLE_HINTS):
-        device = data.get_device("mikrowelle")
-    else:
-        device = data.get_device("toaster")
-    diagnosis = _build_diagnosis(device, "fallback")
-    return {"device": device, "source": "fallback", "diagnosis": diagnosis}
+def _error(message: str, code: str) -> dict:
+    """Einheitliches Fehler-Objekt für den Aufrufer (app.py)."""
+    return {"error": message, "code": code}
 
 
 def _clean_json_text(content: str) -> str:
@@ -333,25 +310,27 @@ def diagnose(
     answers: list | None = None,
     lang: str = "de",
 ) -> dict:
-    """Diagnostiziert Freitext → ``{"device": {...}, "source": "ai"|"fallback", "diagnosis": {...}}``.
+    """Diagnostiziert Freitext → ``{"device": {...}, "source": "ai", "diagnosis": {...}}``.
 
-    Scheitert nie hart: bei jedem Problem sauberer Seed-Fallback.
-    diagnosis enthält {status, score, reason, trust} (PROJ-4/25) und additiv:
+    Ohne konfiguriertes LLM-Backend oder bei einem Fehler ein Fehler-Objekt
+    ``{"error": ..., "code": ...}`` (siehe Modul-Docstring). diagnosis enthält bei
+    Erfolg {status, score, reason, trust} (PROJ-4/25) und additiv:
     {kandidaten, abgrenzung, unklar} (PROJ-17).
 
     Signatur additiv erweitert: bestehende Aufrufe ``diagnose(text)`` bleiben gültig.
     """
     text = (text or "").strip()
     if not text:
-        result = _fallback(text)
-        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
-        return result
+        return _error("Bitte beschreibe zuerst, was kaputt ist.", "empty")
 
     client, model, is_local = _resolve_backend()
     if client is None:
-        result = _fallback(text)
-        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
-        return result
+        return _error(
+            "Es ist kein KI-Backend konfiguriert (lokales Ollama via "
+            "OLLAMA_BASE_URL oder OpenAI via OPENAI_API_KEY) — die Diagnose "
+            "ist deshalb nicht verfügbar.",
+            "no_backend",
+        )
 
     try:
         timeout = float(os.environ.get("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
@@ -381,9 +360,7 @@ def diagnose(
         )
         content = response.choices[0].message.content
         if not content:
-            result = _fallback(text)
-            result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
-            return result
+            return _error("Die KI hat keine Antwort geliefert. Bitte versuch es noch einmal.", "ai_error")
 
         # Sprach-Prüfung (heuristisch) — bei falscher Sprache einmalig wiederholen
         if ist_falsche_sprache(content, lang):
@@ -410,14 +387,10 @@ def diagnose(
         diagnosis = _add_kuratierte_felder(diagnosis, text, kategorie, answers, lang)
         return {"device": device, "source": "ai", "diagnosis": diagnosis}
     except (json.JSONDecodeError, DeviceValidationError):
-        result = _fallback(text)
-        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
-        return result
+        return _error("Die KI-Antwort war unbrauchbar. Bitte versuch es noch einmal.", "ai_error")
     except Exception:
-        # Netzwerk, API-Fehler, alles andere — Demo muss laufen.
-        result = _fallback(text)
-        result["diagnosis"] = _add_kuratierte_felder(result["diagnosis"], text, kategorie, answers, lang)
-        return result
+        # Netzwerk, API-Fehler, alles andere — kein Crash, aber ehrlicher Fehler.
+        return _error("Die Diagnose ist fehlgeschlagen. Bitte versuch es später noch einmal.", "ai_error")
 
 
 def _add_kuratierte_felder(
